@@ -3,40 +3,64 @@
 	"displayName": "Git Config Helper",
 	"description": "Simple git config helper",
 	"version": "0.0.1",
-	"engines": {
-		"vscode": "^1.39.0"
+	"publisher": "onlyutkarsh",
+	"author": {
+		"name": "Utkarsh Shigihalli"
+	},
+	"repository": {
+		"type": "git",
+		"url": "https://github.com/onlyutkarsh/git-config-helper.git"
+	},
+	"icon": "images/icon.png",
+	"galleryBanner": {
+		"color": "#F2F2F2",
+		"theme": "light"
 	},
 	"categories": [
 		"Other"
 	],
-	"activationEvents": [
-		"onCommand:extension.helloWorld"
+	"keywords": [
+		"git",
+		"config",
+		"user.name",
+		"user.email"
 	],
-	"main": "./out/extension.js",
+	"license": "MIT",
+	"engines": {
+		"vscode": "^1.39.0"
+	},
+	"activationEvents": [
+		"*"
+	],
+	"main": "./dist/extension",
 	"contributes": {
 		"commands": [
 			{
-				"command": "extension.helloWorld",
-				"title": "Hello World"
+				"command": "git-config-helper.selectUserProfile",
+				"title": "Git Config Utility: Select user profile"
 			}
 		]
 	},
 	"scripts": {
-		"vscode:prepublish": "npm run compile",
+		"vscode:prepublish": "npm run compile && webpack --mode production",
+		"webpack": "npm run compile && webpack --mode development",
+		"webpack-dev": "npm run compile && webpack --mode development --watch --info-verbosity verbose",
 		"compile": "tsc -p ./",
-		"watch": "tsc -watch -p ./",
-		"pretest": "npm run compile",
-		"test": "node ./out/test/runTest.js"
+		"package": "vsce package",
+		"deploy": "vsce publish -p"
 	},
 	"devDependencies": {
 		"@types/glob": "^7.1.1",
-		"@types/mocha": "^5.2.6",
 		"@types/node": "^10.12.21",
 		"@types/vscode": "^1.39.0",
 		"glob": "^7.1.4",
 		"mocha": "^6.1.4",
-		"typescript": "^3.3.1",
+		"ts-loader": "~6.2.1",
 		"tslint": "^5.12.1",
-		"vscode-test": "^1.2.0"
+		"tslint-webpack-plugin": "~2.1.0",
+		"typescript": "~3.6.3",
+		"vsce": "~1.68.0",
+		"webpack": "~4.41.2",
+		"webpack-cli": "~3.3.9"
 	}
 }

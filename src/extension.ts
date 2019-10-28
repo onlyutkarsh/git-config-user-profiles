@@ -1,27 +1,67 @@
-// The module 'vscode' contains the VS Code extensibility API
-// Import the module and reference it with the alias vscode in your code below
-import * as vscode from 'vscode';
+import { ExtensionContext, StatusBarAlignment, window, StatusBarItem, Selection, workspace, TextEditor, commands } from "vscode";
+import { basename } from "path";
 
-// this method is called when your extension is activated
-// your extension is activated the very first time the command is executed
-export function activate(context: vscode.ExtensionContext) {
+export function activate(context: ExtensionContext) {
 
-	// Use the console to output diagnostic information (console.log) and errors (console.error)
-	// This line of code will only be executed once when your extension is activated
-	console.log('Congratulations, your extension "git-config-helper" is now active!');
+	// Create a status bar item
+	const status = window.createStatusBarItem(StatusBarAlignment.Right, 1000000);
 
-	// The command has been defined in the package.json file
-	// Now provide the implementation of the command with registerCommand
-	// The commandId parameter must match the command field in package.json
-	let disposable = vscode.commands.registerCommand('extension.helloWorld', () => {
-		// The code you place here will be executed every time your command is executed
+	let commandId = "git-config-helper.selectUserProfile";
 
-		// Display a message box to the user
-		vscode.window.showInformationMessage('Hello World!');
-	});
+	context.subscriptions.push(commands.registerCommand(commandId, async () => {
+		const info = getEditorInfo();
+		let selected = await window.showQuickPick(["Home", "Work", "GitHub-Private", "GitHub-Public"], {
+			canPickMany: false,
+			matchOnDetail: true,
+			placeHolder: "Select a profile"
+		});
+		window.showInformationMessage(selected ? selected : "No item selected");
+	}));
 
-	context.subscriptions.push(disposable);
+	status.command = commandId;
+
+	context.subscriptions.push(status);
+
+	// Update status bar item based on events for multi root folder changes
+	context.subscriptions.push(workspace.onDidChangeWorkspaceFolders(e => updateStatus(status)));
+
+	updateStatus(status);
 }
 
-// this method is called when your extension is deactivated
-export function deactivate() {}
+export function deactivate() { }
+
+function updateStatus(status: StatusBarItem): void {
+	const info = getEditorInfo();
+	status.text = info ? info.text || "" : "";
+	status.tooltip = info ? info.tooltip : undefined;
+	status.color = info ? info.color : undefined;
+
+	if (info) {
+		status.show();
+	} else {
+		status.hide();
+	}
+}
+
+function getEditorInfo(): { text?: string; tooltip?: string; color?: string; } | null {
+
+	// If no workspace is opened or just a single folder, we return without any status label
+	// because our extension only works when more than one folder is opened in a workspace.
+	if (!workspace.workspaceFolders || workspace.workspaceFolders.length > 1) {
+		// not supporting multi root workspace at the moment
+		return null;
+	}
+
+	let text: string | undefined;
+	let tooltip: string | undefined;
+	let color: string | undefined;
+
+	// If we have a file:// resource we resolve the WorkspaceFolder this file is from and update
+	// the status accordingly.
+	let rootFolder = workspace.workspaceFolders[0].uri;
+
+	text = `$(repo) No config`;
+	tooltip = rootFolder.fsPath;
+
+	return { text, tooltip, color };
+}
