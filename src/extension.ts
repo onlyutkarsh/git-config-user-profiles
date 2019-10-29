@@ -1,21 +1,31 @@
 import { ExtensionContext, StatusBarAlignment, window, StatusBarItem, Selection, workspace, TextEditor, commands } from "vscode";
 import { basename } from "path";
+import { getProfiles } from "./config";
 
 export function activate(context: ExtensionContext) {
 
 	// Create a status bar item
 	const status = window.createStatusBarItem(StatusBarAlignment.Right, 1000000);
 
-	let commandId = "git-config-helper.selectUserProfile";
+	let commandId = "git-config-user.selectUserProfile";
 
 	context.subscriptions.push(commands.registerCommand(commandId, async () => {
-		const info = getEditorInfo();
-		let selected = await window.showQuickPick(["Home", "Work", "GitHub-Private", "GitHub-Public"], {
-			canPickMany: false,
-			matchOnDetail: true,
-			placeHolder: "Select a profile"
-		});
-		window.showInformationMessage(selected ? selected : "No item selected");
+		let profilesInConfig = getProfiles();
+		if (profilesInConfig.length > 0) {
+			let selected = await window.showQuickPick(profilesInConfig.map(x => x.name), {
+				canPickMany: false,
+				matchOnDetail: true,
+				placeHolder: "Select a profile"
+			});
+			window.showInformationMessage(selected ? selected : "No item selected");
+		}
+		else {
+			let sel = await window.showInformationMessage("No profiles defined. Do you want to?", "Yes", "No"
+			);
+			window.showInformationMessage(sel ? sel : "No item selected");
+
+		}
+
 	}));
 
 	status.command = commandId;

@@ -1,5 +1,5 @@
 {
-	"name": "git-config-helper",
+	"name": "git-config-user",
 	"displayName": "Git Config Helper",
 	"description": "Simple git config helper",
 	"version": "0.0.1",
@@ -9,7 +9,7 @@
 	},
 	"repository": {
 		"type": "git",
-		"url": "https://github.com/onlyutkarsh/git-config-helper.git"
+		"url": "https://github.com/onlyutkarsh/git-config-user.git"
 	},
 	"icon": "images/icon.png",
 	"galleryBanner": {
@@ -36,10 +36,44 @@
 	"contributes": {
 		"commands": [
 			{
-				"command": "git-config-helper.selectUserProfile",
+				"command": "git-config-user.selectUserProfile",
 				"title": "Git Config Utility: Select user profile"
 			}
-		]
+		],
+		"configuration": {
+			"type": "object",
+			"title": "Git Config User",
+			"properties": {
+				"gitConfigUser.enableTelemetry": {
+					"type": "boolean",
+					"default": true,
+					"description": "Enable usage data and errors to be sent to the developer."
+				},
+				"gitConfigUser.profiles": {
+					"type": "array",
+					"items": {
+						"type": "object",
+						"title": "inner objects",
+						"properties": {
+							"name": {
+								"type": "string",
+								"description": "Name of profile. E.g: Work, Home"
+							},
+							"username": {
+								"type": "string",
+								"description": "user name"
+							},
+							"email": {
+								"type": "string",
+								"description": "User email"
+							}
+						}
+					},
+					"default": [],
+					"description": "my test configurations"
+				}
+			}
+		}
 	},
 	"scripts": {
 		"vscode:prepublish": "npm run compile && webpack --mode production",
