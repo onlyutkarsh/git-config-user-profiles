@@ -19,7 +19,6 @@ export class Profile {
         this._name = v;
     }
 
-
     private _userName: string;
     public get userName(): string {
         return this._userName;
@@ -27,7 +26,6 @@ export class Profile {
     public set userName(v: string) {
         this._userName = v;
     }
-
 
     private _email: string;
     public get email(): string {
@@ -39,7 +37,6 @@ export class Profile {
 }
 
 export function getProfiles(): Profile[] {
-
     let profiles = workspace.getConfiguration("gitConfigUser").get<Profile[]>("profiles");
 
     if (profiles) {

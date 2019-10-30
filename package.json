@@ -1,100 +1,107 @@
 {
-	"name": "git-config-user",
-	"displayName": "Git Config Helper",
-	"description": "Simple git config helper",
-	"version": "0.0.1",
-	"publisher": "onlyutkarsh",
-	"author": {
-		"name": "Utkarsh Shigihalli"
-	},
-	"repository": {
-		"type": "git",
-		"url": "https://github.com/onlyutkarsh/git-config-user.git"
-	},
-	"icon": "images/icon.png",
-	"galleryBanner": {
-		"color": "#F2F2F2",
-		"theme": "light"
-	},
-	"categories": [
-		"Other"
-	],
-	"keywords": [
-		"git",
-		"config",
-		"user.name",
-		"user.email"
-	],
-	"license": "MIT",
-	"engines": {
-		"vscode": "^1.39.0"
-	},
-	"activationEvents": [
-		"*"
-	],
-	"main": "./dist/extension",
-	"contributes": {
-		"commands": [
-			{
-				"command": "git-config-user.selectUserProfile",
-				"title": "Git Config Utility: Select user profile"
-			}
-		],
-		"configuration": {
-			"type": "object",
-			"title": "Git Config User",
-			"properties": {
-				"gitConfigUser.enableTelemetry": {
-					"type": "boolean",
-					"default": true,
-					"description": "Enable usage data and errors to be sent to the developer."
-				},
-				"gitConfigUser.profiles": {
-					"type": "array",
-					"items": {
-						"type": "object",
-						"title": "inner objects",
-						"properties": {
-							"name": {
-								"type": "string",
-								"description": "Name of profile. E.g: Work, Home"
-							},
-							"username": {
-								"type": "string",
-								"description": "user name"
-							},
-							"email": {
-								"type": "string",
-								"description": "User email"
-							}
-						}
-					},
-					"default": [],
-					"description": "my test configurations"
-				}
-			}
-		}
-	},
-	"scripts": {
-		"vscode:prepublish": "npm run compile && webpack --mode production",
-		"webpack": "npm run compile && webpack --mode development",
-		"webpack-dev": "npm run compile && webpack --mode development --watch --info-verbosity verbose",
-		"compile": "tsc -p ./",
-		"package": "vsce package",
-		"deploy": "vsce publish -p"
-	},
-	"devDependencies": {
-		"@types/glob": "^7.1.1",
-		"@types/node": "^10.12.21",
-		"@types/vscode": "^1.39.0",
-		"glob": "^7.1.4",
-		"mocha": "^6.1.4",
-		"ts-loader": "~6.2.1",
-		"tslint": "^5.12.1",
-		"tslint-webpack-plugin": "~2.1.0",
-		"typescript": "~3.6.3",
-		"vsce": "~1.68.0",
-		"webpack": "~4.41.2",
-		"webpack-cli": "~3.3.9"
-	}
+    "name": "git-config-user",
+    "displayName": "Git Config Helper",
+    "description": "Simple git config helper",
+    "version": "0.0.1",
+    "publisher": "onlyutkarsh",
+    "author": {
+        "name": "Utkarsh Shigihalli"
+    },
+    "repository": {
+        "type": "git",
+        "url": "https://github.com/onlyutkarsh/git-config-user.git"
+    },
+    "icon": "images/icon.png",
+    "galleryBanner": {
+        "color": "#F2F2F2",
+        "theme": "light"
+    },
+    "categories": [
+        "Other"
+    ],
+    "keywords": [
+        "git",
+        "config",
+        "user.name",
+        "user.email"
+    ],
+    "license": "MIT",
+    "engines": {
+        "vscode": "^1.39.0"
+    },
+    "activationEvents": [
+        "*"
+    ],
+    "main": "./dist/extension",
+    "contributes": {
+        "commands": [
+            {
+                "command": "git-config-user.selectUserProfile",
+                "title": "Git Config Utility: Select user profile"
+            },
+            {
+                "command": "git-config-user.setUserProfile",
+                "title": "Git Config Utility: Set user profile"
+            }
+        ],
+        "configuration": {
+            "type": "object",
+            "title": "Git Config User",
+            "properties": {
+                "gitConfigUser.enableTelemetry": {
+                    "type": "boolean",
+                    "default": true,
+                    "description": "Enable usage data and errors to be sent to the developer."
+                },
+                "gitConfigUser.profiles": {
+                    "type": "array",
+                    "items": {
+                        "type": "object",
+                        "title": "inner objects",
+                        "properties": {
+                            "name": {
+                                "type": "string",
+                                "description": "Name of profile. E.g: Work, Home"
+                            },
+                            "username": {
+                                "type": "string",
+                                "description": "user name"
+                            },
+                            "email": {
+                                "type": "string",
+                                "description": "User email"
+                            }
+                        }
+                    },
+                    "default": [],
+                    "description": "my test configurations"
+                }
+            }
+        }
+    },
+    "scripts": {
+        "vscode:prepublish": "npm run compile && webpack --mode production",
+        "webpack": "npm run compile && webpack --mode development",
+        "webpack-dev": "npm run compile && webpack --mode development --watch --info-verbosity verbose",
+        "compile": "tsc -p ./",
+        "package": "vsce package",
+        "deploy": "vsce publish -p"
+    },
+    "devDependencies": {
+        "@types/glob": "^7.1.1",
+        "@types/node": "^10.12.21",
+        "@types/vscode": "^1.39.0",
+        "glob": "^7.1.4",
+        "mocha": "^6.1.4",
+        "prettier": "^1.18.2",
+        "ts-loader": "~6.2.1",
+        "tslint": "^5.12.1",
+        "tslint-config-prettier": "^1.18.0",
+        "tslint-plugin-prettier": "^2.0.1",
+        "tslint-webpack-plugin": "~2.1.0",
+        "typescript": "~3.6.3",
+        "vsce": "~1.68.0",
+        "webpack": "~4.41.2",
+        "webpack-cli": "~3.3.9"
+    }
 }
