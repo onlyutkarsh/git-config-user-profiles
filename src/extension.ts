@@ -1,6 +1,4 @@
 import { ExtensionContext, StatusBarAlignment, window, StatusBarItem, Selection, workspace, TextEditor, commands } from "vscode";
-import { basename } from "path";
-import { getProfiles } from "./config";
 import { setUserProfile, getUserProfile } from "./commands";
 
 export function activate(context: ExtensionContext) {
@@ -10,7 +8,12 @@ export function activate(context: ExtensionContext) {
     let commandId = "git-config-user.selectUserProfile";
 
     context.subscriptions.push(commands.registerCommand(commandId, getUserProfile));
-    context.subscriptions.push(commands.registerCommand("git-config-user.setUserProfile", setUserProfile));
+    context.subscriptions.push(
+        commands.registerCommand("git-config-user.setUserProfile", async (fromStatusBar: boolean) => {
+            let r = await setUserProfile(fromStatusBar);
+            window.showInformationMessage(`${r.profileName} - ${r.userName} - ${r.email}`);
+        })
+    );
 
     status.command = commandId;
 
