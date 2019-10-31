@@ -1,5 +1,6 @@
 import { ExtensionContext, StatusBarAlignment, window, StatusBarItem, Selection, workspace, TextEditor, commands } from "vscode";
-import { setUserProfile, getUserProfile } from "./commands";
+import { setUserProfile as askForProfile, getUserProfile } from "./commands";
+import { saveProfile } from "./config";
 
 export function activate(context: ExtensionContext) {
     // Create a status bar item
@@ -10,15 +11,15 @@ export function activate(context: ExtensionContext) {
     context.subscriptions.push(commands.registerCommand(commandId, getUserProfile));
     context.subscriptions.push(
         commands.registerCommand("git-config-user.setUserProfile", async (fromStatusBar: boolean) => {
-            let r = await setUserProfile(fromStatusBar);
-            window.showInformationMessage(`${r.profileName} - ${r.userName} - ${r.email}`);
+            let response = await askForProfile(fromStatusBar);
+            if (response && response.profileName && response.userName && response.email) {
+                saveProfile(response);
+            }
         })
     );
 
     status.command = commandId;
-
     context.subscriptions.push(status);
-
     // Update status bar item based on events for multi root folder changes
     context.subscriptions.push(workspace.onDidChangeWorkspaceFolders(e => updateStatus(status)));
 
