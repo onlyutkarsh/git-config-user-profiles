@@ -1,6 +1,7 @@
 import { workspace } from "vscode";
+import { ProfileStatusBar } from "./profileStatusBar";
 
-export interface Profile {
+export class Profile {
     profileName: string;
     userName: string;
     email: string;
@@ -20,4 +21,18 @@ export function saveProfile(profile: Profile) {
     let profiles = getProfiles();
     profiles.push(profile);
     workspace.getConfiguration("gitConfigUser").update("profiles", profiles);
+}
+
+export function getProfile(profileName: string | undefined): Profile | undefined {
+    let filtered = getProfiles().filter(x => x.profileName === profileName);
+    if (filtered && filtered.length > 0) {
+        return filtered[0];
+    }
+    return undefined;
+}
+
+export function onDidChangeConfiguration() {
+    let profiles = getProfiles();
+    let text = ProfileStatusBar.instance.StatusBar.text.replace("$(repo) ", "");
+    //if profile text from the statusbar does not match what is in config, warn
 }

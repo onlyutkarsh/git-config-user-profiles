@@ -1,5 +1,5 @@
 import { window, commands } from "vscode";
-import { getProfiles, Profile, saveProfile } from "./config";
+import { getProfiles, Profile, saveProfile, getProfile } from "./config";
 import { Commands } from "./constants";
 
 export async function setUserProfile() {
@@ -61,20 +61,24 @@ export async function setUserProfile() {
     saveProfile(profile);
 }
 
-export async function getUserProfile() {
+export async function getUserProfile(): Promise<Profile | undefined> {
     let profilesInConfig = getProfiles();
     if (profilesInConfig.length > 0) {
-        let selected = await window.showQuickPick(profilesInConfig.map(x => x.profileName), {
+        let picked = await window.showQuickPick(profilesInConfig.map(x => x.profileName), {
             canPickMany: false,
             matchOnDetail: true,
             ignoreFocusOut: true,
             placeHolder: "Select a user profile. ",
         });
-        window.showInformationMessage(selected ? selected : "No item selected");
+        if (picked) {
+            return getProfile(picked);
+        }
+        return undefined;
     } else {
         let selected = await window.showInformationMessage("No user profiles defined. Do you want to define one now?", "Yes", "No");
         if (selected === "Yes") {
             await commands.executeCommand(Commands.SET_USER_PROFILE);
         }
+        return undefined;
     }
 }
