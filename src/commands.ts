@@ -1,6 +1,8 @@
 import { window, commands } from "vscode";
-import { getProfiles, Profile } from "./config";
-export async function setUserProfile(fromStatusBar: boolean | undefined = false): Promise<Profile | null> {
+import { getProfiles, Profile, saveProfile } from "./config";
+import { Commands } from "./constants";
+
+export async function setUserProfile() {
     let profileName = await window.showInputBox({
         prompt: "Enter name for the profile",
         placeHolder: "Work",
@@ -56,7 +58,7 @@ export async function setUserProfile(fromStatusBar: boolean | undefined = false)
         userName: userName,
     };
 
-    return profile;
+    saveProfile(profile);
 }
 
 export async function getUserProfile() {
@@ -65,13 +67,14 @@ export async function getUserProfile() {
         let selected = await window.showQuickPick(profilesInConfig.map(x => x.profileName), {
             canPickMany: false,
             matchOnDetail: true,
-            placeHolder: "Select a profile",
+            ignoreFocusOut: true,
+            placeHolder: "Select a user profile. ",
         });
         window.showInformationMessage(selected ? selected : "No item selected");
     } else {
-        let selected = await window.showInformationMessage("No config user profiles defined. Do you want to define one now?", "Yes", "No");
+        let selected = await window.showInformationMessage("No user profiles defined. Do you want to define one now?", "Yes", "No");
         if (selected === "Yes") {
-            await commands.executeCommand("git-config-user.setUserProfile", true);
+            await commands.executeCommand(Commands.SET_USER_PROFILE);
         }
     }
 }

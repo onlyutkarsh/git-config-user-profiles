@@ -1,9 +1,5 @@
 import { workspace } from "vscode";
 
-export interface GitUserProfiles {
-    profiles: Profile[];
-}
-
 export interface Profile {
     profileName: string;
     userName: string;
@@ -22,8 +18,6 @@ export function getProfiles(): Profile[] {
 export function saveProfile(profile: Profile) {
     //get existing profiles
     let profiles = getProfiles();
-
     profiles.push(profile);
-
     workspace.getConfiguration("gitConfigUser").update("profiles", profiles);
 }
