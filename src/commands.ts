@@ -74,11 +74,7 @@ export async function getUserProfile(): Promise<Profile | undefined> {
             return getProfile(picked);
         }
         return undefined;
-    } else {
-        let selected = await window.showInformationMessage("No user profiles defined. Do you want to define one now?", "Yes", "No");
-        if (selected === "Yes") {
-            await commands.executeCommand(Commands.SET_USER_PROFILE);
-        }
-        return undefined;
     }
+
+    return undefined;
 }

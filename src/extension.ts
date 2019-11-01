@@ -15,14 +15,17 @@ export function activate(context: ExtensionContext) {
             if (selectedProfile) {
                 statusBar.instance.updateStatus(selectedProfile);
             } else {
-                window.showErrorMessage("The selected profile not found in configuration. Please verify");
+                let selected = await window.showInformationMessage("No user profiles defined. Do you want to define one now?", "Yes", "No");
+                if (selected === "Yes") {
+                    await commands.executeCommand(Commands.SET_USER_PROFILE);
+                }
             }
         })
     );
     context.subscriptions.push(commands.registerCommand(Commands.SET_USER_PROFILE, setUserProfile));
 
     context.subscriptions.push(statusBar.instance.StatusBar);
-    statusBar.instance.updateStatus("No config");
+    statusBar.instance.updateStatus("No profile");
 }
 
 export function deactivate() {}

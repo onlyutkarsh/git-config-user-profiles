@@ -1,4 +1,4 @@
-import { workspace } from "vscode";
+import { workspace, window } from "vscode";
 import { ProfileStatusBar } from "./profileStatusBar";
 
 export class Profile {
@@ -32,7 +32,11 @@ export function getProfile(profileName: string | undefined): Profile | undefined
 }
 
 export function onDidChangeConfiguration() {
-    let profiles = getProfiles();
     let text = ProfileStatusBar.instance.StatusBar.text.replace("$(repo) ", "");
     //if profile text from the statusbar does not match what is in config, warn
+    let exists = getProfile(text);
+    if (!exists) {
+        window.showErrorMessage("Profile seems to have been removed from configuration. Please verify");
+        ProfileStatusBar.instance.updateStatus("No profile");
+    }
 }
