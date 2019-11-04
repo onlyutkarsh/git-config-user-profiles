@@ -4,14 +4,15 @@ import { Commands } from "./constants";
 import { Profile, onDidChangeConfiguration } from "./config";
 import { ProfileStatusBar as statusBar } from "./profileStatusBar";
 
-export function activate(context: ExtensionContext) {
+export async function activate(context: ExtensionContext) {
     workspace.onDidChangeConfiguration(() => onDidChangeConfiguration());
-    // Create a status bar item
     statusBar.instance.attachCommand(Commands.GET_USER_PROFILE);
+    context.subscriptions.push(statusBar.instance.StatusBar);
+    context.subscriptions.push(commands.registerCommand(Commands.SET_USER_PROFILE, setUserProfile));
 
     context.subscriptions.push(
-        commands.registerCommand(Commands.GET_USER_PROFILE, async () => {
-            let selectedProfile: Profile | undefined = await getUserProfile();
+        commands.registerCommand(Commands.GET_USER_PROFILE, async (fromStatusBar: boolean = true) => {
+            let selectedProfile: Profile | undefined = await getUserProfile(fromStatusBar);
             if (selectedProfile) {
                 statusBar.instance.updateStatus(selectedProfile);
             } else {
@@ -22,10 +23,8 @@ export function activate(context: ExtensionContext) {
             }
         })
     );
-    context.subscriptions.push(commands.registerCommand(Commands.SET_USER_PROFILE, setUserProfile));
 
-    context.subscriptions.push(statusBar.instance.StatusBar);
-    statusBar.instance.updateStatus("No profile");
+    await commands.executeCommand(Commands.GET_USER_PROFILE, false);
 }
 
 export function deactivate() {}

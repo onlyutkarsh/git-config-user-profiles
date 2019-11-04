@@ -103,5 +103,8 @@
         "vsce": "~1.68.0",
         "webpack": "~4.41.2",
         "webpack-cli": "~3.3.9"
+    },
+    "dependencies": {
+        "simple-git": "~1.126.0"
     }
 }

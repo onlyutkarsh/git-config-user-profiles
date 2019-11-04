@@ -56,24 +56,45 @@ export async function setUserProfile() {
         profileName: profileName,
         email: email,
         userName: userName,
+        selected: false,
     };
 
     saveProfile(profile);
 }
 
-export async function getUserProfile(): Promise<Profile | undefined> {
+export async function getUserProfile(fromStatusBar: boolean = false): Promise<Profile | undefined> {
     let profilesInConfig = getProfiles();
     if (profilesInConfig.length > 0) {
-        let picked = await window.showQuickPick(profilesInConfig.map(x => x.profileName), {
-            canPickMany: false,
-            matchOnDetail: true,
-            ignoreFocusOut: true,
-            placeHolder: "Select a user profile. ",
-        });
-        if (picked) {
-            return getProfile(picked);
+        let selectedProfileFromConfig = profilesInConfig.filter(x => x.selected);
+        let picked: string | undefined = "";
+
+        if (selectedProfileFromConfig && selectedProfileFromConfig.length > 0 && !fromStatusBar) {
+            //if multiple items have selected = true (due fo manual change) return the first one
+            picked = selectedProfileFromConfig[0].profileName;
+        } else {
+            //show picklist only if no profile is marked as selected in config.
+            //this can happen only when setting up config for the first time or user deliberately changed config
+            picked = await window.showQuickPick(profilesInConfig.map(x => x.profileName), {
+                canPickMany: false,
+                matchOnDetail: true,
+                ignoreFocusOut: true,
+                placeHolder: "Select a user profile. ",
+            });
         }
-        return undefined;
+
+        if (picked) {
+            let selectedProfile = getProfile(picked);
+            if (selectedProfile && !selectedProfile.selected) {
+                //update the selected profile as selected and save to the config
+                selectedProfile.selected = true;
+                saveProfile(selectedProfile);
+            }
+            return selectedProfile;
+        }
+        //TODO: return "No profile" if user skips selection
+        return <Profile>{
+            profileName: "No profile",
+        };
     }
 
     return undefined;
