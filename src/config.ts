@@ -1,5 +1,6 @@
-import { workspace, window, ConfigurationTarget } from "vscode";
+import { workspace, window, ConfigurationTarget, commands } from "vscode";
 import { ProfileStatusBar } from "./profileStatusBar";
+import { Commands } from "./constants";
 
 export class Profile {
     profileName: string;
@@ -40,7 +41,9 @@ export function getProfile(profileName: string): Profile | undefined {
     return undefined;
 }
 
-export function onDidChangeConfiguration() {
+export async function onDidChangeConfiguration() {
+    await commands.executeCommand(Commands.GET_USER_PROFILE, false);
+
     // let text = ProfileStatusBar.instance.StatusBar.text.replace("$(repo) ", "");
     // //if profile text from the statusbar does not match what is in config, warn
     // let exists = getProfile(text);

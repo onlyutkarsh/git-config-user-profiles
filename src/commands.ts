@@ -91,11 +91,15 @@ export async function getUserProfile(fromStatusBar: boolean = false): Promise<Pr
             }
             return selectedProfile;
         }
-        //TODO: return "No profile" if user skips selection
+    }
+    //TODO: return "No profile" if user skips selection
+    if (!fromStatusBar) {
+        //if lprofile oaded automatically and no config found
         return <Profile>{
             profileName: "No profile",
+            selected: false,
         };
     }
-
+    //if no config found and user clicks on "no profile" on status bar, send undefined to show picklist
     return undefined;
 }
