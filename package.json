@@ -83,6 +83,7 @@
         "vscode:prepublish": "npm run compile && webpack --mode production",
         "webpack": "npm run compile && webpack --mode development",
         "webpack-dev": "npm run compile && webpack --mode development --watch --info-verbosity verbose",
+        "dev": "npm run webpack-dev",
         "compile": "tsc -p ./",
         "package": "vsce package",
         "deploy": "vsce publish -p"

@@ -1,7 +1,9 @@
 import { ExtensionContext, StatusBarAlignment, window, StatusBarItem, Selection, workspace, TextEditor, commands } from "vscode";
 import { setUserProfile, getUserProfile } from "./commands";
+import { Action } from "./Action";
 import { Commands } from "./constants";
-import { Profile, onDidChangeConfiguration } from "./config";
+import { onDidChangeConfiguration, getProfiles } from "./config";
+import { Profile } from "./Profile";
 import { ProfileStatusBar as statusBar } from "./profileStatusBar";
 
 export async function activate(context: ExtensionContext) {
@@ -12,17 +14,38 @@ export async function activate(context: ExtensionContext) {
 
     context.subscriptions.push(
         commands.registerCommand(Commands.GET_USER_PROFILE, async (fromStatusBar: boolean = true) => {
-            let selectedProfile: Profile | undefined = await getUserProfile(fromStatusBar);
-            if (selectedProfile) {
-                statusBar.instance.updateStatus(selectedProfile);
-            } else {
+            let selectedProfile: {
+                profile: Profile;
+                action: Action;
+            } = await getUserProfile(fromStatusBar);
+
+            if (selectedProfile.action === Action.ShowCreateConfig) {
                 let selected = await window.showInformationMessage("No user profiles defined. Do you want to define one now?", "Yes", "No");
                 if (selected === "Yes") {
                     await commands.executeCommand(Commands.SET_USER_PROFILE);
                 }
+                return;
+            }
+
+            if (selectedProfile.action === Action.Silent) {
+                //loading silently noprofile or profile
+                // user clicked but escaped OR no profile
+                statusBar.instance.updateStatus(selectedProfile.profile);
+            }
+
+            if (selectedProfile.action === Action.FromPicklist) {
+                statusBar.instance.updateStatus(selectedProfile.profile);
+            }
+
+            if (selectedProfile.action === Action.PickFirstSelected) {
+                statusBar.instance.updateStatus(selectedProfile.profile);
             }
         })
     );
+
+    // see if any config already present, if so check if selected=true and pick that.
+    // if not, show "No profile"
+    //let profileFromConfig = await getUserProfile(false);
 
     await commands.executeCommand(Commands.GET_USER_PROFILE, false);
 }

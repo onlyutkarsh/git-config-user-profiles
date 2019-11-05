@@ -1,5 +1,5 @@
 import { window, StatusBarAlignment, StatusBarItem } from "vscode";
-import { Profile } from "./config";
+import { Profile } from "./Profile";
 
 export class ProfileStatusBar {
     private static _instance: ProfileStatusBar;
@@ -17,9 +17,9 @@ export class ProfileStatusBar {
     }
 
     public updateStatus(status: Profile | undefined | string) {
-        if ((status as Profile).profileName) {
+        if ((status as Profile).label) {
             let profile = status as Profile;
-            ProfileStatusBar._statusBar.text = `$(repo) ${profile.profileName}`;
+            ProfileStatusBar._statusBar.text = `$(repo) ${profile.label}`;
             ProfileStatusBar._statusBar.tooltip = `User name: ${profile.userName}\r\nEmail:${profile.email}`;
         } else if (ProfileStatusBar._statusBar && typeof status === "string") {
             ProfileStatusBar._statusBar.text = `$(repo) ${status}`;
