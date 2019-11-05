@@ -14,6 +14,10 @@ export async function setUserProfile() {
             if (input && input.trim().length === 0) {
                 return "Please enter a valid string";
             }
+            let existingProfile = getProfile(input);
+            if (existingProfile) {
+                return `Oops! Profile with the same name '${input}' already exists!`;
+            }
             return undefined;
         },
     });

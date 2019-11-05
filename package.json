@@ -37,11 +37,11 @@
         "commands": [
             {
                 "command": "git-config-user.selectUserProfile",
-                "title": "Git Config Utility: Select user profile"
+                "title": "Git Config Utility: Select a git config user profile"
             },
             {
                 "command": "git-config-user.setUserProfile",
-                "title": "Git Config Utility: Set user profile"
+                "title": "Git Config Utility: Create a git config user profile"
             }
         ],
         "configuration": {
