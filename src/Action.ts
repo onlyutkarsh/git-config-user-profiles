@@ -1,8 +1,8 @@
 export enum Action {
-    Silent,
-    FromPicklist,
+    LoadSilently,
+    ProfilePickedFromPicklist,
     EscapedPicklist,
-    ShowPicklist,
+    NoOp,
     ShowCreateConfig,
-    PickFirstSelected,
+    PickedSelectedFromConfig,
 }

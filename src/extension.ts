@@ -27,17 +27,21 @@ export async function activate(context: ExtensionContext) {
                 return;
             }
 
-            if (selectedProfile.action === Action.Silent) {
+            if (selectedProfile.action === Action.LoadSilently) {
                 //loading silently noprofile or profile
+                statusBar.instance.updateStatus(selectedProfile.profile);
+            }
+
+            if (selectedProfile.action === Action.EscapedPicklist) {
                 // user clicked but escaped OR no profile
                 statusBar.instance.updateStatus(selectedProfile.profile);
             }
 
-            if (selectedProfile.action === Action.FromPicklist) {
+            if (selectedProfile.action === Action.ProfilePickedFromPicklist) {
                 statusBar.instance.updateStatus(selectedProfile.profile);
             }
 
-            if (selectedProfile.action === Action.PickFirstSelected) {
+            if (selectedProfile.action === Action.PickedSelectedFromConfig) {
                 statusBar.instance.updateStatus(selectedProfile.profile);
             }
         })
