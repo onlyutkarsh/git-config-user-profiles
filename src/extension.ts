@@ -5,6 +5,7 @@ import { Commands } from "./constants";
 import { onDidChangeConfiguration, getProfiles } from "./config";
 import { Profile } from "./Profile";
 import { ProfileStatusBar as statusBar } from "./profileStatusBar";
+import { isGitRepository, isValidWorkspace } from "./utils";
 
 export async function activate(context: ExtensionContext) {
     workspace.onDidChangeConfiguration(() => onDidChangeConfiguration());
@@ -14,6 +15,12 @@ export async function activate(context: ExtensionContext) {
 
     context.subscriptions.push(
         commands.registerCommand(Commands.GET_USER_PROFILE, async (fromStatusBar: boolean = true) => {
+            let validWorkSpace = isValidWorkspace();
+            if (validWorkSpace.result === false) {
+                window.showErrorMessage(validWorkSpace.message);
+                return;
+            }
+
             let selectedProfile: {
                 profile: Profile;
                 action: Action;
@@ -37,7 +44,12 @@ export async function activate(context: ExtensionContext) {
                 statusBar.instance.updateStatus(selectedProfile.profile);
             }
 
-            if (selectedProfile.action === Action.ProfilePickedFromPicklist) {
+            if (selectedProfile.action === Action.ProfilePickedFromQuickPick) {
+                statusBar.instance.updateStatus(selectedProfile.profile);
+            }
+
+            if (selectedProfile.action === Action.ProfileQuickPickedAndSaved) {
+                window.showInformationMessage("Profile selected for the repo. Click the profile and apply to change config settings.");
                 statusBar.instance.updateStatus(selectedProfile.profile);
             }
 

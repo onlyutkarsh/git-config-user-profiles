@@ -1,6 +1,7 @@
 export enum Action {
     LoadSilently,
-    ProfilePickedFromPicklist,
+    ProfilePickedFromQuickPick,
+    ProfileQuickPickedAndSaved,
     EscapedPicklist,
     NoOp,
     ShowCreateConfig,

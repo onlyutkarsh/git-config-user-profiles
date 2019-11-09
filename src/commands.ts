@@ -95,59 +95,67 @@ export async function getUserProfile(fromStatusBar: boolean = false): Promise<{ 
 
     let selectedProfileFromConfig = profilesInConfig.filter(x => x.selected) || [];
 
-    if (selectedProfileFromConfig.length === 0 && !fromStatusBar) {
-        //if configs found, but none are selected, if from statusbar show picklist else silent
-        return {
-            profile: emptyProfile,
-            action: Action.LoadSilently,
-        };
-    }
     if (!fromStatusBar) {
-        //if multiple items have selected = true (due to manual change) return the first one
-        return {
-            profile: selectedProfileFromConfig[0],
-            action: Action.PickedSelectedFromConfig,
-        };
-    } else {
-        let response = await window.showInformationMessage("Do you want to use this profile for this repo?", "Yes, apply", "No, pick another", "Cancel");
-        if (response === "Yes, apply") {
-            window.showInformationMessage("sure");
-        } else if (response === "No, pick another") {
-            //show picklist only if no profile is marked as selected in config.
-            //this can happen only when setting up config for the first time or user deliberately changed config
-            let quickPickResponse = await window.showQuickPick<Profile>(profilesInConfig, {
-                canPickMany: false,
-                matchOnDetail: true,
-                ignoreFocusOut: true,
-                placeHolder: "Select a user profile. ",
-            });
+        if (selectedProfileFromConfig.length === 0) {
+            //if configs found, but none are selected, if from statusbar show picklist else silent
+            return {
+                profile: emptyProfile,
+                action: Action.LoadSilently,
+            };
+        } else {
+            //if multiple items have selected = true (due to manual change) return the first one
+            return {
+                profile: selectedProfileFromConfig[0],
+                action: Action.PickedSelectedFromConfig,
+            };
+        }
+    }
 
-            if (quickPickResponse) {
-                if (quickPickResponse.selected) {
-                    // if the profile already has selected = true, don't save again
-                    return {
-                        profile: quickPickResponse,
-                        action: Action.ProfilePickedFromPicklist,
-                    };
-                } else if (!quickPickResponse.selected) {
-                    //update the selected profile as selected and save to the config
-                    quickPickResponse.selected = true;
-                    saveProfile(Object.assign({}, quickPickResponse));
-                    return {
-                        profile: quickPickResponse,
-                        action: Action.ProfilePickedFromPicklist,
-                    };
-                }
-            } else {
-                // profile is already set in the statusbar,
-                // user clicks statusbar, picklist is shown to switch profiles, but user does not pick anything
-                // leave selected as is
-                if (selectedProfileFromConfig.length > 0 && fromStatusBar) {
-                    return {
-                        profile: selectedProfileFromConfig[0],
-                        action: Action.EscapedPicklist,
-                    };
-                }
+    let response;
+    if (fromStatusBar) {
+        if (selectedProfileFromConfig.length === 0) {
+            response = "No, pick another";
+        } else {
+            response = await window.showInformationMessage("Do you want to use this profile for this repo?", "Yes, apply", "No, pick another", "Cancel");
+        }
+    }
+    if (response === "Yes, apply") {
+        window.showInformationMessage("sure");
+    } else if (response === "No, pick another") {
+        //show picklist only if no profile is marked as selected in config.
+        //this can happen only when setting up config for the first time or user deliberately changed config
+        let quickPickResponse = await window.showQuickPick<Profile>(profilesInConfig, {
+            canPickMany: false,
+            matchOnDetail: true,
+            ignoreFocusOut: true,
+            placeHolder: "Select a user profile. ",
+        });
+
+        if (quickPickResponse) {
+            if (quickPickResponse.selected) {
+                // if the profile already has selected = true, don't save again
+                return {
+                    profile: quickPickResponse,
+                    action: Action.ProfilePickedFromQuickPick,
+                };
+            } else if (!quickPickResponse.selected) {
+                //update the selected profile as selected and save to the config
+                quickPickResponse.selected = true;
+                saveProfile(Object.assign({}, quickPickResponse));
+                return {
+                    profile: quickPickResponse,
+                    action: Action.ProfileQuickPickedAndSaved,
+                };
+            }
+        } else {
+            // profile is already set in the statusbar,
+            // user clicks statusbar, picklist is shown to switch profiles, but user does not pick anything
+            // leave selected as is
+            if (selectedProfileFromConfig.length > 0 && fromStatusBar) {
+                return {
+                    profile: selectedProfileFromConfig[0],
+                    action: Action.EscapedPicklist,
+                };
             }
         }
     }
