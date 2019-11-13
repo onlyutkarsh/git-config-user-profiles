@@ -3,7 +3,7 @@ import { getProfiles, saveProfile, getProfile } from "./config";
 import { Profile } from "./Profile";
 import { Commands } from "./constants";
 import { Action } from "./Action";
-import { access } from "fs";
+import { isValidWorkspace } from "./utils";
 
 export async function setUserProfile() {
     let profileName = await window.showInputBox({
@@ -120,6 +120,14 @@ export async function getUserProfile(fromStatusBar: boolean = false): Promise<{ 
         }
     }
     if (response === "Yes, apply") {
+        let validWorkSpace = await isValidWorkspace();
+        if (validWorkSpace.result === false) {
+            window.showErrorMessage(validWorkSpace.message);
+            return {
+                profile: selectedProfileFromConfig[0],
+                action: Action.EscapedPicklist,
+            };
+        }
         window.showInformationMessage("sure");
     }
     if (response === "Create new") {
@@ -130,7 +138,7 @@ export async function getUserProfile(fromStatusBar: boolean = false): Promise<{ 
         let quickPickResponse = await window.showQuickPick<Profile>(
             profilesInConfig.map(x => {
                 return {
-                    label: `${x.label}${x.selected ? " $(primitive-dot)" : ""}`,
+                    label: `${x.label}${x.selected ? " (selected)" : ""}`,
                     userName: x.userName,
                     email: x.email,
                     selected: x.selected,
@@ -147,6 +155,7 @@ export async function getUserProfile(fromStatusBar: boolean = false): Promise<{ 
 
         if (quickPickResponse) {
             quickPickResponse.detail = undefined;
+            quickPickResponse.label = quickPickResponse.label.replace(" (selected)", "");
             // if (quickPickResponse.selected) {
             //     // if the profile already has selected = true, don't save again
             //     return {

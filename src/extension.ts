@@ -15,12 +15,6 @@ export async function activate(context: ExtensionContext) {
 
     context.subscriptions.push(
         commands.registerCommand(Commands.GET_USER_PROFILE, async (fromStatusBar: boolean = true) => {
-            let validWorkSpace = isValidWorkspace();
-            if (validWorkSpace.result === false) {
-                window.showErrorMessage(validWorkSpace.message);
-                return;
-            }
-
             let selectedProfile: {
                 profile: Profile;
                 action: Action;

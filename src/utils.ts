@@ -9,7 +9,7 @@ export async function isGitRepository(path: string): Promise<boolean> {
     }
 }
 
-export function isValidWorkspace(): { result: boolean; message: string } {
+export async function isValidWorkspace(): Promise<{ result: boolean; message: string }> {
     if (workspace.workspaceFolders) {
         if (workspace.workspaceFolders.length > 1) {
             return {
@@ -24,6 +24,13 @@ export function isValidWorkspace(): { result: boolean; message: string } {
             };
         }
         if (workspace.workspaceFolders.length === 1) {
+            let validGitRepo = await isGitRepository(workspace.workspaceFolders[0].uri.fsPath);
+            if (!validGitRepo) {
+                return {
+                    message: "This does not seem to be a valid git repository",
+                    result: false,
+                };
+            }
             return {
                 message: "",
                 result: true,
@@ -31,7 +38,7 @@ export function isValidWorkspace(): { result: boolean; message: string } {
         }
     }
     return {
-        message: "Does not seem to be a workspace",
-        result: true,
+        message: "Does not seem to be a git workspace",
+        result: false,
     };
 }
