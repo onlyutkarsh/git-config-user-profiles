@@ -4,4 +4,5 @@ export class Profile implements QuickPickItem {
     userName: string;
     email: string;
     selected: boolean;
+    detail?: string | undefined;
 }
