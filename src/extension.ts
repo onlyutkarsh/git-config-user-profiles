@@ -20,35 +20,24 @@ export async function activate(context: ExtensionContext) {
                 action: Action;
             } = await getUserProfile(fromStatusBar);
 
-            if (selectedProfile.action === Action.ShowCreateConfig) {
-                let selected = await window.showInformationMessage("No user profiles defined. Do you want to define one now?", "Yes", "No");
-                if (selected === "Yes") {
-                    await commands.executeCommand(Commands.SET_USER_PROFILE);
+            switch (selectedProfile.action) {
+                case Action.ShowCreateConfig: {
+                    let selected = await window.showInformationMessage("No user profiles defined. Do you want to define one now?", "Yes", "No");
+                    if (selected === "Yes") {
+                        await commands.executeCommand(Commands.SET_USER_PROFILE);
+                    }
+                    return;
                 }
-                return;
-            }
-
-            if (selectedProfile.action === Action.LoadSilently) {
-                //loading silently noprofile or profile
-                statusBar.instance.updateStatus(selectedProfile.profile);
-            }
-
-            if (selectedProfile.action === Action.EscapedPicklist) {
-                // user clicked but escaped OR no profile
-                statusBar.instance.updateStatus(selectedProfile.profile);
-            }
-
-            if (selectedProfile.action === Action.ProfilePickedFromQuickPick) {
-                statusBar.instance.updateStatus(selectedProfile.profile);
-            }
-
-            if (selectedProfile.action === Action.ProfileQuickPickedAndSaved) {
-                // window.showInformationMessage("Profile selected for the repo. Click the profile and apply to change config settings.");
-                statusBar.instance.updateStatus(selectedProfile.profile);
-            }
-
-            if (selectedProfile.action === Action.PickedSelectedFromConfig) {
-                statusBar.instance.updateStatus(selectedProfile.profile);
+                case Action.LoadSilently:
+                case Action.EscapedPicklist:
+                case Action.ProfilePickedFromQuickPick:
+                case Action.ProfileQuickPickedAndSaved:
+                case Action.PickedSelectedFromConfig: {
+                    statusBar.instance.updateStatus(selectedProfile.profile);
+                    break;
+                }
+                default:
+                    break;
             }
         })
     );
