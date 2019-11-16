@@ -163,10 +163,11 @@ export async function getUserProfile(fromStatusBar: boolean = false): Promise<{ 
             quickPickResponse.label = quickPickResponse.label.replace(" (selected)", "");
             quickPickResponse.selected = true;
             saveProfile(Object.assign({}, quickPickResponse));
-            return {
-                profile: quickPickResponse,
-                action: Action.ProfileQuickPickedAndSaved,
-            };
+            await getUserProfile(true);
+            // return {
+            //     profile: quickPickResponse,
+            //     action: Action.ProfileQuickPickedAndSaved,
+            // };
         } else {
             // profile is already set in the statusbar,
             // user clicks statusbar, picklist is shown to switch profiles, but user does not pick anything
