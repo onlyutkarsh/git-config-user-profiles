@@ -43,7 +43,7 @@ export async function activate(context: ExtensionContext) {
             }
 
             if (selectedProfile.action === Action.ProfileQuickPickedAndSaved) {
-                window.showInformationMessage("Profile selected for the repo. Click the profile and apply to change config settings.");
+                // window.showInformationMessage("Profile selected for the repo. Click the profile and apply to change config settings.");
                 statusBar.instance.updateStatus(selectedProfile.profile);
             }
 

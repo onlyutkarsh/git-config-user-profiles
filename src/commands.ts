@@ -1,9 +1,10 @@
-import { window, commands } from "vscode";
+import { window, commands, workspace } from "vscode";
 import { getProfiles, saveProfile, getProfile } from "./config";
 import { Profile } from "./Profile";
 import { Commands } from "./constants";
 import { Action } from "./Action";
 import { isValidWorkspace } from "./utils";
+import * as sgit from "simple-git/promise";
 
 export async function setUserProfile() {
     let profileName = await window.showInputBox({
@@ -128,7 +129,11 @@ export async function getUserProfile(fromStatusBar: boolean = false): Promise<{ 
                 action: Action.EscapedPicklist,
             };
         }
-        window.showInformationMessage("sure");
+        if (workspace.workspaceFolders && workspace.workspaceFolders.length > 0) {
+            let folder = workspace.workspaceFolders[0].uri.fsPath;
+            sgit(folder).addConfig("user.name", selectedProfileFromConfig[0].userName);
+            sgit(folder).addConfig("user.email", selectedProfileFromConfig[0].email);
+        }
     }
     if (response === "Create new") {
         commands.executeCommand(Commands.SET_USER_PROFILE);
@@ -156,21 +161,12 @@ export async function getUserProfile(fromStatusBar: boolean = false): Promise<{ 
         if (quickPickResponse) {
             quickPickResponse.detail = undefined;
             quickPickResponse.label = quickPickResponse.label.replace(" (selected)", "");
-            // if (quickPickResponse.selected) {
-            //     // if the profile already has selected = true, don't save again
-            //     return {
-            //         profile: quickPickResponse,
-            //         action: Action.ProfilePickedFromQuickPick,
-            //     };
-            // } else if (!quickPickResponse.selected) {
-            //update the selected profile as selected and save to the config
             quickPickResponse.selected = true;
             saveProfile(Object.assign({}, quickPickResponse));
             return {
                 profile: quickPickResponse,
                 action: Action.ProfileQuickPickedAndSaved,
             };
-            // }
         } else {
             // profile is already set in the statusbar,
             // user clicks statusbar, picklist is shown to switch profiles, but user does not pick anything
