@@ -3,7 +3,7 @@ import { getProfiles, saveProfile, getProfile } from "./config";
 import { Profile } from "./Profile";
 import { Commands } from "./constants";
 import { Action } from "./Action";
-import { isValidWorkspace } from "./utils";
+import { isValidWorkspace, validateProfileName, validateUserName, validateEmail } from "./utils";
 import * as sgit from "simple-git/promise";
 
 export async function setUserProfile() {
@@ -11,16 +11,7 @@ export async function setUserProfile() {
         prompt: "Enter name for the profile",
         placeHolder: "Work",
         ignoreFocusOut: true,
-        validateInput: input => {
-            if (input && input.trim().length === 0) {
-                return "Please enter a valid string";
-            }
-            let existingProfile = getProfile(input);
-            if (existingProfile) {
-                return `Oops! Profile with the same name '${input}' already exists!`;
-            }
-            return undefined;
-        },
+        validateInput: input => validateProfileName(input),
     });
 
     if (!profileName) {
@@ -31,12 +22,7 @@ export async function setUserProfile() {
         prompt: `Enter user name for '${profileName}'`,
         placeHolder: "John Smith",
         ignoreFocusOut: true,
-        validateInput: input => {
-            if (input && input.trim().length === 0) {
-                return "Please enter a valid string";
-            }
-            return undefined;
-        },
+        validateInput: input => validateUserName(input),
     });
 
     if (!userName) {
@@ -47,13 +33,7 @@ export async function setUserProfile() {
         prompt: `Enter email for '${profileName}'`,
         placeHolder: "john.smith@work.com",
         ignoreFocusOut: true,
-        validateInput: input => {
-            let validEmail = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-            if (!validEmail.test(input)) {
-                return "Oops! That does not seem to be a valid email. Please verify";
-            }
-            return undefined;
-        },
+        validateInput: input => validateEmail(input),
     });
 
     if (!email) {
@@ -117,10 +97,12 @@ export async function getUserProfile(fromStatusBar: boolean = false): Promise<{ 
         if (selectedProfileFromConfig.length === 0) {
             response = "No, pick another";
         } else {
-            response = await window.showInformationMessage("Do you want to use this profile for this repo?", "Yes, apply", "No, pick another", "Create new");
+            response = await window.showInformationMessage("Do you want to use this profile for this repo?", "Yes, apply", "No, pick another", "Edit existing", "Create new");
         }
     }
-    if (response === "Yes, apply") {
+    if (response === "Edit existing") {
+        commands.executeCommand(Commands.EDIT_USER_PROFILE);
+    } else if (response === "Yes, apply") {
         let validWorkSpace = await isValidWorkspace();
         if (validWorkSpace.result === false) {
             window.showErrorMessage(validWorkSpace.message);
@@ -140,7 +122,7 @@ export async function getUserProfile(fromStatusBar: boolean = false): Promise<{ 
     } else if (response === "No, pick another") {
         //show picklist only if no profile is marked as selected in config.
         //this can happen only when setting up config for the first time or user deliberately changed config
-        let quickPickResponse = await window.showQuickPick<Profile>(
+        let pickedProfile = await window.showQuickPick<Profile>(
             profilesInConfig.map(x => {
                 return {
                     label: `${x.label}${x.selected ? " (selected)" : ""}`,
@@ -158,11 +140,11 @@ export async function getUserProfile(fromStatusBar: boolean = false): Promise<{ 
             }
         );
 
-        if (quickPickResponse) {
-            quickPickResponse.detail = undefined;
-            quickPickResponse.label = quickPickResponse.label.replace(" (selected)", "");
-            quickPickResponse.selected = true;
-            saveProfile(Object.assign({}, quickPickResponse));
+        if (pickedProfile) {
+            pickedProfile.detail = undefined;
+            pickedProfile.label = pickedProfile.label.replace(" (selected)", "");
+            pickedProfile.selected = true;
+            saveProfile(Object.assign({}, pickedProfile));
             await getUserProfile(true);
             // return {
             //     profile: quickPickResponse,
@@ -185,4 +167,81 @@ export async function getUserProfile(fromStatusBar: boolean = false): Promise<{ 
         profile: emptyProfile,
         action: Action.NoOp,
     };
+}
+
+export async function editUserProfile() {
+    window.showInformationMessage("edit");
+    let profilesInConfig = getProfiles();
+
+    if (profilesInConfig.length === 0) {
+        window.showWarningMessage("No profiles found");
+    }
+
+    let pickedProfile = await window.showQuickPick<Profile>(
+        profilesInConfig.map(x => {
+            return {
+                label: `${x.label}${x.selected ? " (selected)" : ""}`,
+                userName: x.userName,
+                email: x.email,
+                selected: x.selected,
+                detail: `${x.userName} (${x.email}) `,
+            };
+        }),
+        {
+            canPickMany: false,
+            matchOnDetail: false,
+            ignoreFocusOut: true,
+            placeHolder: "Select a user profile. ",
+        }
+    );
+
+    if (pickedProfile) {
+        pickedProfile.detail = undefined;
+        pickedProfile.label = pickedProfile.label.replace(" (selected)", "");
+
+        let profileName = await window.showInputBox({
+            prompt: "Enter name for the profile",
+            placeHolder: "Work",
+            ignoreFocusOut: true,
+            value: pickedProfile.label,
+            validateInput: input => validateProfileName(input, false),
+        });
+
+        if (!profileName) {
+            return null;
+        }
+
+        let userName = await window.showInputBox({
+            prompt: `Enter user name for '${profileName}'`,
+            placeHolder: "John Smith",
+            ignoreFocusOut: true,
+            value: pickedProfile.userName,
+            validateInput: input => validateUserName(input),
+        });
+
+        if (!userName) {
+            return null;
+        }
+
+        let email = await window.showInputBox({
+            prompt: `Enter email for '${profileName}'`,
+            placeHolder: "john.smith@work.com",
+            ignoreFocusOut: true,
+            value: pickedProfile.email,
+            validateInput: input => validateEmail(input),
+        });
+
+        if (!email) {
+            return null;
+        }
+
+        let profile: Profile = {
+            label: profileName,
+            email: email,
+            userName: userName,
+            selected: pickedProfile.selected,
+        };
+
+        saveProfile(profile, pickedProfile.label);
+    }
 }

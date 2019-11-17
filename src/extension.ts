@@ -1,5 +1,5 @@
 import { ExtensionContext, StatusBarAlignment, window, StatusBarItem, Selection, workspace, TextEditor, commands } from "vscode";
-import { setUserProfile, getUserProfile } from "./commands";
+import { setUserProfile, getUserProfile, editUserProfile } from "./commands";
 import { Action } from "./Action";
 import { Commands } from "./constants";
 import { onDidChangeConfiguration, getProfiles } from "./config";
@@ -12,6 +12,7 @@ export async function activate(context: ExtensionContext) {
     statusBar.instance.attachCommand(Commands.GET_USER_PROFILE);
     context.subscriptions.push(statusBar.instance.StatusBar);
     context.subscriptions.push(commands.registerCommand(Commands.SET_USER_PROFILE, setUserProfile));
+    context.subscriptions.push(commands.registerCommand(Commands.EDIT_USER_PROFILE, editUserProfile));
 
     context.subscriptions.push(
         commands.registerCommand(Commands.GET_USER_PROFILE, async (fromStatusBar: boolean = true) => {

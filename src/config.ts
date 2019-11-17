@@ -12,13 +12,21 @@ export function getProfiles(): Profile[] {
     return [];
 }
 
-export function saveProfile(profile: Profile) {
+export function saveProfile(profile: Profile, oldProfileName?: string) {
     //get existing profiles
     let profiles = getProfiles();
 
-    let existingProfileIndex = profiles.findIndex(x => x.label.toLowerCase() === profile.label.toLowerCase());
+    let existingProfileIndex = -1;
+    if (oldProfileName) {
+        existingProfileIndex = profiles.findIndex(x => x.label.toLowerCase() === oldProfileName.toLowerCase());
+    } else {
+        existingProfileIndex = profiles.findIndex(x => x.label.toLowerCase() === profile.label.toLowerCase());
+        if (existingProfileIndex > -1) {
+            // set existing to false if user is making a selection of profile (not updating the profile)
+            profiles.forEach(x => (x.selected = false));
+        }
+    }
     if (existingProfileIndex > -1) {
-        profiles.forEach(x => (x.selected = false));
         profiles[existingProfileIndex] = profile;
     } else {
         profiles.push(profile);
