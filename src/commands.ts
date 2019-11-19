@@ -5,51 +5,67 @@ import { Commands } from "./constants";
 import { Action } from "./Action";
 import { isValidWorkspace, validateProfileName, validateUserName, validateEmail } from "./utils";
 import * as sgit from "simple-git/promise";
+import { MultiStepInput, State } from "./multiStepInput";
 
 export async function setUserProfile() {
-    let profileName = await window.showInputBox({
-        prompt: "Enter name for the profile",
-        placeHolder: "Work",
-        ignoreFocusOut: true,
-        validateInput: input => validateProfileName(input),
-    });
-
-    if (!profileName) {
-        return null;
-    }
-
-    let userName = await window.showInputBox({
-        prompt: `Enter user name for '${profileName}'`,
-        placeHolder: "John Smith",
-        ignoreFocusOut: true,
-        validateInput: input => validateUserName(input),
-    });
-
-    if (!userName) {
-        return null;
-    }
-
-    let email = await window.showInputBox({
-        prompt: `Enter email for '${profileName}'`,
-        placeHolder: "john.smith@work.com",
-        ignoreFocusOut: true,
-        validateInput: input => validateEmail(input),
-    });
-
-    if (!email) {
-        return null;
-    }
+    const state = {} as Partial<State>;
+    await MultiStepInput.run(input => pickProfileName(input, state));
 
     let profile: Profile = {
-        label: profileName,
-        email: email,
-        userName: userName,
+        label: state.profileName || "",
+        email: state.email || "",
+        userName: state.userName || "",
         selected: false,
     };
 
     saveProfile(profile);
 }
 
+function shouldResume() {
+    // Could show a notification with the option to resume.
+    return new Promise<boolean>((resolve, reject) => {});
+}
+
+async function pickProfileName(input: MultiStepInput, state: Partial<State>, create: boolean = true) {
+    state.profileName = await input.showInputBox({
+        title: create ? "Create a profile" : "Edit profile",
+        step: 1,
+        totalSteps: 3,
+        prompt: "Enter name for the profile",
+        value: state.profileName || "",
+        placeholder: "Work",
+        validate: validateProfileName,
+        shouldResume: shouldResume,
+    });
+    return (input: MultiStepInput) => pickUserName(input, state, create);
+}
+
+async function pickUserName(input: MultiStepInput, state: Partial<State>, create: boolean = true) {
+    state.userName = await input.showInputBox({
+        title: create ? "Create a profile" : "Edit profile",
+        step: 2,
+        totalSteps: 3,
+        prompt: "Enter the user name",
+        value: state.userName || "",
+        placeholder: "John Smith",
+        validate: validateUserName,
+        shouldResume: shouldResume,
+    });
+    return (input: MultiStepInput) => pickEmail(input, state, create);
+}
+
+async function pickEmail(input: MultiStepInput, state: Partial<State>, create: boolean = true) {
+    state.email = await input.showInputBox({
+        title: create ? "Create a profile" : "Edit profile",
+        step: 3,
+        totalSteps: 3,
+        prompt: "Enter the email",
+        value: state.email || "",
+        placeholder: "john.smith@myorg.com",
+        validate: validateEmail,
+        shouldResume: shouldResume,
+    });
+}
 export async function getUserProfile(fromStatusBar: boolean = false): Promise<{ profile: Profile; action: Action }> {
     let profilesInConfig = getProfiles();
     let emptyProfile = <Profile>{
@@ -146,10 +162,6 @@ export async function getUserProfile(fromStatusBar: boolean = false): Promise<{ 
             pickedProfile.selected = true;
             saveProfile(Object.assign({}, pickedProfile));
             await getUserProfile(true);
-            // return {
-            //     profile: quickPickResponse,
-            //     action: Action.ProfileQuickPickedAndSaved,
-            // };
         } else {
             // profile is already set in the statusbar,
             // user clicks statusbar, picklist is shown to switch profiles, but user does not pick anything
@@ -170,7 +182,6 @@ export async function getUserProfile(fromStatusBar: boolean = false): Promise<{ 
 }
 
 export async function editUserProfile() {
-    window.showInformationMessage("edit");
     let profilesInConfig = getProfiles();
 
     if (profilesInConfig.length === 0) {
@@ -198,47 +209,17 @@ export async function editUserProfile() {
     if (pickedProfile) {
         pickedProfile.detail = undefined;
         pickedProfile.label = pickedProfile.label.replace(" (selected)", "");
-
-        let profileName = await window.showInputBox({
-            prompt: "Enter name for the profile",
-            placeHolder: "Work",
-            ignoreFocusOut: true,
-            value: pickedProfile.label,
-            validateInput: input => validateProfileName(input, false),
-        });
-
-        if (!profileName) {
-            return null;
-        }
-
-        let userName = await window.showInputBox({
-            prompt: `Enter user name for '${profileName}'`,
-            placeHolder: "John Smith",
-            ignoreFocusOut: true,
-            value: pickedProfile.userName,
-            validateInput: input => validateUserName(input),
-        });
-
-        if (!userName) {
-            return null;
-        }
-
-        let email = await window.showInputBox({
-            prompt: `Enter email for '${profileName}'`,
-            placeHolder: "john.smith@work.com",
-            ignoreFocusOut: true,
-            value: pickedProfile.email,
-            validateInput: input => validateEmail(input),
-        });
-
-        if (!email) {
-            return null;
-        }
+        const state: Partial<State> = {
+            email: pickedProfile.email,
+            userName: pickedProfile.userName,
+            profileName: pickedProfile.label,
+        };
+        await MultiStepInput.run(input => pickProfileName(input, state, false));
 
         let profile: Profile = {
-            label: profileName,
-            email: email,
-            userName: userName,
+            label: state.profileName || "",
+            email: state.email || "",
+            userName: state.userName || "",
             selected: pickedProfile.selected,
         };
 
