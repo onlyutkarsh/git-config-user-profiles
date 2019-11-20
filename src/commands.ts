@@ -34,7 +34,7 @@ async function pickProfileName(input: MultiStepInput, state: Partial<State>, cre
         prompt: "Enter name for the profile",
         value: state.profileName || "",
         placeholder: "Work",
-        validate: validateProfileName,
+        validate: input => validateProfileName(input, create),
         shouldResume: shouldResume,
     });
     return (input: MultiStepInput) => pickUserName(input, state, create);
@@ -129,8 +129,8 @@ export async function getUserProfile(fromStatusBar: boolean = false): Promise<{ 
         }
         if (workspace.workspaceFolders && workspace.workspaceFolders.length > 0) {
             let folder = workspace.workspaceFolders[0].uri.fsPath;
-            sgit(folder).addConfig("user.name", selectedProfileFromConfig[0].userName);
-            sgit(folder).addConfig("user.email", selectedProfileFromConfig[0].email);
+            let response = await sgit(folder).addConfig("user.name", selectedProfileFromConfig[0].userName);
+            let resp = await sgit(folder).addConfig("user.email", selectedProfileFromConfig[0].email);
         }
     }
     if (response === "Create new") {
