@@ -1,5 +1,5 @@
 import { ExtensionContext, StatusBarAlignment, window, StatusBarItem, Selection, workspace, TextEditor, commands } from "vscode";
-import { setUserProfile, getUserProfile, editUserProfile } from "./commands";
+import { createUserProfile, getUserProfile, editUserProfile } from "./commands";
 import { Action } from "./Action";
 import { Commands } from "./constants";
 import { onDidChangeConfiguration, getProfiles } from "./config";
@@ -11,7 +11,7 @@ export async function activate(context: ExtensionContext) {
     workspace.onDidChangeConfiguration(() => onDidChangeConfiguration());
     statusBar.instance.attachCommand(Commands.GET_USER_PROFILE);
     context.subscriptions.push(statusBar.instance.StatusBar);
-    context.subscriptions.push(commands.registerCommand(Commands.SET_USER_PROFILE, setUserProfile));
+    context.subscriptions.push(commands.registerCommand(Commands.CREATE_USER_PROFILE, createUserProfile));
     context.subscriptions.push(commands.registerCommand(Commands.EDIT_USER_PROFILE, editUserProfile));
 
     context.subscriptions.push(
@@ -21,25 +21,7 @@ export async function activate(context: ExtensionContext) {
                 action: Action;
             } = await getUserProfile(fromStatusBar);
 
-            switch (selectedProfile.action) {
-                case Action.ShowCreateConfig: {
-                    let selected = await window.showInformationMessage("No user profiles defined. Do you want to define one now?", "Yes", "No");
-                    if (selected === "Yes") {
-                        await commands.executeCommand(Commands.SET_USER_PROFILE);
-                    }
-                    return;
-                }
-                case Action.LoadSilently:
-                case Action.EscapedPicklist:
-                case Action.ProfilePickedFromQuickPick:
-                case Action.ProfileQuickPickedAndSaved:
-                case Action.PickedSelectedFromConfig: {
-                    statusBar.instance.updateStatus(selectedProfile.profile);
-                    break;
-                }
-                default:
-                    break;
-            }
+            statusBar.instance.updateStatus(selectedProfile.profile);
         })
     );
 

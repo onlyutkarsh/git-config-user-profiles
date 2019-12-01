@@ -40,7 +40,7 @@
                 "title": "Git Config User Profiles: Select a git config user profile"
             },
             {
-                "command": "git-config-user.setUserProfile",
+                "command": "git-config-user.createUserProfile",
                 "title": "Git Config User Profiles: Create a git config user profile"
             },
             {

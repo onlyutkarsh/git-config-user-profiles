@@ -39,7 +39,7 @@ export async function isValidWorkspace(): Promise<{ result: boolean; message: st
         }
     }
     return {
-        message: "Does not seem to be a git workspace",
+        message: "This does not seem to be a valid git repository",
         result: false,
     };
 }

@@ -7,7 +7,7 @@ import { isValidWorkspace, validateProfileName, validateUserName, validateEmail 
 import * as sgit from "simple-git/promise";
 import { MultiStepInput, State } from "./multiStepInput";
 
-export async function setUserProfile() {
+export async function createUserProfile() {
     const state = {} as Partial<State>;
     await MultiStepInput.run(input => pickProfileName(input, state));
 
@@ -79,6 +79,10 @@ export async function getUserProfile(fromStatusBar: boolean = false): Promise<{ 
         //if profile loaded automatically and no config found
         //OR if no config found and user clicks on "no profile" on status bar, send undefined to show picklist
         if (fromStatusBar) {
+            let selected = await window.showInformationMessage("No user profiles defined. Do you want to define one now?", "Yes", "No");
+            if (selected === "Yes") {
+                await commands.executeCommand(Commands.CREATE_USER_PROFILE);
+            }
             return {
                 profile: emptyProfile,
                 action: Action.ShowCreateConfig,
@@ -106,19 +110,9 @@ export async function getUserProfile(fromStatusBar: boolean = false): Promise<{ 
                 action: Action.PickedSelectedFromConfig,
             };
         }
-    }
+    } else if (fromStatusBar) {
+        let response;
 
-    let response;
-    if (fromStatusBar) {
-        if (selectedProfileFromConfig.length === 0) {
-            response = "No, pick another";
-        } else {
-            response = await window.showInformationMessage("Do you want to use this profile for this repo?", "Yes, apply", "No, pick another", "Edit existing", "Create new");
-        }
-    }
-    if (response === "Edit existing") {
-        commands.executeCommand(Commands.EDIT_USER_PROFILE);
-    } else if (response === "Yes, apply") {
         let validWorkSpace = await isValidWorkspace();
         if (validWorkSpace.result === false) {
             window.showErrorMessage(validWorkSpace.message);
@@ -127,54 +121,86 @@ export async function getUserProfile(fromStatusBar: boolean = false): Promise<{ 
                 action: Action.EscapedPicklist,
             };
         }
-        if (workspace.workspaceFolders && workspace.workspaceFolders.length > 0) {
-            let folder = workspace.workspaceFolders[0].uri.fsPath;
-            let response = await sgit(folder).addConfig("user.name", selectedProfileFromConfig[0].userName);
-            let resp = await sgit(folder).addConfig("user.email", selectedProfileFromConfig[0].email);
-        }
-    }
-    if (response === "Create new") {
-        commands.executeCommand(Commands.SET_USER_PROFILE);
-    } else if (response === "No, pick another") {
-        //show picklist only if no profile is marked as selected in config.
-        //this can happen only when setting up config for the first time or user deliberately changed config
-        let pickedProfile = await window.showQuickPick<Profile>(
-            profilesInConfig.map(x => {
-                return {
-                    label: `${x.label}${x.selected ? " (selected)" : ""}`,
-                    userName: x.userName,
-                    email: x.email,
-                    selected: x.selected,
-                    detail: `${x.userName} (${x.email}) `,
-                };
-            }),
-            {
-                canPickMany: false,
-                matchOnDetail: false,
-                ignoreFocusOut: true,
-                placeHolder: "Select a user profile. ",
-            }
-        );
-
-        if (pickedProfile) {
-            pickedProfile.detail = undefined;
-            pickedProfile.label = pickedProfile.label.replace(" (selected)", "");
-            pickedProfile.selected = true;
-            saveProfile(Object.assign({}, pickedProfile));
-            await getUserProfile(true);
+        if (selectedProfileFromConfig.length === 0) {
+            response = await window.showInformationMessage(`What do you want to do?`, "Pick a profile", "Edit existing", "Create new");
         } else {
-            // profile is already set in the statusbar,
-            // user clicks statusbar, picklist is shown to switch profiles, but user does not pick anything
-            // leave selected as is
-            if (selectedProfileFromConfig.length > 0 && fromStatusBar) {
+            response = await window.showInformationMessage(
+                `Do you want to use profile '${selectedProfileFromConfig[0].label}' for this repo?`,
+                "Yes, apply",
+                "No, pick another",
+                "Edit existing",
+                "Create new"
+            );
+        }
+        if (response === undefined) {
+            return {
+                profile: selectedProfileFromConfig[0],
+                action: Action.NoOp,
+            };
+        } else if (response === "Edit existing") {
+            await commands.executeCommand(Commands.EDIT_USER_PROFILE);
+            return {
+                profile: selectedProfileFromConfig[0],
+                action: Action.NoOp,
+            };
+        } else if (response === "Yes, apply") {
+            if (workspace.workspaceFolders && workspace.workspaceFolders.length > 0) {
+                let folder = workspace.workspaceFolders[0].uri.fsPath;
+                await sgit(folder).addConfig("user.name", selectedProfileFromConfig[0].userName);
+                await sgit(folder).addConfig("user.email", selectedProfileFromConfig[0].email);
+                window.showInformationMessage("User name and email updated in git config file.");
                 return {
                     profile: selectedProfileFromConfig[0],
-                    action: Action.EscapedPicklist,
+                    action: Action.NoOp,
                 };
+            }
+        } else if (response === "Create new") {
+            await commands.executeCommand(Commands.CREATE_USER_PROFILE);
+            return {
+                profile: selectedProfileFromConfig[0],
+                action: Action.NoOp,
+            };
+        } else if (response === "No, pick another" || response === "Pick a profile") {
+            //show picklist only if no profile is marked as selected in config.
+            //this can happen only when setting up config for the first time or user deliberately changed config
+            let pickedProfile = await window.showQuickPick<Profile>(
+                profilesInConfig.map(x => {
+                    return {
+                        label: `${x.label}${x.selected ? " $(star)" : ""}`,
+                        userName: x.userName,
+                        email: x.email,
+                        selected: x.selected,
+                        detail: `${x.userName} (${x.email}) `,
+                    };
+                }),
+                {
+                    canPickMany: false,
+                    matchOnDetail: false,
+                    ignoreFocusOut: true,
+                    placeHolder: "Select a user profile. ",
+                }
+            );
+
+            if (pickedProfile) {
+                pickedProfile.detail = undefined;
+                pickedProfile.label = pickedProfile.label.replace(" $(star)", "");
+                pickedProfile.selected = true;
+                saveProfile(Object.assign({}, pickedProfile));
+                let selectedProfile = await getUserProfile(true);
+                return selectedProfile;
+            } else {
+                // profile is already set in the statusbar,
+                // user clicks statusbar, picklist is shown to switch profiles, but user does not pick anything
+                // leave selected as is
+                if (selectedProfileFromConfig.length > 0 && fromStatusBar) {
+                    return {
+                        profile: selectedProfileFromConfig[0],
+                        action: Action.EscapedPicklist,
+                    };
+                }
             }
         }
     }
-
     return {
         profile: emptyProfile,
         action: Action.NoOp,
@@ -186,12 +212,15 @@ export async function editUserProfile() {
 
     if (profilesInConfig.length === 0) {
         window.showWarningMessage("No profiles found");
+        return;
     }
+
+    let selectedProfileFromConfig = profilesInConfig.filter(x => x.selected) || [];
 
     let pickedProfile = await window.showQuickPick<Profile>(
         profilesInConfig.map(x => {
             return {
-                label: `${x.label}${x.selected ? " (selected)" : ""}`,
+                label: `${x.label}${x.selected ? " $(star)" : ""}`,
                 userName: x.userName,
                 email: x.email,
                 selected: x.selected,
@@ -208,7 +237,7 @@ export async function editUserProfile() {
 
     if (pickedProfile) {
         pickedProfile.detail = undefined;
-        pickedProfile.label = pickedProfile.label.replace(" (selected)", "");
+        pickedProfile.label = pickedProfile.label.replace(" $(star)", "");
         const state: Partial<State> = {
             email: pickedProfile.email,
             userName: pickedProfile.userName,
@@ -224,5 +253,7 @@ export async function editUserProfile() {
         };
 
         saveProfile(profile, pickedProfile.label);
+    } else {
+        //TODO: profile is already selected, user decides to edit and then cancels action
     }
 }
