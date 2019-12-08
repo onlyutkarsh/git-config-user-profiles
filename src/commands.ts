@@ -1,11 +1,10 @@
-import { window, commands, workspace } from "vscode";
-import { getProfiles, saveProfile, getProfile } from "./config";
-import { Profile } from "./Profile";
-import { Commands } from "./constants";
-import { Action } from "./Action";
-import { isValidWorkspace, validateProfileName, validateUserName, validateEmail } from "./utils";
 import * as sgit from "simple-git/promise";
+import { commands, window, workspace } from "vscode";
+import { getProfiles, saveProfile } from "./config";
+import { Commands } from "./constants";
 import { MultiStepInput, State } from "./multiStepInput";
+import { Profile } from "./Profile";
+import { isValidWorkspace, validateEmail, validateProfileName, validateUserName } from "./utils";
 
 export async function createUserProfile() {
     const state = {} as Partial<State>;
@@ -66,60 +65,45 @@ async function pickEmail(input: MultiStepInput, state: Partial<State>, create: b
         shouldResume: shouldResume,
     });
 }
-export async function getUserProfile(fromStatusBar: boolean = false): Promise<{ profile: Profile; action: Action }> {
+export async function getUserProfile(fromStatusBar: boolean = false): Promise<Profile> {
     let profilesInConfig = getProfiles();
     let emptyProfile = <Profile>{
-        label: "No profile",
+        label: "No profile(s) in config",
         selected: false,
         userName: "NA",
         email: "NA",
     };
 
-    if (profilesInConfig.length === 0) {
-        //if profile loaded automatically and no config found
-        //OR if no config found and user clicks on "no profile" on status bar, send undefined to show picklist
-        if (fromStatusBar) {
+    let selectedProfileFromConfig = profilesInConfig.filter(x => x.selected) || [];
+
+    if (!fromStatusBar) {
+        if (profilesInConfig.length === 0) {
+            //if profile loaded automatically and no config found
+            //OR if no config found and user clicks on "no profile" on status bar, send undefined to show picklist
+            return emptyProfile;
+        }
+        if (selectedProfileFromConfig.length === 0) {
+            //if configs found, but none are selected, if from statusbar show picklist else silent
+            return emptyProfile;
+        } else {
+            //if multiple items have selected = true (due to manual change) return the first one
+            return selectedProfileFromConfig[0];
+        }
+    } else if (fromStatusBar) {
+        if (profilesInConfig.length === 0) {
             let selected = await window.showInformationMessage("No user profiles defined. Do you want to define one now?", "Yes", "No");
             if (selected === "Yes") {
                 await commands.executeCommand(Commands.CREATE_USER_PROFILE);
             }
-            return {
-                profile: emptyProfile,
-                action: Action.ShowCreateConfig,
-            };
+            return emptyProfile;
         }
-        return {
-            profile: emptyProfile,
-            action: Action.LoadSilently,
-        };
-    }
 
-    let selectedProfileFromConfig = profilesInConfig.filter(x => x.selected) || [];
-
-    if (!fromStatusBar) {
-        if (selectedProfileFromConfig.length === 0) {
-            //if configs found, but none are selected, if from statusbar show picklist else silent
-            return {
-                profile: emptyProfile,
-                action: Action.LoadSilently,
-            };
-        } else {
-            //if multiple items have selected = true (due to manual change) return the first one
-            return {
-                profile: selectedProfileFromConfig[0],
-                action: Action.PickedSelectedFromConfig,
-            };
-        }
-    } else if (fromStatusBar) {
         let response;
 
         let validWorkSpace = await isValidWorkspace();
         if (validWorkSpace.result === false) {
             window.showErrorMessage(validWorkSpace.message);
-            return {
-                profile: selectedProfileFromConfig[0],
-                action: Action.EscapedPicklist,
-            };
+            return selectedProfileFromConfig[0];
         }
         if (selectedProfileFromConfig.length === 0) {
             response = await window.showInformationMessage(`What do you want to do?`, "Pick a profile", "Edit existing", "Create new");
@@ -133,33 +117,21 @@ export async function getUserProfile(fromStatusBar: boolean = false): Promise<{ 
             );
         }
         if (response === undefined) {
-            return {
-                profile: selectedProfileFromConfig[0],
-                action: Action.NoOp,
-            };
+            return selectedProfileFromConfig[0];
         } else if (response === "Edit existing") {
-            await commands.executeCommand(Commands.EDIT_USER_PROFILE);
-            return {
-                profile: selectedProfileFromConfig[0],
-                action: Action.NoOp,
-            };
+            await editUserProfile();
+            return emptyProfile;
         } else if (response === "Yes, apply") {
             if (workspace.workspaceFolders && workspace.workspaceFolders.length > 0) {
                 let folder = workspace.workspaceFolders[0].uri.fsPath;
                 await sgit(folder).addConfig("user.name", selectedProfileFromConfig[0].userName);
                 await sgit(folder).addConfig("user.email", selectedProfileFromConfig[0].email);
                 window.showInformationMessage("User name and email updated in git config file.");
-                return {
-                    profile: selectedProfileFromConfig[0],
-                    action: Action.NoOp,
-                };
+                return selectedProfileFromConfig[0];
             }
         } else if (response === "Create new") {
-            await commands.executeCommand(Commands.CREATE_USER_PROFILE);
-            return {
-                profile: selectedProfileFromConfig[0],
-                action: Action.NoOp,
-            };
+            await createUserProfile();
+            return selectedProfileFromConfig[0];
         } else if (response === "No, pick another" || response === "Pick a profile") {
             //show picklist only if no profile is marked as selected in config.
             //this can happen only when setting up config for the first time or user deliberately changed config
@@ -177,7 +149,7 @@ export async function getUserProfile(fromStatusBar: boolean = false): Promise<{ 
                     canPickMany: false,
                     matchOnDetail: false,
                     ignoreFocusOut: true,
-                    placeHolder: "Select a user profile. ",
+                    placeHolder: "Select a user profile.",
                 }
             );
 
@@ -193,18 +165,12 @@ export async function getUserProfile(fromStatusBar: boolean = false): Promise<{ 
                 // user clicks statusbar, picklist is shown to switch profiles, but user does not pick anything
                 // leave selected as is
                 if (selectedProfileFromConfig.length > 0 && fromStatusBar) {
-                    return {
-                        profile: selectedProfileFromConfig[0],
-                        action: Action.EscapedPicklist,
-                    };
+                    return selectedProfileFromConfig[0];
                 }
             }
         }
     }
-    return {
-        profile: emptyProfile,
-        action: Action.NoOp,
-    };
+    return emptyProfile;
 }
 
 export async function editUserProfile() {
@@ -256,4 +222,5 @@ export async function editUserProfile() {
     } else {
         //TODO: profile is already selected, user decides to edit and then cancels action
     }
+    return;
 }

@@ -10,9 +10,4 @@
     "typescript.tsc.autoDetect": "off",
     "editor.formatOnSave": true,
     "editor.wordWrap": "on",
-    "[typescript]": {
-        "editor.codeActionsOnSave": {
-            "source.organizeImports": true
-        }
-    }
 }

@@ -1,5 +1,4 @@
-import { workspace, window, ConfigurationTarget, commands } from "vscode";
-import { ProfileStatusBar } from "./profileStatusBar";
+import { commands, ConfigurationTarget, workspace } from "vscode";
 import { Commands } from "./constants";
 import { Profile } from "./Profile";
 

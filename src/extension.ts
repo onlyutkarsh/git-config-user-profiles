@@ -16,12 +16,8 @@ export async function activate(context: ExtensionContext) {
 
     context.subscriptions.push(
         commands.registerCommand(Commands.GET_USER_PROFILE, async (fromStatusBar: boolean = true) => {
-            let selectedProfile: {
-                profile: Profile;
-                action: Action;
-            } = await getUserProfile(fromStatusBar);
-
-            statusBar.instance.updateStatus(selectedProfile.profile);
+            let selectedProfile: Profile = await getUserProfile(fromStatusBar);
+            statusBar.instance.updateStatus(selectedProfile);
         })
     );
 
