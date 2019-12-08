@@ -41,7 +41,3 @@ export function getProfile(profileName: string): Profile | undefined {
     }
     return undefined;
 }
-
-export async function onDidChangeConfiguration() {
-    await commands.executeCommand(Commands.GET_USER_PROFILE, false);
-}

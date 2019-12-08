@@ -20,10 +20,9 @@ export class ProfileStatusBar {
         if ((status as Profile).label) {
             let profile = status as Profile;
             ProfileStatusBar._statusBar.text = `$(person-filled) ${profile.label}`;
-            ProfileStatusBar._statusBar.tooltip = `User name: ${profile.userName}\r\nEmail:${profile.email}`;
-        } else if (ProfileStatusBar._statusBar && typeof status === "string") {
-            ProfileStatusBar._statusBar.text = `$(person-filled) ${status}`;
-            ProfileStatusBar._statusBar.tooltip = "No profiles found";
+            if (profile.userName !== "NA") {
+                ProfileStatusBar._statusBar.tooltip = `User name: ${profile.userName}\r\nEmail:${profile.email}`;
+            }
         }
         ProfileStatusBar._statusBar.show();
     }

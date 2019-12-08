@@ -10,7 +10,7 @@ export async function isGitRepository(path: string): Promise<boolean> {
     }
 }
 
-export async function isValidWorkspace(): Promise<{ result: boolean; message: string }> {
+export async function isValidWorkspace(): Promise<{ result: boolean; message: string; folder?: string }> {
     if (workspace.workspaceFolders) {
         if (workspace.workspaceFolders.length > 1) {
             return {
@@ -35,6 +35,7 @@ export async function isValidWorkspace(): Promise<{ result: boolean; message: st
             return {
                 message: "",
                 result: true,
+                folder: workspace.workspaceFolders[0].uri.fsPath,
             };
         }
     }

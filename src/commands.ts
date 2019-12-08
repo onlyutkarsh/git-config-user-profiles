@@ -68,7 +68,7 @@ async function pickEmail(input: MultiStepInput, state: Partial<State>, create: b
 export async function getUserProfile(fromStatusBar: boolean = false): Promise<Profile> {
     let profilesInConfig = getProfiles();
     let emptyProfile = <Profile>{
-        label: "No profile(s) in config",
+        label: "Git Config Profiles",
         selected: false,
         userName: "NA",
         email: "NA",
@@ -91,6 +91,7 @@ export async function getUserProfile(fromStatusBar: boolean = false): Promise<Pr
         }
     } else if (fromStatusBar) {
         if (profilesInConfig.length === 0) {
+            //if no profiles in config, prompt user to create (even if its non git workspace)
             let selected = await window.showInformationMessage("No user profiles defined. Do you want to define one now?", "Yes", "No");
             if (selected === "Yes") {
                 await commands.executeCommand(Commands.CREATE_USER_PROFILE);
@@ -103,8 +104,9 @@ export async function getUserProfile(fromStatusBar: boolean = false): Promise<Pr
         let validWorkSpace = await isValidWorkspace();
         if (validWorkSpace.result === false) {
             window.showErrorMessage(validWorkSpace.message);
-            return selectedProfileFromConfig[0];
+            return emptyProfile;
         }
+        // let watcher = workspace.createFileSystemWatcher(`${validWorkSpace.folder}/.git/config`);
         if (selectedProfileFromConfig.length === 0) {
             response = await window.showInformationMessage(`What do you want to do?`, "Pick a profile", "Edit existing", "Create new");
         } else {
@@ -122,13 +124,12 @@ export async function getUserProfile(fromStatusBar: boolean = false): Promise<Pr
             await editUserProfile();
             return emptyProfile;
         } else if (response === "Yes, apply") {
-            if (workspace.workspaceFolders && workspace.workspaceFolders.length > 0) {
-                let folder = workspace.workspaceFolders[0].uri.fsPath;
-                await sgit(folder).addConfig("user.name", selectedProfileFromConfig[0].userName);
-                await sgit(folder).addConfig("user.email", selectedProfileFromConfig[0].email);
-                window.showInformationMessage("User name and email updated in git config file.");
-                return selectedProfileFromConfig[0];
-            }
+            //no chance of getting undefined value here as validWorkSpace.result will always be true
+            let folder = validWorkSpace.folder;
+            await sgit(folder).addConfig("user.name", selectedProfileFromConfig[0].userName);
+            await sgit(folder).addConfig("user.email", selectedProfileFromConfig[0].email);
+            window.showInformationMessage("User name and email updated in git config file.");
+            return selectedProfileFromConfig[0];
         } else if (response === "Create new") {
             await createUserProfile();
             return selectedProfileFromConfig[0];
