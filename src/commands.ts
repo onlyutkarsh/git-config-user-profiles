@@ -82,6 +82,12 @@ export async function getUserProfile(fromStatusBar: boolean = false): Promise<Pr
             //OR if no config found and user clicks on "no profile" on status bar, send undefined to show picklist
             return emptyProfile;
         }
+        let validWorkSpace = await isValidWorkspace();
+
+        if (validWorkSpace.result === false) {
+            return emptyProfile;
+        }
+
         if (selectedProfileFromConfig.length === 0) {
             //if configs found, but none are selected, if from statusbar show picklist else silent
             return emptyProfile;
@@ -100,15 +106,20 @@ export async function getUserProfile(fromStatusBar: boolean = false): Promise<Pr
         }
 
         let response;
-
         let validWorkSpace = await isValidWorkspace();
+
         if (validWorkSpace.result === false) {
             window.showErrorMessage(validWorkSpace.message);
             return emptyProfile;
         }
         // let watcher = workspace.createFileSystemWatcher(`${validWorkSpace.folder}/.git/config`);
         if (selectedProfileFromConfig.length === 0) {
-            response = await window.showInformationMessage(`What do you want to do?`, "Pick a profile", "Edit existing", "Create new");
+            response = await window.showInformationMessage(
+                `You have ${profilesInConfig.length} profiles in settings. What do you want to do?`,
+                "Pick a profile",
+                "Edit existing",
+                "Create new"
+            );
         } else {
             response = await window.showInformationMessage(
                 `Do you want to use profile '${selectedProfileFromConfig[0].label}' for this repo?`,
@@ -122,6 +133,10 @@ export async function getUserProfile(fromStatusBar: boolean = false): Promise<Pr
             return selectedProfileFromConfig[0];
         } else if (response === "Edit existing") {
             await editUserProfile();
+            if (selectedProfileFromConfig.length > 0) {
+                //user escaped, keep selected
+                return selectedProfileFromConfig[0];
+            }
             return emptyProfile;
         } else if (response === "Yes, apply") {
             //no chance of getting undefined value here as validWorkSpace.result will always be true
@@ -220,8 +235,6 @@ export async function editUserProfile() {
         };
 
         saveProfile(profile, pickedProfile.label);
-    } else {
-        //TODO: profile is already selected, user decides to edit and then cancels action
     }
-    return;
+    return undefined;
 }

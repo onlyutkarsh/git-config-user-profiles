@@ -10,4 +10,8 @@
     "typescript.tsc.autoDetect": "off",
     "editor.formatOnSave": true,
     "editor.wordWrap": "on",
+    "terminal.integrated.scrollback": 5000,
+    "workbench.colorCustomizations": {
+        "tab.activeBorder": "#09b1f3"
+    }
 }
