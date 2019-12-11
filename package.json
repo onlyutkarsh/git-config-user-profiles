@@ -1,7 +1,7 @@
 {
-    "name": "git-config-user",
-    "displayName": "Git Config Helper",
-    "description": "Simple git config helper",
+    "name": "git-config-user-profiles",
+    "displayName": "Git Config User Profiles",
+    "description": "Define multiple git config user profiles and switch them easily using status bar",
     "version": "0.0.1",
     "publisher": "onlyutkarsh",
     "author": {
@@ -9,7 +9,7 @@
     },
     "repository": {
         "type": "git",
-        "url": "https://github.com/onlyutkarsh/git-config-user.git"
+        "url": "https://github.com/onlyutkarsh/git-config-user-profiles.git"
     },
     "icon": "images/icon.png",
     "galleryBanner": {
@@ -36,21 +36,21 @@
     "contributes": {
         "commands": [
             {
-                "command": "git-config-user.selectUserProfile",
+                "command": "git-config-user-profiles.selectUserProfile",
                 "title": "Git Config User Profiles: Select a git config user profile"
             },
             {
-                "command": "git-config-user.createUserProfile",
+                "command": "git-config-user-profiles.createUserProfile",
                 "title": "Git Config User Profiles: Create a git config user profile"
             },
             {
-                "command": "git-config-user.editUserProfile",
+                "command": "git-config-user-profiles.editUserProfile",
                 "title": "Git Config User Profiles: Edit a existing user profile"
             }
         ],
         "configuration": {
             "type": "object",
-            "title": "Git Config User",
+            "title": "Git Config User Profiles",
             "properties": {
                 "gitConfigUser.enableTelemetry": {
                     "type": "boolean",
@@ -78,7 +78,7 @@
                         }
                     },
                     "default": [],
-                    "description": "my test configurations"
+                    "description": "Git Config User Profiles configuration"
                 }
             }
         }
