@@ -1,6 +1,5 @@
 import { commands, ConfigurationTarget, workspace } from "vscode";
-import { Commands } from "./constants";
-import { Profile } from "./Profile";
+import { Profile } from "./models";
 
 export function getProfiles(): Profile[] {
     let profiles = workspace.getConfiguration("gitConfigUser").get<Profile[]>("profiles");

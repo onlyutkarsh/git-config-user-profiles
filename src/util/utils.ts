@@ -1,6 +1,6 @@
 import * as sgit from "simple-git/promise";
 import { workspace, window } from "vscode";
-import { getProfile } from "./config";
+import { getProfile } from "./../config";
 
 export async function isGitRepository(path: string): Promise<boolean> {
     try {

@@ -1,10 +1,10 @@
 import * as sgit from "simple-git/promise";
 import { commands, window, workspace } from "vscode";
 import { getProfiles, saveProfile } from "./config";
-import { Commands } from "./constants";
-import { MultiStepInput, State } from "./multiStepInput";
-import { Profile } from "./Profile";
-import { isValidWorkspace, validateEmail, validateProfileName, validateUserName } from "./utils";
+import { isValidWorkspace, validateEmail, validateProfileName, validateUserName } from "./util";
+import * as constants from "./constants";
+import { MultiStepInput, State } from "./controls";
+import { Profile } from "./models";
 import * as gitconfig from "gitconfiglocal";
 
 export async function createUserProfile() {
@@ -106,7 +106,7 @@ export async function getUserProfile(fromStatusBar: boolean = false): Promise<Pr
             //if no profiles in config, prompt user to create (even if its non git workspace)
             let selected = await window.showInformationMessage("No user profiles defined. Do you want to define one now?", "Yes", "No");
             if (selected === "Yes") {
-                await commands.executeCommand(Commands.CREATE_USER_PROFILE);
+                await commands.executeCommand(constants.CommandIds.CREATE_USER_PROFILE);
             }
             return emptyProfile;
         }

@@ -1,5 +1,5 @@
 import { window, StatusBarAlignment, StatusBarItem } from "vscode";
-import { Profile } from "./Profile";
+import { Profile } from "../models";
 
 export class ProfileStatusBar {
     private static _instance: ProfileStatusBar;

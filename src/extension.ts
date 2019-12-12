@@ -1,25 +1,25 @@
 import { commands, ExtensionContext, workspace } from "vscode";
 import { createUserProfile, editUserProfile, getUserProfile } from "./commands";
-import { Commands } from "./constants";
-import { Profile } from "./Profile";
-import { ProfileStatusBar as statusBar } from "./profileStatusBar";
+import { Profile } from "./models";
+import { ProfileStatusBar as statusBar } from "./controls";
+import * as constants from "./constants";
 
 export async function activate(context: ExtensionContext) {
-    workspace.onDidChangeConfiguration(async () => await commands.executeCommand(Commands.GET_USER_PROFILE, false));
+    workspace.onDidChangeConfiguration(async () => await commands.executeCommand(constants.CommandIds.GET_USER_PROFILE, false));
 
-    statusBar.instance.attachCommand(Commands.GET_USER_PROFILE);
+    statusBar.instance.attachCommand(constants.CommandIds.GET_USER_PROFILE);
     context.subscriptions.push(statusBar.instance.StatusBar);
 
-    context.subscriptions.push(commands.registerCommand(Commands.CREATE_USER_PROFILE, createUserProfile));
-    context.subscriptions.push(commands.registerCommand(Commands.EDIT_USER_PROFILE, editUserProfile));
+    context.subscriptions.push(commands.registerCommand(constants.CommandIds.CREATE_USER_PROFILE, createUserProfile));
+    context.subscriptions.push(commands.registerCommand(constants.CommandIds.EDIT_USER_PROFILE, editUserProfile));
     context.subscriptions.push(
-        commands.registerCommand(Commands.GET_USER_PROFILE, async (fromStatusBar: boolean = true) => {
+        commands.registerCommand(constants.CommandIds.GET_USER_PROFILE, async (fromStatusBar: boolean = true) => {
             let selectedProfile: Profile = await getUserProfile(fromStatusBar);
             statusBar.instance.updateStatus(selectedProfile);
         })
     );
 
-    await commands.executeCommand(Commands.GET_USER_PROFILE, false);
+    await commands.executeCommand(constants.CommandIds.GET_USER_PROFILE, false);
 }
 
 export function deactivate() {}
