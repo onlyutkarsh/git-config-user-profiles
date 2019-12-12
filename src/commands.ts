@@ -5,6 +5,7 @@ import { Commands } from "./constants";
 import { MultiStepInput, State } from "./multiStepInput";
 import { Profile } from "./Profile";
 import { isValidWorkspace, validateEmail, validateProfileName, validateUserName } from "./utils";
+import * as gitconfig from "gitconfiglocal";
 
 export async function createUserProfile() {
     const state = {} as Partial<State>;
@@ -117,6 +118,7 @@ export async function getUserProfile(fromStatusBar: boolean = false): Promise<Pr
             window.showErrorMessage(validWorkSpace.message);
             return emptyProfile;
         }
+        let workspaceFolder = validWorkSpace.folder ? validWorkSpace.folder : ".\\";
         if (selectedProfileFromConfig.length === 0) {
             response = await window.showInformationMessage(
                 `You have ${profilesInConfig.length} profile(s) in settings. What do you want to do?`,
@@ -125,6 +127,8 @@ export async function getUserProfile(fromStatusBar: boolean = false): Promise<Pr
                 "Create new"
             );
         } else {
+            let currentConfig = await getCurrentConfig(workspaceFolder);
+
             response = await window.showInformationMessage(
                 `Do you want to use profile '${selectedProfile.label} for this repo?' (user: ${selectedProfile.userName}, email: ${selectedProfile.email}) `,
                 "Yes, apply",
@@ -143,9 +147,8 @@ export async function getUserProfile(fromStatusBar: boolean = false): Promise<Pr
         }
         if (response === "Yes, apply") {
             //no chance of getting undefined value here as validWorkSpace.result will always be true
-            let folder = validWorkSpace.folder;
-            await sgit(folder).addConfig("user.name", selectedProfile.userName);
-            await sgit(folder).addConfig("user.email", selectedProfile.email);
+            await sgit(workspaceFolder).addConfig("user.name", selectedProfile.userName);
+            await sgit(workspaceFolder).addConfig("user.email", selectedProfile.email);
             window.showInformationMessage("User name and email updated in git config file.");
             return selectedProfile;
         }
@@ -194,6 +197,19 @@ export async function getUserProfile(fromStatusBar: boolean = false): Promise<Pr
     return emptyProfile;
 }
 
+function getCurrentConfig(gitFolder: string): Promise<{ userName: string; email: string }> {
+    return new Promise((resolve, reject) => {
+        gitconfig(gitFolder, (error, config) => {
+            if (config.user && config.user.name && config.user.email) {
+                let currentConfig = {
+                    userName: config.user.name,
+                    email: config.user.email,
+                };
+                resolve(currentConfig);
+            }
+        });
+    });
+}
 export async function editUserProfile() {
     let profilesInConfig = getProfiles();
 

@@ -93,6 +93,7 @@
         "deploy": "vsce publish -p"
     },
     "devDependencies": {
+        "@types/gitconfiglocal": "^2.0.0",
         "@types/glob": "^7.1.1",
         "@types/node": "^10.12.21",
         "@types/vscode": "^1.39.0",
@@ -110,6 +111,7 @@
         "webpack-cli": "~3.3.9"
     },
     "dependencies": {
+        "gitconfiglocal": "^2.1.0",
         "simple-git": "~1.126.0"
     }
 }
