@@ -35,6 +35,7 @@ async function pickProfileName(input: MultiStepInput, state: Partial<State>, cre
         placeholder: "Work",
         validate: input => validateProfileName(input, create),
         shouldResume: shouldResume,
+        ignoreFocusOut: true,
     });
     return (input: MultiStepInput) => pickUserName(input, state, create);
 }
@@ -49,6 +50,7 @@ async function pickUserName(input: MultiStepInput, state: Partial<State>, create
         placeholder: "John Smith",
         validate: validateUserName,
         shouldResume: shouldResume,
+        ignoreFocusOut: true,
     });
     return (input: MultiStepInput) => pickEmail(input, state, create);
 }
@@ -63,6 +65,7 @@ async function pickEmail(input: MultiStepInput, state: Partial<State>, create: b
         placeholder: "john.smith@myorg.com",
         validate: validateEmail,
         shouldResume: shouldResume,
+        ignoreFocusOut: true,
     });
 }
 export async function getUserProfile(fromStatusBar: boolean = false): Promise<Profile> {
@@ -75,6 +78,7 @@ export async function getUserProfile(fromStatusBar: boolean = false): Promise<Pr
     };
 
     let selectedProfileFromConfig = profilesInConfig.filter(x => x.selected) || [];
+    let selectedProfile: Profile = selectedProfileFromConfig.length > 0 ? selectedProfileFromConfig[0] : emptyProfile;
 
     if (!fromStatusBar) {
         if (profilesInConfig.length === 0) {
@@ -82,20 +86,21 @@ export async function getUserProfile(fromStatusBar: boolean = false): Promise<Pr
             //OR if no config found and user clicks on "no profile" on status bar, send undefined to show picklist
             return emptyProfile;
         }
-        let validWorkSpace = await isValidWorkspace();
 
-        if (validWorkSpace.result === false) {
+        let validWorkSpace = await isValidWorkspace();
+        if (validWorkSpace.isValid === false) {
             return emptyProfile;
         }
 
         if (selectedProfileFromConfig.length === 0) {
             //if configs found, but none are selected, if from statusbar show picklist else silent
             return emptyProfile;
-        } else {
-            //if multiple items have selected = true (due to manual change) return the first one
-            return selectedProfileFromConfig[0];
         }
-    } else if (fromStatusBar) {
+        //if multiple items have selected = true (due to manual change) return the first one
+        return selectedProfile;
+    }
+
+    if (fromStatusBar) {
         if (profilesInConfig.length === 0) {
             //if no profiles in config, prompt user to create (even if its non git workspace)
             let selected = await window.showInformationMessage("No user profiles defined. Do you want to define one now?", "Yes", "No");
@@ -108,47 +113,47 @@ export async function getUserProfile(fromStatusBar: boolean = false): Promise<Pr
         let response;
         let validWorkSpace = await isValidWorkspace();
 
-        if (validWorkSpace.result === false) {
+        if (validWorkSpace.isValid === false) {
             window.showErrorMessage(validWorkSpace.message);
             return emptyProfile;
         }
-        // let watcher = workspace.createFileSystemWatcher(`${validWorkSpace.folder}/.git/config`);
         if (selectedProfileFromConfig.length === 0) {
             response = await window.showInformationMessage(
-                `You have ${profilesInConfig.length} profiles in settings. What do you want to do?`,
+                `You have ${profilesInConfig.length} profile(s) in settings. What do you want to do?`,
                 "Pick a profile",
                 "Edit existing",
                 "Create new"
             );
         } else {
             response = await window.showInformationMessage(
-                `Do you want to use profile '${selectedProfileFromConfig[0].label}' for this repo?`,
+                `Do you want to use profile '${selectedProfile.label} for this repo?' (user: ${selectedProfile.userName}, email: ${selectedProfile.email}) `,
                 "Yes, apply",
                 "No, pick another",
                 "Edit existing",
                 "Create new"
             );
         }
+
         if (response === undefined) {
-            return selectedProfileFromConfig[0];
-        } else if (response === "Edit existing") {
+            return selectedProfile;
+        }
+        if (response === "Edit existing") {
             await editUserProfile();
-            if (selectedProfileFromConfig.length > 0) {
-                //user escaped, keep selected
-                return selectedProfileFromConfig[0];
-            }
-            return emptyProfile;
-        } else if (response === "Yes, apply") {
+            return selectedProfile;
+        }
+        if (response === "Yes, apply") {
             //no chance of getting undefined value here as validWorkSpace.result will always be true
             let folder = validWorkSpace.folder;
-            await sgit(folder).addConfig("user.name", selectedProfileFromConfig[0].userName);
-            await sgit(folder).addConfig("user.email", selectedProfileFromConfig[0].email);
+            await sgit(folder).addConfig("user.name", selectedProfile.userName);
+            await sgit(folder).addConfig("user.email", selectedProfile.email);
             window.showInformationMessage("User name and email updated in git config file.");
-            return selectedProfileFromConfig[0];
-        } else if (response === "Create new") {
+            return selectedProfile;
+        }
+        if (response === "Create new") {
             await createUserProfile();
-            return selectedProfileFromConfig[0];
-        } else if (response === "No, pick another" || response === "Pick a profile") {
+            return selectedProfile;
+        }
+        if (response === "No, pick another" || response === "Pick a profile") {
             //show picklist only if no profile is marked as selected in config.
             //this can happen only when setting up config for the first time or user deliberately changed config
             let pickedProfile = await window.showQuickPick<Profile>(
@@ -181,7 +186,7 @@ export async function getUserProfile(fromStatusBar: boolean = false): Promise<Pr
                 // user clicks statusbar, picklist is shown to switch profiles, but user does not pick anything
                 // leave selected as is
                 if (selectedProfileFromConfig.length > 0 && fromStatusBar) {
-                    return selectedProfileFromConfig[0];
+                    return selectedProfile;
                 }
             }
         }

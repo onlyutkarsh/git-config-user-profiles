@@ -10,19 +10,19 @@ export async function isGitRepository(path: string): Promise<boolean> {
     }
 }
 
-export async function isValidWorkspace(): Promise<{ result: boolean; message: string; folder?: string }> {
+export async function isValidWorkspace(): Promise<{ isValid: boolean; message: string; folder?: string }> {
     if (workspace.workspaceFolders) {
         let foldersCount = workspace.workspaceFolders.length;
         if (foldersCount > 1) {
             return {
                 message: "Sorry, the extension does not support multi root workspaces at the moment",
-                result: false,
+                isValid: false,
             };
         }
         if (foldersCount === 0) {
             return {
                 message: "Sorry, you need to open a git repository first",
-                result: false,
+                isValid: false,
             };
         }
         if (foldersCount === 1) {
@@ -30,19 +30,19 @@ export async function isValidWorkspace(): Promise<{ result: boolean; message: st
             if (!validGitRepo) {
                 return {
                     message: "This does not seem to be a valid git repository",
-                    result: false,
+                    isValid: false,
                 };
             }
             return {
                 message: "",
-                result: true,
+                isValid: true,
                 folder: workspace.workspaceFolders[0].uri.fsPath,
             };
         }
     }
     return {
         message: "This does not seem to be a valid git repository",
-        result: false,
+        isValid: false,
     };
 }
 
