@@ -1,11 +1,10 @@
 import * as sgit from "simple-git/promise";
 import { commands, window, workspace } from "vscode";
 import { getProfiles, saveProfile } from "./config";
-import { isValidWorkspace, validateEmail, validateProfileName, validateUserName } from "./util";
+import { isValidWorkspace, validateEmail, validateProfileName, validateUserName, getCurrentConfig } from "./util";
 import * as constants from "./constants";
 import { MultiStepInput, State } from "./controls";
 import { Profile } from "./models";
-import * as gitconfig from "gitconfiglocal";
 
 export async function createUserProfile() {
     const state = {} as Partial<State>;
@@ -92,11 +91,7 @@ export async function getUserProfile(fromStatusBar: boolean = false): Promise<Pr
         if (validWorkSpace.isValid === false) {
             return emptyProfile;
         }
-
-        if (selectedProfileFromConfig.length === 0) {
-            //if configs found, but none are selected, if from statusbar show picklist else silent
-            return emptyProfile;
-        }
+        //if configs found, but none are selected, if from statusbar show picklist else silent
         //if multiple items have selected = true (due to manual change) return the first one
         return selectedProfile;
     }
@@ -197,19 +192,6 @@ export async function getUserProfile(fromStatusBar: boolean = false): Promise<Pr
     return emptyProfile;
 }
 
-function getCurrentConfig(gitFolder: string): Promise<{ userName: string; email: string }> {
-    return new Promise((resolve, reject) => {
-        gitconfig(gitFolder, (error, config) => {
-            if (config.user && config.user.name && config.user.email) {
-                let currentConfig = {
-                    userName: config.user.name,
-                    email: config.user.email,
-                };
-                resolve(currentConfig);
-            }
-        });
-    });
-}
 export async function editUserProfile() {
     let profilesInConfig = getProfiles();
 
@@ -217,8 +199,6 @@ export async function editUserProfile() {
         window.showWarningMessage("No profiles found");
         return;
     }
-
-    let selectedProfileFromConfig = profilesInConfig.filter(x => x.selected) || [];
 
     let pickedProfile = await window.showQuickPick<Profile>(
         profilesInConfig.map(x => {

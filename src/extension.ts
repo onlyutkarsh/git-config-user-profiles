@@ -3,7 +3,7 @@ import { createUserProfile, editUserProfile, getUserProfile } from "./commands";
 import { Profile } from "./models";
 import { ProfileStatusBar as statusBar } from "./controls";
 import * as constants from "./constants";
-
+import { getCurrentConfig, isValidWorkspace } from "./util";
 export async function activate(context: ExtensionContext) {
     workspace.onDidChangeConfiguration(async () => await commands.executeCommand(constants.CommandIds.GET_USER_PROFILE, false));
 
@@ -15,6 +15,10 @@ export async function activate(context: ExtensionContext) {
     context.subscriptions.push(
         commands.registerCommand(constants.CommandIds.GET_USER_PROFILE, async (fromStatusBar: boolean = true) => {
             let selectedProfile: Profile = await getUserProfile(fromStatusBar);
+            let validWorkspace = await isValidWorkspace();
+            if (validWorkspace.isValid && validWorkspace.folder) {
+                let currentConfig = await getCurrentConfig(validWorkspace.folder);
+            }
             statusBar.instance.updateStatus(selectedProfile);
         })
     );

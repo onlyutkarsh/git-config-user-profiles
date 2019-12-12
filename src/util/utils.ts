@@ -1,6 +1,7 @@
 import * as sgit from "simple-git/promise";
 import { workspace, window } from "vscode";
 import { getProfile } from "./../config";
+import * as gitconfig from "gitconfiglocal";
 
 export async function isGitRepository(path: string): Promise<boolean> {
     try {
@@ -48,6 +49,20 @@ export async function isValidWorkspace(): Promise<{ isValid: boolean; message: s
 
 export function isEmpty(str: string | undefined | null) {
     return !str || 0 === str.length;
+}
+
+export function getCurrentConfig(gitFolder: string): Promise<{ userName: string; email: string }> {
+    return new Promise((resolve, reject) => {
+        gitconfig(gitFolder, (error, config) => {
+            if (config.user && config.user.name && config.user.email) {
+                let currentConfig = {
+                    userName: config.user.name,
+                    email: config.user.email,
+                };
+                resolve(currentConfig);
+            }
+        });
+    });
 }
 
 export function isBlank(str: string) {
