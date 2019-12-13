@@ -90,28 +90,29 @@
         "dev": "npm run webpack-dev",
         "compile": "tsc -p ./",
         "package": "vsce package",
-        "deploy": "vsce publish -p"
+        "deploy": "vsce publish -p",
+        "clean": "git clean -fdX"
     },
     "devDependencies": {
         "@types/gitconfiglocal": "^2.0.0",
         "@types/glob": "^7.1.1",
-        "@types/node": "^10.12.21",
-        "@types/vscode": "^1.39.0",
-        "glob": "^7.1.4",
-        "mocha": "^6.1.4",
-        "prettier": "^1.18.2",
+        "@types/node": "^12.12.17",
+        "@types/vscode": "^1.41.0",
+        "glob": "^7.1.6",
+        "mocha": "^6.2.2",
+        "prettier": "^1.19.1",
         "ts-loader": "~6.2.1",
-        "tslint": "^5.12.1",
+        "tslint": "^5.20.1",
         "tslint-config-prettier": "^1.18.0",
         "tslint-plugin-prettier": "^2.0.1",
         "tslint-webpack-plugin": "~2.1.0",
         "typescript": "~3.6.3",
-        "vsce": "~1.68.0",
+        "vsce": "~1.71.0",
         "webpack": "~4.41.2",
-        "webpack-cli": "~3.3.9"
+        "webpack-cli": "~3.3.10"
     },
     "dependencies": {
         "gitconfiglocal": "^2.1.0",
-        "simple-git": "~1.126.0"
+        "simple-git": "~1.128.0"
     }
 }

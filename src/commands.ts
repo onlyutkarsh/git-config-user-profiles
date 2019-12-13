@@ -79,7 +79,15 @@ export async function getUserProfile(fromStatusBar: boolean = false): Promise<Pr
 
     let selectedProfileFromConfig = profilesInConfig.filter(x => x.selected) || [];
     let selectedProfile: Profile = selectedProfileFromConfig.length > 0 ? selectedProfileFromConfig[0] : emptyProfile;
-
+    let validWorkspace = await isValidWorkspace();
+    let currentConfig: { userName: string; email: string };
+    let configApplied = false;
+    if (validWorkspace.isValid && validWorkspace.folder) {
+        currentConfig = await getCurrentConfig(validWorkspace.folder);
+        if (currentConfig.email.toLowerCase() === selectedProfile.email.toLowerCase() && currentConfig.userName.toLowerCase() === currentConfig.userName.toLowerCase()) {
+            configApplied = true;
+        }
+    }
     if (!fromStatusBar) {
         if (profilesInConfig.length === 0) {
             //if profile loaded automatically and no config found
@@ -87,10 +95,13 @@ export async function getUserProfile(fromStatusBar: boolean = false): Promise<Pr
             return emptyProfile;
         }
 
-        let validWorkSpace = await isValidWorkspace();
-        if (validWorkSpace.isValid === false) {
+        if (validWorkspace.isValid === false) {
             return emptyProfile;
         }
+        if (configApplied) {
+            selectedProfile.label = `${selectedProfile.label.replace("$(check)", "").trim()} $(check)`;
+        }
+
         //if configs found, but none are selected, if from statusbar show picklist else silent
         //if multiple items have selected = true (due to manual change) return the first one
         return selectedProfile;
@@ -107,13 +118,12 @@ export async function getUserProfile(fromStatusBar: boolean = false): Promise<Pr
         }
 
         let response;
-        let validWorkSpace = await isValidWorkspace();
 
-        if (validWorkSpace.isValid === false) {
-            window.showErrorMessage(validWorkSpace.message);
+        if (validWorkspace.isValid === false) {
+            window.showErrorMessage(validWorkspace.message);
             return emptyProfile;
         }
-        let workspaceFolder = validWorkSpace.folder ? validWorkSpace.folder : ".\\";
+        let workspaceFolder = validWorkspace.folder ? validWorkspace.folder : ".\\";
         if (selectedProfileFromConfig.length === 0) {
             response = await window.showInformationMessage(
                 `You have ${profilesInConfig.length} profile(s) in settings. What do you want to do?`,
@@ -122,8 +132,9 @@ export async function getUserProfile(fromStatusBar: boolean = false): Promise<Pr
                 "Create new"
             );
         } else {
-            let currentConfig = await getCurrentConfig(workspaceFolder);
-
+            if (configApplied) {
+                selectedProfile.label = `${selectedProfile.label.replace("$(check)", "").trim()} $(check)`;
+            }
             response = await window.showInformationMessage(
                 `Do you want to use profile '${selectedProfile.label} for this repo?' (user: ${selectedProfile.userName}, email: ${selectedProfile.email}) `,
                 "Yes, apply",
@@ -174,7 +185,10 @@ export async function getUserProfile(fromStatusBar: boolean = false): Promise<Pr
 
             if (pickedProfile) {
                 pickedProfile.detail = undefined;
-                pickedProfile.label = pickedProfile.label.replace(" $(star)", "");
+                pickedProfile.label = pickedProfile.label
+                    .trim()
+                    .replace("$(star)", "")
+                    .replace("$(check)", "");
                 pickedProfile.selected = true;
                 saveProfile(Object.assign({}, pickedProfile));
                 let selectedProfile = await getUserProfile(true);
