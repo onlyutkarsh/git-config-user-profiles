@@ -2,6 +2,7 @@ import * as sgit from "simple-git/promise";
 import { workspace, window } from "vscode";
 import { getProfile } from "./../config";
 import * as gitconfig from "gitconfiglocal";
+import { Profile } from "../models";
 
 export async function isGitRepository(path: string): Promise<boolean> {
     try {
@@ -95,4 +96,15 @@ export function validateEmail(input: string) {
         return "Oops! That does not seem to be a valid email. Please verify";
     }
     return undefined;
+}
+
+export function trimProperties(profile: Profile): Profile {
+    return <Profile>{
+        label: profile.label.replace("$(check)", "").trim(),
+        email: profile.email.trim(),
+        userName: profile.userName.trim(),
+        selected: profile.selected,
+
+        detail: profile.detail,
+    };
 }

@@ -81,13 +81,7 @@ export async function getUserProfile(fromStatusBar: boolean = false): Promise<Pr
     let selectedProfile: Profile = selectedProfileFromConfig.length > 0 ? selectedProfileFromConfig[0] : emptyProfile;
     let validWorkspace = await isValidWorkspace();
     let currentConfig: { userName: string; email: string };
-    let configApplied = false;
-    if (validWorkspace.isValid && validWorkspace.folder) {
-        currentConfig = await getCurrentConfig(validWorkspace.folder);
-        if (currentConfig.email.toLowerCase() === selectedProfile.email.toLowerCase() && currentConfig.userName.toLowerCase() === currentConfig.userName.toLowerCase()) {
-            configApplied = true;
-        }
-    }
+
     if (!fromStatusBar) {
         if (profilesInConfig.length === 0) {
             //if profile loaded automatically and no config found
@@ -97,9 +91,6 @@ export async function getUserProfile(fromStatusBar: boolean = false): Promise<Pr
 
         if (validWorkspace.isValid === false) {
             return emptyProfile;
-        }
-        if (configApplied) {
-            selectedProfile.label = `${selectedProfile.label.replace("$(check)", "").trim()} $(check)`;
         }
 
         //if configs found, but none are selected, if from statusbar show picklist else silent
@@ -132,11 +123,8 @@ export async function getUserProfile(fromStatusBar: boolean = false): Promise<Pr
                 "Create new"
             );
         } else {
-            if (configApplied) {
-                selectedProfile.label = `${selectedProfile.label.replace("$(check)", "").trim()} $(check)`;
-            }
             response = await window.showInformationMessage(
-                `Do you want to use profile '${selectedProfile.label} for this repo?' (user: ${selectedProfile.userName}, email: ${selectedProfile.email}) `,
+                `Do you want to use profile '${selectedProfile.label}' for this repo? (user: ${selectedProfile.userName}, email: ${selectedProfile.email}) `,
                 "Yes, apply",
                 "No, pick another",
                 "Edit existing",
@@ -185,10 +173,7 @@ export async function getUserProfile(fromStatusBar: boolean = false): Promise<Pr
 
             if (pickedProfile) {
                 pickedProfile.detail = undefined;
-                pickedProfile.label = pickedProfile.label
-                    .trim()
-                    .replace("$(star)", "")
-                    .replace("$(check)", "");
+                pickedProfile.label = pickedProfile.label.trim().replace("$(star)", "");
                 pickedProfile.selected = true;
                 saveProfile(Object.assign({}, pickedProfile));
                 let selectedProfile = await getUserProfile(true);

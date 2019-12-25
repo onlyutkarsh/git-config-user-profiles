@@ -12,6 +12,8 @@
     "editor.wordWrap": "on",
     "terminal.integrated.scrollback": 5000,
     "workbench.colorCustomizations": {
-        "tab.activeBorder": "#09b1f3"
-    }
+        "tab.activeBackground": "#020205"
+    },
+    "problems.showCurrentInStatus": true,
+    "git.untrackedChanges": "separate"
 }

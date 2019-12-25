@@ -1,5 +1,6 @@
 import { commands, ConfigurationTarget, workspace } from "vscode";
 import { Profile } from "./models";
+import { trimProperties } from "./util";
 
 export function getProfiles(): Profile[] {
     let profiles = workspace.getConfiguration("gitConfigUser").get<Profile[]>("profiles");
@@ -13,7 +14,7 @@ export function getProfiles(): Profile[] {
 export function saveProfile(profile: Profile, oldProfileName?: string) {
     //get existing profiles
     let profiles = getProfiles();
-
+    profile = trimProperties(profile);
     let existingProfileIndex = -1;
     if (oldProfileName) {
         existingProfileIndex = profiles.findIndex(x => x.label.toLowerCase() === oldProfileName.toLowerCase());
@@ -21,7 +22,10 @@ export function saveProfile(profile: Profile, oldProfileName?: string) {
         existingProfileIndex = profiles.findIndex(x => x.label.toLowerCase() === profile.label.toLowerCase());
         if (existingProfileIndex > -1) {
             // set existing to false if user is making a selection of profile (not updating the profile)
-            profiles.forEach(x => (x.selected = false));
+            profiles.forEach(x => {
+                x.selected = false;
+                x.label = x.label.replace("$(check)", "").trim();
+            });
         }
     }
     if (existingProfileIndex > -1) {
