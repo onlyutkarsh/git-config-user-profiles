@@ -1,7 +1,7 @@
 import * as sgit from "simple-git/promise";
 import { commands, window, workspace } from "vscode";
 import { getProfiles, saveProfile } from "./config";
-import { isValidWorkspace, validateEmail, validateProfileName, validateUserName, getCurrentConfig } from "./util";
+import { isValidWorkspace, validateEmail, validateProfileName, validateUserName, getCurrentConfig, trimLabelIcons } from "./util";
 import * as constants from "./constants";
 import { MultiStepInput, State } from "./controls";
 import { Profile } from "./models";
@@ -80,7 +80,12 @@ export async function getUserProfile(fromStatusBar: boolean = false): Promise<Pr
     let selectedProfileFromConfig = profilesInConfig.filter(x => x.selected) || [];
     let selectedProfile: Profile = selectedProfileFromConfig.length > 0 ? selectedProfileFromConfig[0] : emptyProfile;
     let validWorkspace = await isValidWorkspace();
-    let currentConfig: { userName: string; email: string };
+
+    let configInSync = false;
+    if (validWorkspace.isValid && validWorkspace.folder) {
+        let currentConfig = await getCurrentConfig(validWorkspace.folder);
+        configInSync = currentConfig.email.toLowerCase() === selectedProfile.email.toLowerCase() && currentConfig.userName.toLowerCase() === selectedProfile.userName.toLowerCase();
+    }
 
     if (!fromStatusBar) {
         if (profilesInConfig.length === 0) {
@@ -123,13 +128,15 @@ export async function getUserProfile(fromStatusBar: boolean = false): Promise<Pr
                 "Create new"
             );
         } else {
-            response = await window.showInformationMessage(
-                `Do you want to use profile '${selectedProfile.label}' for this repo? (user: ${selectedProfile.userName}, email: ${selectedProfile.email}) `,
-                "Yes, apply",
-                "No, pick another",
-                "Edit existing",
-                "Create new"
-            );
+            let notSyncOptions = ["Yes, apply", "No, pick another", "Edit existing", "Create new"];
+            let syncOptions = ["Apply again", "Pick a profile", "Edit existing", "Create new"];
+
+            let options = configInSync ? syncOptions : notSyncOptions;
+            let message = configInSync
+                ? `gitconfig is already in sync with '${trimLabelIcons(selectedProfile.label)}' values. What do you want to do?`
+                : `Do you want to use profile '${trimLabelIcons(selectedProfile.label)}' for this repo? (user: ${selectedProfile.userName}, email: ${selectedProfile.email}) `;
+
+            response = await window.showInformationMessage(message, ...options);
         }
 
         if (response === undefined) {
@@ -139,7 +146,7 @@ export async function getUserProfile(fromStatusBar: boolean = false): Promise<Pr
             await editUserProfile();
             return selectedProfile;
         }
-        if (response === "Yes, apply") {
+        if (response === "Yes, apply" || response === "Apply again") {
             //no chance of getting undefined value here as validWorkSpace.result will always be true
             await sgit(workspaceFolder).addConfig("user.name", selectedProfile.userName);
             await sgit(workspaceFolder).addConfig("user.email", selectedProfile.email);
@@ -156,7 +163,7 @@ export async function getUserProfile(fromStatusBar: boolean = false): Promise<Pr
             let pickedProfile = await window.showQuickPick<Profile>(
                 profilesInConfig.map(x => {
                     return {
-                        label: `${x.label}${x.selected ? " $(star)" : ""}`,
+                        label: x.label,
                         userName: x.userName,
                         email: x.email,
                         selected: x.selected,
@@ -173,7 +180,7 @@ export async function getUserProfile(fromStatusBar: boolean = false): Promise<Pr
 
             if (pickedProfile) {
                 pickedProfile.detail = undefined;
-                pickedProfile.label = pickedProfile.label.trim().replace("$(star)", "");
+                pickedProfile.label = pickedProfile.label;
                 pickedProfile.selected = true;
                 saveProfile(Object.assign({}, pickedProfile));
                 let selectedProfile = await getUserProfile(true);
@@ -202,7 +209,7 @@ export async function editUserProfile() {
     let pickedProfile = await window.showQuickPick<Profile>(
         profilesInConfig.map(x => {
             return {
-                label: `${x.label}${x.selected ? " $(star)" : ""}`,
+                label: x.label,
                 userName: x.userName,
                 email: x.email,
                 selected: x.selected,
@@ -219,7 +226,7 @@ export async function editUserProfile() {
 
     if (pickedProfile) {
         pickedProfile.detail = undefined;
-        pickedProfile.label = pickedProfile.label.replace(" $(star)", "");
+        pickedProfile.label = pickedProfile.label;
         const state: Partial<State> = {
             email: pickedProfile.email,
             userName: pickedProfile.userName,

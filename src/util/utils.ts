@@ -66,6 +66,14 @@ export function getCurrentConfig(gitFolder: string): Promise<{ userName: string;
     });
 }
 
+export function trimLabelIcons(str: string) {
+    if (str) {
+        return str.replace("$(check)", "").trim();
+    } else {
+        return str;
+    }
+}
+
 export function isBlank(str: string) {
     return !str || /^\s*$/.test(str);
 }
