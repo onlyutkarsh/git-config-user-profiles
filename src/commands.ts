@@ -17,7 +17,7 @@ export async function createUserProfile() {
         selected: false,
     };
 
-    saveProfile(profile);
+    await saveProfile(profile);
 }
 
 function shouldResume() {
@@ -133,7 +133,7 @@ export async function getUserProfile(fromStatusBar: boolean = false): Promise<Pr
 
             let options = configInSync ? syncOptions : notSyncOptions;
             let message = configInSync
-                ? `gitconfig is already in sync with '${trimLabelIcons(selectedProfile.label)}' values. What do you want to do?`
+                ? `gitconfig is already in sync with profile '${trimLabelIcons(selectedProfile.label)}'. What do you want to do?`
                 : `Do you want to use profile '${trimLabelIcons(selectedProfile.label)}' for this repo? (user: ${selectedProfile.userName}, email: ${selectedProfile.email}) `;
 
             response = await window.showInformationMessage(message, ...options);
@@ -182,7 +182,7 @@ export async function getUserProfile(fromStatusBar: boolean = false): Promise<Pr
                 pickedProfile.detail = undefined;
                 pickedProfile.label = pickedProfile.label;
                 pickedProfile.selected = true;
-                saveProfile(Object.assign({}, pickedProfile));
+                await saveProfile(Object.assign({}, pickedProfile));
                 let selectedProfile = await getUserProfile(true);
                 return selectedProfile;
             } else {
@@ -209,7 +209,7 @@ export async function editUserProfile() {
     let pickedProfile = await window.showQuickPick<Profile>(
         profilesInConfig.map(x => {
             return {
-                label: x.label,
+                label: trimLabelIcons(x.label),
                 userName: x.userName,
                 email: x.email,
                 selected: x.selected,
@@ -241,7 +241,7 @@ export async function editUserProfile() {
             selected: pickedProfile.selected,
         };
 
-        saveProfile(profile, pickedProfile.label);
+        await saveProfile(profile, pickedProfile.label);
     }
     return undefined;
 }

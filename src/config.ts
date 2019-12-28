@@ -1,17 +1,25 @@
 import { commands, ConfigurationTarget, workspace } from "vscode";
 import { Profile } from "./models";
-import { trimProperties } from "./util";
+import { trimProperties, trimLabelIcons as trimCheckIcon } from "./util";
 
 export function getProfiles(): Profile[] {
     let profiles = workspace.getConfiguration("gitConfigUser").get<Profile[]>("profiles");
 
     if (profiles) {
-        return profiles;
+        return profiles.map(x => {
+            return {
+                label: trimCheckIcon(x.label),
+                userName: x.userName,
+                email: x.email,
+                selected: x.selected,
+                detail: undefined,
+            };
+        });
     }
     return [];
 }
 
-export function saveProfile(profile: Profile, oldProfileName?: string) {
+export async function saveProfile(profile: Profile, oldProfileName?: string): Promise<void> {
     //get existing profiles
     let profiles = getProfiles();
     profile = trimProperties(profile);
@@ -33,8 +41,7 @@ export function saveProfile(profile: Profile, oldProfileName?: string) {
     } else {
         profiles.push(profile);
     }
-
-    workspace.getConfiguration("gitConfigUser").update("profiles", profiles, ConfigurationTarget.Global);
+    await workspace.getConfiguration("gitConfigUser").update("profiles", profiles, ConfigurationTarget.Global);
 }
 
 export function getProfile(profileName: string): Profile | undefined {

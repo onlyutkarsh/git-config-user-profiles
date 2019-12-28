@@ -112,7 +112,6 @@ export function trimProperties(profile: Profile): Profile {
         email: profile.email.trim(),
         userName: profile.userName.trim(),
         selected: profile.selected,
-
-        detail: profile.detail,
+        detail: undefined,
     };
 }
