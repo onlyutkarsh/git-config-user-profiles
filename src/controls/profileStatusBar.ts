@@ -1,5 +1,6 @@
-import { window, StatusBarAlignment, StatusBarItem } from "vscode";
+import { window, StatusBarAlignment, StatusBarItem, ThemeColor } from "vscode";
 import { Profile } from "../models";
+import * as Constants from "../constants";
 
 export class ProfileStatusBar {
     private static _instance: ProfileStatusBar;
@@ -17,10 +18,21 @@ export class ProfileStatusBar {
     }
 
     public updateStatus(status: Profile | undefined | string, usedInRepo: boolean = false) {
+        let tooltip = Constants.Application.APPLICATION_NAME;
+
         if ((status as Profile).label) {
             let profile = status as Profile;
-            ProfileStatusBar._statusBar.text = `$(person-filled) ${profile.label}`;
+            ProfileStatusBar._statusBar.text = `$(repo) ${profile.label}`;
+            if (usedInRepo) {
+                ProfileStatusBar._statusBar.text = `$(repo) ${profile.label.replace("$(check)", "").trim()} $(check)`;
+                tooltip = `${profile.userName} (${profile.email}) - Click for more`;
+            } else {
+                ProfileStatusBar._statusBar.text = `$(repo) ${profile.label.replace("$(alert)", "").trim()} $(alert)`;
+                tooltip = `${profile.userName} (${profile.email}) [NOT used for repo - Click for more]`;
+            }
         }
+        ProfileStatusBar._statusBar.tooltip = tooltip;
+
         ProfileStatusBar._statusBar.show();
     }
 

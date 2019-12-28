@@ -68,7 +68,7 @@ async function pickEmail(input: MultiStepInput, state: Partial<State>, create: b
         ignoreFocusOut: true,
     });
 }
-export async function getUserProfile(fromStatusBar: boolean = false): Promise<Profile> {
+export async function getUserProfile(fromStatusBar: boolean = false, notProfileSwitch: boolean = true): Promise<Profile> {
     let profilesInConfig = getProfiles();
     let emptyProfile = <Profile>{
         label: "Git Config Profiles",
@@ -127,7 +127,7 @@ export async function getUserProfile(fromStatusBar: boolean = false): Promise<Pr
                 "Edit existing",
                 "Create new"
             );
-        } else {
+        } else if (notProfileSwitch) {
             let notSyncOptions = ["Yes, apply", "No, pick another", "Edit existing", "Create new"];
             let syncOptions = ["Apply again", "Pick a profile", "Edit existing", "Create new"];
 
@@ -183,7 +183,7 @@ export async function getUserProfile(fromStatusBar: boolean = false): Promise<Pr
                 pickedProfile.label = pickedProfile.label;
                 pickedProfile.selected = true;
                 await saveProfile(Object.assign({}, pickedProfile));
-                let selectedProfile = await getUserProfile(true);
+                let selectedProfile = await getUserProfile(true, false); //dont show popup if user is switching profile
                 return selectedProfile;
             } else {
                 // profile is already set in the statusbar,

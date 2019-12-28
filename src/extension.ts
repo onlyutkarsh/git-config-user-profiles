@@ -14,7 +14,7 @@ export async function activate(context: ExtensionContext) {
     context.subscriptions.push(commands.registerCommand(constants.CommandIds.EDIT_USER_PROFILE, editUserProfile));
     context.subscriptions.push(
         commands.registerCommand(constants.CommandIds.GET_USER_PROFILE, async (fromStatusBar: boolean = true) => {
-            let selectedProfile: Profile = await getUserProfile(fromStatusBar);
+            let selectedProfile: Profile = await getUserProfile(fromStatusBar, true);
             let validWorkspace = await isValidWorkspace();
             let configInSync = false;
             if (validWorkspace.isValid && validWorkspace.folder) {
@@ -22,10 +22,8 @@ export async function activate(context: ExtensionContext) {
                 configInSync =
                     currentConfig.email.toLowerCase() === selectedProfile.email.toLowerCase() && currentConfig.userName.toLowerCase() === selectedProfile.userName.toLowerCase();
             }
-            if (configInSync) {
-                selectedProfile.label = `${selectedProfile.label.replace("$(check)", "").trim()} $(check)`;
-            }
-            statusBar.instance.updateStatus(selectedProfile);
+
+            statusBar.instance.updateStatus(selectedProfile, configInSync);
         })
     );
 
