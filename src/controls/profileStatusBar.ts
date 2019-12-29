@@ -18,17 +18,19 @@ export class ProfileStatusBar {
     }
 
     public updateStatus(status: Profile | undefined | string, usedInRepo: boolean = false) {
-        let tooltip = Constants.Application.APPLICATION_NAME;
+        let tooltip = `${Constants.Application.APPLICATION_NAME} - Click for more`;
 
         if ((status as Profile).label) {
             let profile = status as Profile;
             ProfileStatusBar._statusBar.text = `$(repo) ${profile.label}`;
-            if (usedInRepo) {
-                ProfileStatusBar._statusBar.text = `$(repo) ${profile.label.replace("$(check)", "").trim()} $(check)`;
-                tooltip = `${profile.userName} (${profile.email}) - Click for more`;
-            } else {
-                ProfileStatusBar._statusBar.text = `$(repo) ${profile.label.replace("$(alert)", "").trim()} $(alert)`;
-                tooltip = `${profile.userName} (${profile.email}) [NOT used for repo - Click for more]`;
+            if (profile.label !== Constants.Application.APPLICATION_NAME) {
+                if (usedInRepo) {
+                    ProfileStatusBar._statusBar.text = `$(repo) ${profile.label.replace("$(check)", "").trim()} $(check)`;
+                    tooltip = `${profile.userName} (${profile.email}) - Click for more`;
+                } else {
+                    ProfileStatusBar._statusBar.text = `$(repo) ${profile.label.replace("$(alert)", "").trim()} $(alert)`;
+                    tooltip = `${profile.userName} (${profile.email}) - Click for more`;
+                }
             }
         }
         ProfileStatusBar._statusBar.tooltip = tooltip;

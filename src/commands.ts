@@ -2,7 +2,7 @@ import * as sgit from "simple-git/promise";
 import { commands, window, workspace } from "vscode";
 import { getProfiles, saveProfile } from "./config";
 import { isValidWorkspace, validateEmail, validateProfileName, validateUserName, getCurrentConfig, trimLabelIcons } from "./util";
-import * as constants from "./constants";
+import * as Constants from "./constants";
 import { MultiStepInput, State } from "./controls";
 import { Profile } from "./models";
 
@@ -71,7 +71,7 @@ async function pickEmail(input: MultiStepInput, state: Partial<State>, create: b
 export async function getUserProfile(fromStatusBar: boolean = false, notProfileSwitch: boolean = true): Promise<Profile> {
     let profilesInConfig = getProfiles();
     let emptyProfile = <Profile>{
-        label: "Git Config Profiles",
+        label: Constants.Application.APPLICATION_NAME,
         selected: false,
         userName: "NA",
         email: "NA",
@@ -108,7 +108,7 @@ export async function getUserProfile(fromStatusBar: boolean = false, notProfileS
             //if no profiles in config, prompt user to create (even if its non git workspace)
             let selected = await window.showInformationMessage("No user profiles defined. Do you want to define one now?", "Yes", "No");
             if (selected === "Yes") {
-                await commands.executeCommand(constants.CommandIds.CREATE_USER_PROFILE);
+                await commands.executeCommand(Constants.CommandIds.CREATE_USER_PROFILE);
             }
             return emptyProfile;
         }
@@ -133,8 +133,10 @@ export async function getUserProfile(fromStatusBar: boolean = false, notProfileS
 
             let options = configInSync ? syncOptions : notSyncOptions;
             let message = configInSync
-                ? `gitconfig is already in sync with profile '${trimLabelIcons(selectedProfile.label)}'. What do you want to do?`
-                : `Do you want to use profile '${trimLabelIcons(selectedProfile.label)}' for this repo? (user: ${selectedProfile.userName}, email: ${selectedProfile.email}) `;
+                ? `Git config is already in sync with profile '${trimLabelIcons(selectedProfile.label)}'. What do you want to do?`
+                : `Git config is not using this profile. Do you want to use profile '${trimLabelIcons(selectedProfile.label)}' for this repo? (user: ${
+                      selectedProfile.userName
+                  }, email: ${selectedProfile.email}) `;
 
             response = await window.showInformationMessage(message, ...options);
         }
