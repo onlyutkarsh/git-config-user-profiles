@@ -73,12 +73,19 @@ export async function getUserProfile(fromStatusBar: boolean = false, notProfileS
     let emptyProfile = <Profile>{
         label: Constants.Application.APPLICATION_NAME,
         selected: false,
-        userName: "NA",
         email: "NA",
+        userName: "NA",
     };
 
     let selectedProfileFromConfig = profilesInConfig.filter(x => x.selected) || [];
     let selectedProfile: Profile = selectedProfileFromConfig.length > 0 ? selectedProfileFromConfig[0] : emptyProfile;
+
+    //TODO: Show error if the user deliberately deletes the username or email property from config
+    if (selectedProfile.label === undefined || selectedProfile.userName === undefined || selectedProfile.email === undefined) {
+        window.showErrorMessage("One of label, userName or email properties is missing in the config. Please verify.");
+        return emptyProfile;
+    }
+
     let validWorkspace = await isValidWorkspace();
 
     let configInSync = false;
