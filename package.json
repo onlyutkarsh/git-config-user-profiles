@@ -27,7 +27,7 @@
     ],
     "license": "MIT",
     "engines": {
-        "vscode": "^1.39.0"
+        "vscode": "^1.34.0"
     },
     "activationEvents": [
         "*"
@@ -91,13 +91,13 @@
         "compile": "tsc -p ./",
         "package": "vsce package",
         "deploy": "vsce publish -p",
-        "clean": "git clean -fdX"
+        "clean": "git clean -fdX",
+        "postinstall": "node ./node_modules/vscode/bin/install"
     },
     "devDependencies": {
         "@types/gitconfiglocal": "^2.0.0",
         "@types/glob": "^7.1.1",
         "@types/node": "^12.12.17",
-        "@types/vscode": "^1.41.0",
         "glob": "^7.1.6",
         "mocha": "^6.2.2",
         "prettier": "^1.19.1",
@@ -109,7 +109,8 @@
         "typescript": "~3.6.3",
         "vsce": "~1.71.0",
         "webpack": "~4.41.2",
-        "webpack-cli": "~3.3.10"
+        "webpack-cli": "~3.3.10",
+        "vscode": "^1.1.36"
     },
     "dependencies": {
         "gitconfiglocal": "^2.1.0",

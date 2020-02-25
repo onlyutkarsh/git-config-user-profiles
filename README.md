@@ -1,19 +1,13 @@
 # Git Config User Profiles
 
-Ever wanted to use different username and email for your commits at work and use different one for your personal repositories? While it is easy to do using `git config`, this extension allows you to maintain different username and email in named profiles and allows you to easily switch and apply to the repository you are working.
+Ever wanted to use different username and email addresses for your commits at work and for your personal repositories? While it is easy to do using `git config` command, this extension allows you to maintain different username and email in named profiles and allows you to easily switch and apply to the repository you are working.
 
-## Features
+## Usage
 
-## Extension Settings
+Once you install extension, click on 'Git Config Profiles' on the VSCode Status Bar and define few profiles. 
 
-Include if your extension adds any VS Code settings through the `contributes.configuration` extension point.
+![status bar](images/marketplace/statusbar.png)
 
-For example:
-
-This extension contributes the following settings:
-
--   `myExtension.enable`: enable/disable this extension
--   `myExtension.thing`: set to `blah` to do something
 
 ## Known Issues
 
