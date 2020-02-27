@@ -8,7 +8,6 @@ vsc-extension-quickstart.md
 **/tslint.json
 **/*.map
 **/*.ts
-images/marketplace/
 .prettierignore
 webpack*.js
 node_modules
