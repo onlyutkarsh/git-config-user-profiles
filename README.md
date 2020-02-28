@@ -40,8 +40,3 @@ If you want to apply the username and email defined in the selected profile to t
 Once the repository's username and email are in sync, you might see a check icon confirming that repository config is in sync with the profile selected.
 
 ![repo in sync](images/marketplace/repo-in-sync.png)
-
-
-## Known Issues
-
-None

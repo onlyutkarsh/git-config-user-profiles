@@ -22,8 +22,6 @@
     "keywords": [
         "git",
         "config",
-        "user.name",
-        "user.email"
     ],
     "license": "MIT",
     "engines": {
