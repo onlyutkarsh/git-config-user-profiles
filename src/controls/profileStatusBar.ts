@@ -1,6 +1,7 @@
 import { window, StatusBarAlignment, StatusBarItem, ThemeColor } from "vscode";
 import { Profile } from "../models";
 import * as Constants from "../constants";
+import { Logger } from "../util/logger";
 
 export class ProfileStatusBar {
     private static _instance: ProfileStatusBar;
@@ -15,6 +16,7 @@ export class ProfileStatusBar {
 
     private constructor() {
         ProfileStatusBar._statusBar = window.createStatusBarItem(StatusBarAlignment.Right, 1000000);
+        Logger.instance.logInfo("Initializing status bar complete.");
     }
 
     public updateStatus(status: Profile | undefined | string, usedInRepo: boolean = false) {

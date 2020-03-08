@@ -3,6 +3,8 @@ import { workspace, window } from "vscode";
 import { getProfile } from "./../config";
 import * as gitconfig from "gitconfiglocal";
 import { Profile } from "../models";
+import { Messages } from "../constants";
+import { Logger } from "../util";
 
 export async function isGitRepository(path: string): Promise<boolean> {
     try {
@@ -13,37 +15,41 @@ export async function isGitRepository(path: string): Promise<boolean> {
 }
 
 export async function isValidWorkspace(): Promise<{ isValid: boolean; message: string; folder?: string }> {
+
     if (workspace.workspaceFolders) {
         let foldersCount = workspace.workspaceFolders.length;
         if (foldersCount > 1) {
             return {
-                message: "Sorry, the extension does not support multi root workspaces at the moment",
+                message: Messages.DOES_NOT_SUPPORT_MULTI_ROOT,
                 isValid: false,
             };
         }
         if (foldersCount === 0) {
             return {
-                message: "Sorry, you need to open a git repository first",
+                message: Messages.OPEN_REPO_FIRST,
                 isValid: false,
             };
         }
         if (foldersCount === 1) {
-            let validGitRepo = await isGitRepository(workspace.workspaceFolders[0].uri.fsPath);
+            let folderPath = workspace.workspaceFolders[0].uri.fsPath;
+
+            let validGitRepo = await isGitRepository(folderPath);
+
             if (!validGitRepo) {
                 return {
-                    message: "This does not seem to be a valid git repository",
+                    message: Messages.NOT_A_VALID_REPO,
                     isValid: false,
                 };
             }
             return {
                 message: "",
                 isValid: true,
-                folder: workspace.workspaceFolders[0].uri.fsPath,
+                folder: folderPath,
             };
         }
     }
     return {
-        message: "This does not seem to be a valid git repository",
+        message: Messages.NOT_A_VALID_REPO,
         isValid: false,
     };
 }
@@ -53,6 +59,7 @@ export function isEmpty(str: string | undefined | null) {
 }
 
 export function getCurrentConfig(gitFolder: string): Promise<{ userName: string; email: string }> {
+    Logger.instance.logInfo(`Getting details from config file in ${gitFolder}`);
     return new Promise((resolve, reject) => {
         gitconfig(gitFolder, (error, config) => {
             if (config.user && config.user.name && config.user.email) {
@@ -60,6 +67,7 @@ export function getCurrentConfig(gitFolder: string): Promise<{ userName: string;
                     userName: config.user.name,
                     email: config.user.email,
                 };
+                Logger.instance.logInfo(`Config details found: ${JSON.stringify(currentConfig)}`);
                 resolve(currentConfig);
             }
         });
@@ -80,7 +88,7 @@ export function isBlank(str: string) {
 
 export function validateProfileName(input: string, checkForDuplicates: boolean = true) {
     if (isEmpty(input) || isBlank(input)) {
-        return "Please enter a valid string";
+        return Messages.ENTER_A_VALID_STRING;
     }
     if (checkForDuplicates) {
         let existingProfile = getProfile(input);
@@ -93,7 +101,7 @@ export function validateProfileName(input: string, checkForDuplicates: boolean =
 
 export function validateUserName(input: string) {
     if (isEmpty(input) || isBlank(input)) {
-        return "Please enter a valid string";
+        return Messages.ENTER_A_VALID_STRING;
     }
     return undefined;
 }
@@ -101,7 +109,7 @@ export function validateUserName(input: string) {
 export function validateEmail(input: string) {
     let validEmail = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!validEmail.test(input)) {
-        return "Oops! That does not seem to be a valid email. Please verify";
+        return Messages.NOT_A_VALID_EMAIL;
     }
     return undefined;
 }

@@ -5,6 +5,7 @@ import { isValidWorkspace, validateEmail, validateProfileName, validateUserName,
 import * as Constants from "./constants";
 import { MultiStepInput, State } from "./controls";
 import { Profile } from "./models";
+import { Logger } from "./util/logger";
 
 export async function createUserProfile() {
     const state = {} as Partial<State>;
@@ -22,7 +23,7 @@ export async function createUserProfile() {
 
 function shouldResume() {
     // Could show a notification with the option to resume.
-    return new Promise<boolean>((resolve, reject) => {});
+    return new Promise<boolean>((resolve, reject) => { });
 }
 
 async function pickProfileName(input: MultiStepInput, state: Partial<State>, create: boolean = true) {
@@ -69,6 +70,7 @@ async function pickEmail(input: MultiStepInput, state: Partial<State>, create: b
     });
 }
 export async function getUserProfile(fromStatusBar: boolean = false, notProfileSwitch: boolean = true): Promise<Profile> {
+    Logger.instance.logInfo(`Getting user profiles. Triggerred from status bar = ${fromStatusBar}`);
     let profilesInConfig = getProfiles();
     let emptyProfile = <Profile>{
         label: Constants.Application.APPLICATION_NAME,
@@ -142,8 +144,8 @@ export async function getUserProfile(fromStatusBar: boolean = false, notProfileS
             let message = configInSync
                 ? `Git config is already in sync with profile '${trimLabelIcons(selectedProfile.label)}'. What do you want to do?`
                 : `Git config is not using this profile. Do you want to use profile '${trimLabelIcons(selectedProfile.label)}' for this repo? (user: ${
-                      selectedProfile.userName
-                  }, email: ${selectedProfile.email}) `;
+                selectedProfile.userName
+                }, email: ${selectedProfile.email}) `;
 
             response = await window.showInformationMessage(message, ...options);
         }

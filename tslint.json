@@ -1,5 +1,8 @@
 {
-    "extends": ["tslint-plugin-prettier", "tslint-config-prettier"],
+    "extends": [
+        "tslint-plugin-prettier",
+        "tslint-config-prettier"
+    ],
     "rules": {
         "no-string-throw": true,
         "no-unused-expression": true,
@@ -7,9 +10,20 @@
         "curly": true,
         "class-name": true,
         "import-spacing": true,
-        "semicolon": [true, "always"],
+        "semicolon": [
+            true,
+            "always"
+        ],
         "triple-equals": true,
-        "indent": [true, "spaces", 4]
+        "indent": [
+            true,
+            "spaces",
+            4
+        ],
+        "quotemark": [
+            true,
+            "double"
+        ]
     },
     "defaultSeverity": "warning",
     "no-var-keyword": true,
