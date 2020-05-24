@@ -74,7 +74,9 @@ jobs:
   
       - name: publish to marketplace
         if: github.ref == 'refs/heads/master'
-        run: npm run deploy ${{ secrets.PAT }}
+        env:
+           PAT: ${{ secrets.PAT }}
+        run: npm run deploy ${{ env.PAT }}
 
       - name: create a release
         if: github.ref == 'refs/heads/master'
