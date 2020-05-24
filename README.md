@@ -2,6 +2,8 @@
 
 Ever wanted to use different username and email addresses for your commits at work and for your personal repositories? While it is easy to do using `git config` command, this extension allows you to maintain different username and email in named profiles and allows you to easily switch and apply to the repository you are working.
 
+![demo](images/marketplace/demo.gif)
+
 ## Usage
 
 ### Creating the profiles
@@ -40,3 +42,5 @@ If you want to apply the username and email defined in the selected profile to t
 Once the repository's username and email are in sync, you might see a check icon confirming that repository config is in sync with the profile selected.
 
 ![repo in sync](images/marketplace/repo-in-sync.png)
+
+

@@ -69,6 +69,7 @@ export async function getCurrentConfig(gitFolder: string): Promise<{ userName: s
                 Logger.instance.logInfo(`Config details found: ${JSON.stringify(currentConfig)}`);
                 resolve(currentConfig);
             } else {
+                Logger.instance.logInfo(`No config details found.`);
                 resolve({ userName: "", email: "" });
             }
         });
