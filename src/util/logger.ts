@@ -90,7 +90,7 @@ export class Logger {
     private logMessage(message: string, logLevel: LogLevel): void {
         if (this.outputChannel) {
             const title = new Date().toLocaleTimeString();
-            this.outputChannel.appendLine(`["${logLevel}" - ${title}] ${message}`);
+            this.outputChannel.appendLine(`[${logLevel} - ${title}] ${message}`);
         }
     }
 }

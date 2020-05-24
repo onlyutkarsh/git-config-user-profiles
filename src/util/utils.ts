@@ -15,19 +15,18 @@ export async function isGitRepository(path: string): Promise<boolean> {
 }
 
 export async function isValidWorkspace(): Promise<{ isValid: boolean; message: string; folder?: string }> {
-
     if (workspace.workspaceFolders) {
         let foldersCount = workspace.workspaceFolders.length;
         if (foldersCount > 1) {
             return {
                 message: Messages.DOES_NOT_SUPPORT_MULTI_ROOT,
-                isValid: false,
+                isValid: false
             };
         }
         if (foldersCount === 0) {
             return {
                 message: Messages.OPEN_REPO_FIRST,
-                isValid: false,
+                isValid: false
             };
         }
         if (foldersCount === 1) {
@@ -38,19 +37,19 @@ export async function isValidWorkspace(): Promise<{ isValid: boolean; message: s
             if (!validGitRepo) {
                 return {
                     message: Messages.NOT_A_VALID_REPO,
-                    isValid: false,
+                    isValid: false
                 };
             }
             return {
                 message: "",
                 isValid: true,
-                folder: folderPath,
+                folder: folderPath
             };
         }
     }
     return {
         message: Messages.NOT_A_VALID_REPO,
-        isValid: false,
+        isValid: false
     };
 }
 
@@ -58,17 +57,19 @@ export function isEmpty(str: string | undefined | null) {
     return !str || 0 === str.length;
 }
 
-export function getCurrentConfig(gitFolder: string): Promise<{ userName: string; email: string }> {
+export async function getCurrentConfig(gitFolder: string): Promise<{ userName: string; email: string }> {
     Logger.instance.logInfo(`Getting details from config file in ${gitFolder}`);
-    return new Promise((resolve, reject) => {
+    return await new Promise((resolve, reject) => {
         gitconfig(gitFolder, (error, config) => {
             if (config.user && config.user.name && config.user.email) {
                 let currentConfig = {
                     userName: config.user.name,
-                    email: config.user.email,
+                    email: config.user.email
                 };
                 Logger.instance.logInfo(`Config details found: ${JSON.stringify(currentConfig)}`);
                 resolve(currentConfig);
+            } else {
+                resolve({ userName: "", email: "" });
             }
         });
     });
@@ -120,6 +121,6 @@ export function trimProperties(profile: Profile): Profile {
         email: profile.email.trim(),
         userName: profile.userName.trim(),
         selected: profile.selected,
-        detail: undefined,
+        detail: undefined
     };
 }

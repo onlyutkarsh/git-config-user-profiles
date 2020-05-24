@@ -4,9 +4,7 @@
     "description": "Define multiple git config user profiles and switch them easily using status bar",
     "version": "0.0.1",
     "publisher": "onlyutkarsh",
-    "author": {
-        "name": "Utkarsh Shigihalli"
-    },
+    "author": "Utkarsh Shigihalli",
     "repository": {
         "type": "git",
         "url": "https://github.com/onlyutkarsh/git-config-user-profiles.git"
@@ -27,10 +25,43 @@
     "engines": {
         "vscode": "^1.34.0"
     },
-    "activationEvents": [
-        "*"
-    ],
+    "activationEvents": [ "*" ],
+    "extensionDependencies": [ "vscode.git" ],
     "main": "./dist/extension",
+    "scripts": {
+        "vscode:prepublish": "npm run compile && webpack --mode production",
+        "webpack": "npm run compile && webpack --mode development",
+        "webpack-dev": "npm run compile && webpack --mode development --watch --info-verbosity verbose",
+        "dev": "npm run webpack-dev",
+        "compile": "tsc -p ./",
+        "package": "vsce package",
+        "deploy": "vsce publish -p",
+        "clean": "git clean -fdX",
+        "postinstall": "node ./node_modules/vscode/bin/install"
+    },
+    "devDependencies": {
+        "@types/gitconfiglocal": "^2.0.0",
+        "@types/glob": "^7.1.1",
+        "@types/node": "~12.12.17",
+        "glob": "^7.1.6",
+        "mocha": "^7.1.2",
+        "prettier": "^2.0.5",
+        "ts-loader": "~7.0.2",
+        "tslint": "^6.1.2",
+        "tslint-config-prettier": "^1.18.0",
+        "tslint-plugin-prettier": "^2.3.0",
+        "tslint-webpack-plugin": "~2.1.0",
+        "typescript": "~3.6.3",
+        "vsce": "~1.75.0",
+        "webpack": "~4.43.0",
+        "webpack-cli": "~3.3.11",
+        "vscode": "^1.1.37"
+    },
+    "dependencies": {
+        "@sentry/node": "~5.15.5",
+        "gitconfiglocal": "^2.1.0",
+        "simple-git": "~2.3.0"
+    },
     "contributes": {
         "commands": [
             {
@@ -50,11 +81,6 @@
             "type": "object",
             "title": "Git Config User Profiles",
             "properties": {
-                "gitConfigUser.enableTelemetry": {
-                    "type": "boolean",
-                    "default": true,
-                    "description": "Enable usage data and errors to be sent to the developer."
-                },
                 "gitConfigUser.profiles": {
                     "type": "array",
                     "items": {
@@ -80,38 +106,5 @@
                 }
             }
         }
-    },
-    "scripts": {
-        "vscode:prepublish": "npm run compile && webpack --mode production",
-        "webpack": "npm run compile && webpack --mode development",
-        "webpack-dev": "npm run compile && webpack --mode development --watch --info-verbosity verbose",
-        "dev": "npm run webpack-dev",
-        "compile": "tsc -p ./",
-        "package": "vsce package",
-        "deploy": "vsce publish -p",
-        "clean": "git clean -fdX",
-        "postinstall": "node ./node_modules/vscode/bin/install"
-    },
-    "devDependencies": {
-        "@types/gitconfiglocal": "^2.0.0",
-        "@types/glob": "^7.1.1",
-        "@types/node": "^12.12.17",
-        "glob": "^7.1.6",
-        "mocha": "^6.2.2",
-        "prettier": "^1.19.1",
-        "ts-loader": "~6.2.1",
-        "tslint": "^5.20.1",
-        "tslint-config-prettier": "^1.18.0",
-        "tslint-plugin-prettier": "^2.0.1",
-        "tslint-webpack-plugin": "~2.1.0",
-        "typescript": "~3.6.3",
-        "vsce": "~1.71.0",
-        "webpack": "~4.41.2",
-        "webpack-cli": "~3.3.10",
-        "vscode": "^1.1.36"
-    },
-    "dependencies": {
-        "gitconfiglocal": "^2.1.0",
-        "simple-git": "~1.128.0"
     }
 }

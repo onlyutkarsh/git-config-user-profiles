@@ -15,5 +15,9 @@
         "tab.activeBackground": "#020205"
     },
     "problems.showCurrentInStatus": true,
-    "git.untrackedChanges": "separate"
+    "git.untrackedChanges": "separate",
+    "prettier.semi": true,
+    "prettier.singleQuote": false,
+    "prettier.useTabs": false,
+    "prettier.jsonEnable": []
 }
