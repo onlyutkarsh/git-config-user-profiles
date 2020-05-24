@@ -19,5 +19,6 @@
     "prettier.semi": true,
     "prettier.singleQuote": false,
     "prettier.useTabs": false,
-    "prettier.jsonEnable": []
+    "prettier.jsonEnable": [],
+    "explorer.compactFolders": false
 }
