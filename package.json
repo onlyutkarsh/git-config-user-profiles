@@ -35,7 +35,7 @@
         "dev": "npm run webpack-dev",
         "compile": "tsc -p ./",
         "package": "vsce package",
-        "deploy": "vsce publish",
+        "deploy": "vsce publish -p",
         "clean": "git clean -fdX",
         "postinstall": "node ./node_modules/vscode/bin/install"
     },
