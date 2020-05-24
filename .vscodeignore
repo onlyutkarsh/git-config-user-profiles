@@ -1,0 +1,16 @@
+.vscode/**
+.vscode-test/**
+out/**
+src/**
+.gitignore
+vsc-extension-quickstart.md
+**/tsconfig.json
+**/tslint.json
+**/*.map
+**/*.ts
+.prettierignore
+webpack*.js
+node_modules
+.github/
+gitversion.yml
+marketplace/
