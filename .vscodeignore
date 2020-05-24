@@ -11,3 +11,6 @@ vsc-extension-quickstart.md
 .prettierignore
 webpack*.js
 node_modules
+.github/
+.gitversion.yml
+marketplace/

@@ -2,7 +2,7 @@
 
 Ever wanted to use different username and email addresses for your commits at work and for your personal repositories? While it is easy to do using `git config` command, this extension allows you to maintain different username and email in named profiles and allows you to easily switch and apply to the repository you are working.
 
-![demo](images/marketplace/demo.gif)
+![demo](marketplace/demo.gif)
 
 ## Usage
 
@@ -10,7 +10,7 @@ Ever wanted to use different username and email addresses for your commits at wo
 ---
 Once you install extension, click on 'Git Config Profiles' on the VSCode Status Bar and define few profiles. 
 
-![status bar](images/marketplace/statusbar.png)
+![status bar](marketplace/statusbar.png)
 
 > Profiles defined are stored in global settings file in VSCode so that they are available for all other repositories.
 
@@ -21,11 +21,11 @@ Once you install extension, click on 'Git Config Profiles' on the VSCode Status 
 
 Click on the status bar and if you have profiles you will presented with a dialog as below.
 
-![status bar picker](images/marketplace/statusbar-picker.png)
+![status bar picker](marketplace/statusbar-picker.png)
 
 Click `Pick a profile` and then select a profile you need.
 
-![picker](images/marketplace/profile-picker.png)
+![picker](marketplace/profile-picker.png)
 
 <br/>
 
@@ -37,10 +37,10 @@ Once you select a profile, the status bar text changes to selected profile name 
 
 If you want to apply the username and email defined in the selected profile to the current repository, click on profile name in the status bar (e.g `Work` ) and then select `Yes, apply` in the dialog [2 image below].
 
-![profile not in sync](images/marketplace/repo-not-in-sync.png)
+![profile not in sync](marketplace/repo-not-in-sync.png)
 
 Once the repository's username and email are in sync, you might see a check icon confirming that repository config is in sync with the profile selected.
 
-![repo in sync](images/marketplace/repo-in-sync.png)
+![repo in sync](marketplace/repo-in-sync.png)
 
 

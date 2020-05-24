@@ -20,5 +20,6 @@
     "prettier.singleQuote": false,
     "prettier.useTabs": false,
     "prettier.jsonEnable": [],
-    "explorer.compactFolders": false
+    "explorer.compactFolders": false,
+    
 }
