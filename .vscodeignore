@@ -12,5 +12,5 @@ vsc-extension-quickstart.md
 webpack*.js
 node_modules
 .github/
-.gitversion.yml
+gitversion.yml
 marketplace/
