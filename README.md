@@ -44,3 +44,9 @@ Once the repository's username and email are in sync, you might see a check icon
 ![repo in sync](images/marketplace/repo-in-sync.png)
 
 
+### Issues and feature requests
+
+If you find any bug or have any suggestion/feature request, please submit the [issue](https://github.com/onlyutkarsh/git-config-user-profiles/issues) in the GitHub repo. It is helpful to troubleshoot if you paste results of `Output` window when submitting issues. 
+
+![output window](images/marketplace/outputwindow.png)
+

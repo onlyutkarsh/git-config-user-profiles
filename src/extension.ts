@@ -5,14 +5,9 @@ import { ProfileStatusBar as statusBar } from "./controls";
 import * as constants from "./constants";
 import { getCurrentConfig, isValidWorkspace } from "./util";
 import { Logger } from "./util/logger";
-import * as Sentry from "@sentry/node";
 
 export async function activate(context: ExtensionContext) {
     try {
-        Sentry.init({
-            dsn: "https://2c585484973d4e91952ee96cd3d1bcad@o188211.ingest.sentry.io/5251697"
-        });
-
         Logger.instance.logInfo("Activating extension");
 
         Logger.instance.logInfo("Registering for config change event");
@@ -48,7 +43,6 @@ export async function activate(context: ExtensionContext) {
         Logger.instance.logInfo("Initializing commands complete.");
         await commands.executeCommand(constants.CommandIds.GET_USER_PROFILE, false);
     } catch (error) {
-        Sentry.captureException(error);
         Logger.instance.logError("Error ocurred", error);
     }
 }
