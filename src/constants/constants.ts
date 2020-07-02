@@ -13,5 +13,6 @@ export const Messages = {
     OPEN_REPO_FIRST: "Sorry, you need to open a git repository first",
     NOT_A_VALID_REPO: "This does not seem to be a valid git repository",
     ENTER_A_VALID_STRING: "Please enter a valid string",
-    NOT_A_VALID_EMAIL: "Oops! That does not seem to be a valid email. Please verify"
+    NOT_A_VALID_EMAIL: "Oops! That does not seem to be a valid email. Please verify",
+    NOT_A_VALID_SIGNING_KEY: "Oops! That does not seem to be a valid signing key (named by an email address). Please verify"
 };

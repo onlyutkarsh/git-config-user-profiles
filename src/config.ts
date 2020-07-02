@@ -11,6 +11,7 @@ export function getProfiles(): Profile[] {
                 label: trimCheckIcon(x.label),
                 userName: x.userName,
                 email: x.email,
+                signingKey: x.signingKey,
                 selected: x.selected,
                 detail: undefined,
             };

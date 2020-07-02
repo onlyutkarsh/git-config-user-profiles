@@ -57,20 +57,21 @@ export function isEmpty(str: string | undefined | null) {
     return !str || 0 === str.length;
 }
 
-export async function getCurrentConfig(gitFolder: string): Promise<{ userName: string; email: string }> {
+export async function getCurrentConfig(gitFolder: string): Promise<{ userName: string; email: string, signingKey: string }> {
     Logger.instance.logInfo(`Getting details from config file in ${gitFolder}`);
     return await new Promise((resolve, reject) => {
         gitconfig(gitFolder, (error, config) => {
-            if (config.user && config.user.name && config.user.email) {
+            if (config.user && config.user.name && config.user.email && config.user.signingkey) {
                 let currentConfig = {
                     userName: config.user.name,
-                    email: config.user.email
+                    email: config.user.email,
+                    signingKey: config.user.signingkey
                 };
                 Logger.instance.logInfo(`Config details found: ${JSON.stringify(currentConfig)}`);
                 resolve(currentConfig);
             } else {
                 Logger.instance.logInfo(`No config details found.`);
-                resolve({ userName: "", email: "" });
+                resolve({ userName: "", email: "", signingKey: ""});
             }
         });
     });
@@ -116,11 +117,20 @@ export function validateEmail(input: string) {
     return undefined;
 }
 
+export function validateSigningKey(input: string) {
+    let validSigningKey = /(^[^\s@]+@[^\s@]+\.[^\s@]+$)|[A-Z0-9]{16}|[A-Z0-9]{8}/;
+    if (input !== "" && !validSigningKey.test(input)) {
+        return Messages.NOT_A_VALID_SIGNING_KEY;
+    }
+    return undefined;
+}
+
 export function trimProperties(profile: Profile): Profile {
     return <Profile>{
         label: profile.label.replace("$(check)", "").trim(),
         email: profile.email.trim(),
         userName: profile.userName.trim(),
+        signingKey: profile.signingKey.trim(),
         selected: profile.selected,
         detail: undefined
     };

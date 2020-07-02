@@ -1,6 +1,6 @@
 # Git Config User Profiles
 
-Ever wanted to use different username and email addresses for your commits at work and for your personal repositories? While it is easy to do using `git config` command, this extension allows you to maintain different username and email in named profiles and allows you to easily switch and apply to the repository you are working.
+Ever wanted to use different username, email addresses, and signing key for your commits at work and for your personal repositories? While it is easy to do using `git config` command, this extension allows you to maintain different username, email, and signing key in named profiles and allows you to easily switch and apply to the repository you are working.
 
 ![demo](images/marketplace/demo.gif)
 
@@ -33,13 +33,13 @@ Click `Pick a profile` and then select a profile you need.
 ---
 Once you select a profile, the status bar text changes to selected profile name [1 in image below]. 
 
-> The icon might display a "warning" sign if the current repo is not using the username and email selected.
+> The icon might display a "warning" sign if the current repo is not using the username, email, and signing key selected.
 
-If you want to apply the username and email defined in the selected profile to the current repository, click on profile name in the status bar (e.g `Work` ) and then select `Yes, apply` in the dialog [2 image below].
+If you want to apply the username, email, and signing key defined in the selected profile to the current repository, click on profile name in the status bar (e.g `Work` ) and then select `Yes, apply` in the dialog [2 image below].
 
 ![profile not in sync](images/marketplace/repo-not-in-sync.png)
 
-Once the repository's username and email are in sync, you might see a check icon confirming that repository config is in sync with the profile selected.
+Once the repository's username, email, and signing key are in sync, you might see a check icon confirming that repository config is in sync with the profile selected.
 
 ![repo in sync](images/marketplace/repo-in-sync.png)
 
