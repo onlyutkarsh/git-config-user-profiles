@@ -101,6 +101,10 @@
                             "email": {
                                 "type": "string",
                                 "description": "User email"
+                            },
+                            "signingkey": {
+                                "type": "string",
+                                "description": "User signing key"
                             }
                         }
                     },

@@ -41,6 +41,7 @@ export interface State {
     profileName: string;
     userName: string;
     email: string;
+    signingKey: string;
 }
 
 export class MultiStepInput {

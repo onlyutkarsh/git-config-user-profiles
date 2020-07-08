@@ -28,10 +28,14 @@ export class ProfileStatusBar {
             if (profile.label !== Constants.Application.APPLICATION_NAME) {
                 if (usedInRepo) {
                     ProfileStatusBar._statusBar.text = `$(repo) ${profile.label.replace("$(check)", "").trim()} $(check)`;
-                    tooltip = `${profile.userName} (${profile.email}) - Click for more`;
+                    tooltip = profile.signingKey ?
+                        `${profile.userName} (${profile.email}) <${profile.signingKey}> - Click for more` :
+                        `${profile.userName} (${profile.email}) - Click for more`;
                 } else {
                     ProfileStatusBar._statusBar.text = `$(repo) ${profile.label.replace("$(alert)", "").trim()} $(alert)`;
-                    tooltip = `${profile.userName} (${profile.email}) - Click for more`;
+                    tooltip = profile.signingKey ?
+                    `${profile.userName} (${profile.email}) <${profile.signingKey}> - Click for more` :
+                    `${profile.userName} (${profile.email}) - Click for more`;
                 }
             }
         }

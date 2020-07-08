@@ -34,7 +34,8 @@ export async function activate(context: ExtensionContext) {
                     let currentConfig = await getCurrentConfig(validWorkspace.folder);
                     configInSync =
                         currentConfig.email.toLowerCase() === selectedProfile.email.toLowerCase() &&
-                        currentConfig.userName.toLowerCase() === selectedProfile.userName.toLowerCase();
+                        currentConfig.userName.toLowerCase() === selectedProfile.userName.toLowerCase() &&
+                        currentConfig.signingKey.toLowerCase() === selectedProfile.signingKey.toLowerCase();
                 }
 
                 statusBar.instance.updateStatus(selectedProfile, configInSync);
