@@ -41,7 +41,6 @@
         "package": "vsce package",
         "deploy": "vsce publish -p",
         "clean": "git clean -fdX",
-        "postinstall": "node ./node_modules/vscode/bin/install",
         "update-changelog": "auto-changelog -p"
     },
     "devDependencies": {
