@@ -89,6 +89,16 @@ jobs:
           name: git-config-user-profiles-${{steps.gitversion.outputs.semVer}}.vsix
           path: ${{github.workspace}}/git-config-user-profiles-${{steps.gitversion.outputs.semVer}}.vsix
 
+    outputs:
+      vsix-version: ${{ steps.gitversion.outputs.semVer }}
+
+  issue:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - run: |
+          echo ${{ needs.build.outputs.vsix-version }}
+
       # create issue if it is not triggered by dispatch event and watch for commands
       - name: create an issue and watch for '/deploy' or '/reject'
         uses: JasonEtco/create-an-issue@v2.4.0
