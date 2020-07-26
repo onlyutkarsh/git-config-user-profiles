@@ -5,7 +5,8 @@ on:
     inputs:
       action:
         description: Trigger build
-        required: false
+        required: true
+        default: "build"
   pull_request:
     branches:
       - master
