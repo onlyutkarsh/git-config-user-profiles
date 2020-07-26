@@ -6,7 +6,6 @@ on:
 jobs:
   dispatch:
     runs-on: windows-latest
-    if: github.event.comment.user.login == 'onlyutkarsh'
     steps:
       - run: |
           echo ${{ github.event.comment.user.login }}

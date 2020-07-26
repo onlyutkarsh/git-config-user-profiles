@@ -105,6 +105,7 @@ jobs:
       # create issue if it is not triggered by dispatch event and watch for commands
       - name: create an issue and watch for '/deploy' or '/reject'
         uses: JasonEtco/create-an-issue@v2.4.0
+        id: create-issue
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           VSIX_VERSION: ${{ needs.build.outputs.vsix-version }}
@@ -115,7 +116,7 @@ jobs:
         uses: peter-evans/create-or-update-comment@v1
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
-          issue-number: ${{ github.event.issue.number }}
+          issue-number: ${{ steps.create-issue.outputs.number }}
           body: |
             Hey, @${{ github.event.comment.user.login }}!
             You can type slash command `/deploy` or '/reject' in the first line, to start or stop a release.
