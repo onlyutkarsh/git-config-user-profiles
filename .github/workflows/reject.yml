@@ -1,0 +1,15 @@
+name: "reject release"
+on:
+  repository_dispatch:
+    types:
+      - reject-command
+jobs:
+  close-issue:
+    runs-on: windows-latest
+    steps:
+      - name: close issue
+        uses: peter-evans/close-issue@v1
+        with:
+          comment: |
+            '/reject' command triggerred by ${{ github.actor }}.
+            Auto-closing this issue.

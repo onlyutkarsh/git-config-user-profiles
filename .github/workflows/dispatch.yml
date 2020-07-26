@@ -1,0 +1,17 @@
+name: dispatch-comamnd
+on:
+  issue_comment:
+    types:
+      - created
+jobs:
+  dispatch:
+    runs-on: windows-latest
+    if: github.event.comment.user.login == 'onlyutkarsh'
+    steps:
+      - run: |
+          echo ${{ github.event.comment.user.login }}
+
+      - name: dispatch command
+        uses: peter-evans/slash-command-dispatch@v1
+        with:
+          commands: deploy, reject

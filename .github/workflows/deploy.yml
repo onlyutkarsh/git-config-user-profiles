@@ -1,31 +1,10 @@
-name: cicd
-
+name: "deploy release"
 on:
-  workflow_dispatch:
-    inputs:
-      action:
-        description: Trigger build
-        required: false
   repository_dispatch:
     types:
       - deploy-command
-  pull_request:
-    branches:
-      - master
-  pull_request_review:
-    branches:
-      - master
-    types:
-      - submitted
-  push:
-    branches:
-      - "feature/**" # match an pushes on feature/* and feature/<any sub branch>/*
-      - master
-    paths-ignore: # dont run when changes made to these folders
-      - ".vscode/**"
-
 jobs:
-  build:
+  deploy:
     runs-on: windows-latest
     steps:
       - name: checkout repo
@@ -89,15 +68,6 @@ jobs:
           name: git-config-user-profiles-${{steps.gitversion.outputs.semVer}}.vsix
           path: ${{github.workspace}}/git-config-user-profiles-${{steps.gitversion.outputs.semVer}}.vsix
 
-      # create issue if it is not triggered by dispatch event and watch for commands
-      - name: create an issue and watch for '/deploy' or '/reject'
-        uses: JasonEtco/create-an-issue@v2.4.0
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          VSIX_VERSION: ${{steps.gitversion.outputs.semVer}}
-        with:
-          filename: .github/ISSUE_TEMPLATE/release_issue.md
-
       - name: update the comment in the issue
         uses: peter-evans/create-or-update-comment@v1
         with:
@@ -105,9 +75,26 @@ jobs:
           issue-number: ${{ github.event.issue.number }}
           body: |
             Hey, @${{ github.event.comment.user.login }}!
-            You can type slash command `/deploy` or '/reject' in the first line, to start or stop a release.
+            I am starting the deployment for v${{steps.gitversion.outputs.semVer}} :v:
+
+      - name: publish to marketplace
+        if: github.ref == 'refs/heads/master' && (github.event_name == 'repository_dispatch' && github.event.client_payload.slash_command.command == 'deploy')
+        env:
+          VS_MARKETPLACE_PAT: ${{ secrets.PAT }}
+        run: npm run deploy ${{ env.VS_MARKETPLACE_PAT }}
+
+      - name: create a release
+        if: github.ref == 'refs/heads/master' && (github.event_name == 'repository_dispatch' && github.event.client_payload.slash_command.command == 'deploy')
+        uses: johnwbyrd/update-release@v1.0.0
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          tag: v${{ steps.gitversion.outputs.semVer }}
+          release: v${{ steps.gitversion.outputs.semVer }}
+          files: ${{github.workspace}}/git-config-user-profiles-${{steps.gitversion.outputs.semVer}}.vsix
+          prerelease: false
+          draft: false
 
       - name: test deploy dispatch
-        if: github.event_name == 'repository_dispatch' && github.event.client_payload.slash_command.command == 'deploy'
+        if: github.event_name == 'repository_dispatch'
         run: |
           echo ${{ github.event.client_payload.slash_command.command }}
