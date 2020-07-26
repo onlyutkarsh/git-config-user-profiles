@@ -118,8 +118,8 @@ jobs:
           token: ${{ secrets.GITHUB_TOKEN }}
           issue-number: ${{ steps.create-issue.outputs.number }}
           body: |
-            Hey, @${{ github.event.comment.user.login }}!
-            You can type slash command `/deploy` or '/reject' in the first line, to start or stop a release.
+            Hey, @${{ github.actor }}!
+            You can type slash command `/deploy` or `/reject` in the first line, to start or stop a release.
 
       - name: test deploy dispatch
         if: github.event_name == 'repository_dispatch' && github.event.client_payload.slash_command.command == 'deploy'
