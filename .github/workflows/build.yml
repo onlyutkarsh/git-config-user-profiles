@@ -92,12 +92,15 @@ jobs:
     outputs:
       vsix-version: ${{ steps.gitversion.outputs.semVer }}
 
-  issue:
+  create-issue:
     needs: build
     runs-on: ubuntu-latest
     steps:
+      - name: checkout repo
+        uses: actions/checkout@v2
+
       - run: |
-          echo ${{ needs.build.outputs.vsix-version }}
+          echo "VSIX Version is ${{ needs.build.outputs.vsix-version }}"
 
       # create issue if it is not triggered by dispatch event and watch for commands
       - name: create an issue and watch for '/deploy' or '/reject'
