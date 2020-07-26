@@ -3,7 +3,6 @@ on:
   issue_comment:
     types:
       - created
-      - edited
 jobs:
   dispatch:
     runs-on: ubuntu-latest

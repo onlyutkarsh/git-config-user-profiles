@@ -6,9 +6,6 @@ on:
       action:
         description: Trigger build
         required: false
-  repository_dispatch:
-    types:
-      - deploy-command
   pull_request:
     branches:
       - master
@@ -120,8 +117,3 @@ jobs:
           body: |
             Hey, @${{ github.actor }}!
             You can type slash command `/deploy` or `/reject` in the first line, to start or stop a release.
-
-      - name: test deploy dispatch
-        if: github.event_name == 'repository_dispatch' && github.event.client_payload.slash_command.command == 'deploy'
-        run: |
-          echo ${{ github.event.client_payload.slash_command.command }}
