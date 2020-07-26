@@ -107,7 +107,7 @@ jobs:
         uses: JasonEtco/create-an-issue@v2.4.0
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          VSIX_VERSION: ${{steps.gitversion.outputs.semVer}}
+          VSIX_VERSION: ${{ needs.build.outputs.vsix-version }}
         with:
           filename: .github/ISSUE_TEMPLATE/release_issue.md
 
