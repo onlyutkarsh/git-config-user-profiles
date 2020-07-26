@@ -32,13 +32,13 @@ jobs:
         run: git fetch --prune --unshallow
 
       - name: install gitversion tool
-        uses: gittools/actions/gitversion/setup@v0.9
+        uses: gittools/actions/gitversion/setup@v0.9.4
         with:
-          versionSpec: "5.1.x"
+          versionSpec: "5.2.x"
 
       - name: execute gitversion
         id: gitversion # step id used as reference for output values
-        uses: gittools/actions/gitversion/execute@v0.9
+        uses: gittools/actions/gitversion/execute@v0.9.4
 
       - name: print gitversion
         run: |
