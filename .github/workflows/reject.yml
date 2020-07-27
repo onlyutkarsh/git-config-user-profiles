@@ -11,6 +11,6 @@ jobs:
         uses: peter-evans/create-or-update-comment@v1
         with:
           token: ${{ secrets.REPO_ACCESS_TOKEN }}
-          issue-number: ${{ github.event.issue.number }}
+          issue-number: ${{ github.event.client_payload.github.event.issue.number }}
           body: |
             `/reject` command triggerred by ${{ github.actor }}. You may now close this issue.

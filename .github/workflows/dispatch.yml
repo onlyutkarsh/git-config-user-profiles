@@ -26,6 +26,6 @@ jobs:
         if: github.repository_owner != github.event.comment.user.login
         with:
           token: ${{ secrets.REPO_ACCESS_TOKEN }}
-          issue-number: ${{ github.event.issue.number }}
+          issue-number: ${{ github.event.client_payload.github.event.issue.number }}
           body: |
             Dispatch command can only be triggerred by ${{ github.repository_owner }}.
