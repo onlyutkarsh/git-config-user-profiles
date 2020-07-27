@@ -11,7 +11,7 @@ jobs:
           echo ${{ github.event.comment.user.login }}
 
       - name: dispatch command
-        uses: peter-evans/slash-command-dispatch@v1
+        uses: peter-evans/slash-command-dispatch@v2
         with:
           token: ${{ secrets.REPO_ACCESS_TOKEN }}
           reaction-token: ${{ secrets.REPO_ACCESS_TOKEN }}

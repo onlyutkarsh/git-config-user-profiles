@@ -94,7 +94,11 @@ jobs:
           prerelease: false
           draft: false
 
-      - name: test deploy dispatch
-        if: github.event_name == 'repository_dispatch'
-        run: |
-          echo ${{ github.event.client_payload.slash_command.command }}
+      - name: update the comment as deployment triggerred
+        uses: peter-evans/create-or-update-comment@v1
+        with:
+          token: ${{ secrets.REPO_ACCESS_TOKEN }}
+          comment-id: ${{ github.event.client_payload.github.payload.comment.id }}
+          reaction-type: hooray
+          body: |
+            Extension is now released to VS Marketplace by ${{ github.actor }}. You may now close this issue.

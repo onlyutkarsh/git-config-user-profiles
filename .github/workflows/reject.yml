@@ -7,9 +7,11 @@ jobs:
   close-issue:
     runs-on: windows-latest
     steps:
-      - name: close issue
-        uses: peter-evans/close-issue@v1
+      - name: update comment as rejected
+        uses: peter-evans/create-or-update-comment@v1
         with:
-          comment: |
-            '/reject' command triggerred by ${{ github.actor }}.
-            Auto-closing this issue.
+          token: ${{ secrets.REPO_ACCESS_TOKEN }}
+          comment-id: ${{ github.event.client_payload.github.payload.comment.id }}
+          reaction-type: "+1"
+          body: |
+            '/reject' command triggerred by ${{ github.actor }}. You may now close this issue.
