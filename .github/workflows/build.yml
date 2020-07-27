@@ -107,7 +107,7 @@ jobs:
         id: create-issue
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          VSIX_VERSION: ${{ needs.build.outputs.vsix-version }}
+          VSIX_VERSION: ${{ needs.ci.outputs.vsix-version }}
         with:
           filename: .github/ISSUE_TEMPLATE/release_issue.md
 
