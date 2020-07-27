@@ -61,7 +61,7 @@ jobs:
 
       - name: print vsix path
         run: |
-          echo "VSIX Path: {{ env.VSIX_PATH }}"
+          echo "VSIX Path: ${{ env.VSIX_PATH }}"
 
       - name: upload vsix as artifact of build
         uses: actions/upload-artifact@v1
@@ -73,9 +73,8 @@ jobs:
         uses: peter-evans/create-or-update-comment@v1
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
-          issue-number: ${{ github.event.issue.number }}
+          issue-number: ${{ github.event.client_payload.github.payload.issue.number }}
           body: |
-            Hey, @${{ github.event.comment.user.login }}!
             I am starting the deployment for v${{steps.gitversion.outputs.semVer}} :v:
 
       - name: publish to marketplace
