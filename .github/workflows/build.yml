@@ -91,7 +91,7 @@ jobs:
       vsix-version: ${{ steps.gitversion.outputs.semVer }}
 
   create-issue:
-    needs: build
+    needs: ci
     if: github.ref == 'refs/heads/master'
     runs-on: ubuntu-latest
     steps:
