@@ -97,7 +97,7 @@ jobs:
         uses: peter-evans/create-or-update-comment@v1
         with:
           token: ${{ secrets.REPO_ACCESS_TOKEN }}
-          issue-number: ${{ github.event.client_payload.github.event.issue.number }}
+          issue-number: ${{ github.event.client_payload.github.payload.issue.number }}
           reaction-type: hooray
           body: |
             Extension is now released to VS Marketplace by ${{ github.actor }}. You may now close this issue.
