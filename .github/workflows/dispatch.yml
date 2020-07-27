@@ -1,0 +1,19 @@
+name: dispatch-comamnd
+on:
+  issue_comment:
+    types:
+      - created
+jobs:
+  dispatch:
+    runs-on: ubuntu-latest
+    steps:
+      - run: |
+          echo login: ${{ github.event.comment.user.login }}
+          echo actor: ${{ github.actor }}
+
+      - name: dispatch command
+        uses: peter-evans/slash-command-dispatch@v2
+        with:
+          token: ${{ secrets.REPO_ACCESS_TOKEN }}
+          reaction-token: ${{ secrets.REPO_ACCESS_TOKEN }}
+          commands: deploy, reject

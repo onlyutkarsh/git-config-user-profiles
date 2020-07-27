@@ -1,0 +1,104 @@
+name: "deploy release"
+on:
+  repository_dispatch:
+    types:
+      - deploy-command
+jobs:
+  deploy:
+    runs-on: windows-latest
+    steps:
+      - name: checkout repo
+        uses: actions/checkout@v2
+
+      - name: fetch all history and tags from all branches for gitversion
+        run: git fetch --prune --unshallow
+
+      - name: install gitversion tool
+        uses: gittools/actions/gitversion/setup@v0.9.4
+        with:
+          versionSpec: "5.2.x"
+
+      - name: execute gitversion
+        id: gitversion # step id used as reference for output values
+        uses: gittools/actions/gitversion/execute@v0.9.4
+
+      - name: print gitversion
+        run: |
+          echo "Major: ${{ steps.gitversion.outputs.major }}"
+          echo "Minor: ${{ steps.gitversion.outputs.minor }}"
+          echo "Patch: ${{ steps.gitversion.outputs.patch }}"
+          echo "MajorMinorPatch: ${{ steps.gitversion.outputs.majorMinorPatch }}"
+          echo "SemVer: ${{ steps.gitversion.outputs.semVer }}"
+
+      - name: setup node
+        uses: actions/setup-node@v1
+        with:
+          node-version: "12.x"
+
+      - name: clean install dependencies
+        run: npm ci
+
+      - name: update metadata in package.json
+        uses: onlyutkarsh/patch-files-action@v1.0.1
+        with:
+          files: "${{github.workspace}}/package.json"
+          patch-syntax: |
+            = /version => "${{ steps.gitversion.outputs.semVer }}"
+            = /displayName => "Git Config User Profiles"
+            = /description => "Define multiple git config user profiles and switch them easily using status bar"
+
+      - name: update CHANGELOG.md
+        run: |
+          npm run update-changelog
+
+      - name: compile and create vsix
+        run: npm run package
+
+      - name: set vsix path as environment variable
+        run: |
+          echo "::set-env name=VSIX_PATH::${{github.workspace}}/git-config-user-profiles-${{steps.gitversion.outputs.semVer}}.vsix"
+
+      - name: print vsix path
+        run: |
+          echo "VSIX Path: {{ env.VSIX_PATH }}"
+
+      - name: upload vsix as artifact of build
+        uses: actions/upload-artifact@v1
+        with:
+          name: git-config-user-profiles-${{steps.gitversion.outputs.semVer}}.vsix
+          path: ${{github.workspace}}/git-config-user-profiles-${{steps.gitversion.outputs.semVer}}.vsix
+
+      - name: update the comment in the issue
+        uses: peter-evans/create-or-update-comment@v1
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          issue-number: ${{ github.event.issue.number }}
+          body: |
+            Hey, @${{ github.event.comment.user.login }}!
+            I am starting the deployment for v${{steps.gitversion.outputs.semVer}} :v:
+
+      - name: publish to marketplace
+        if: github.ref == 'refs/heads/master' && (github.event_name == 'repository_dispatch' && github.event.client_payload.slash_command.command == 'deploy')
+        env:
+          VS_MARKETPLACE_PAT: ${{ secrets.PAT }}
+        run: npm run deploy ${{ env.VS_MARKETPLACE_PAT }}
+
+      - name: create a release
+        if: github.ref == 'refs/heads/master' && (github.event_name == 'repository_dispatch' && github.event.client_payload.slash_command.command == 'deploy')
+        uses: johnwbyrd/update-release@v1.0.0
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          tag: v${{ steps.gitversion.outputs.semVer }}
+          release: v${{ steps.gitversion.outputs.semVer }}
+          files: ${{github.workspace}}/git-config-user-profiles-${{steps.gitversion.outputs.semVer}}.vsix
+          prerelease: false
+          draft: false
+
+      - name: update the comment as deployment triggerred
+        uses: peter-evans/create-or-update-comment@v1
+        with:
+          token: ${{ secrets.REPO_ACCESS_TOKEN }}
+          comment-id: ${{ github.event.client_payload.github.payload.comment.id }}
+          reaction-type: hooray
+          body: |
+            Extension is now released to VS Marketplace by ${{ github.actor }}. You may now close this issue.
