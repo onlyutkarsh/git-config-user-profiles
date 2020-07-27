@@ -1,4 +1,4 @@
-name: cicd
+name: build
 
 on:
   workflow_dispatch:
@@ -6,7 +6,7 @@ on:
       action:
         description: Trigger build
         required: true
-        default: "build"
+        default: "ci"
   pull_request:
     branches:
       - master
@@ -23,7 +23,7 @@ on:
       - ".vscode/**"
 
 jobs:
-  build:
+  ci:
     runs-on: windows-latest
     steps:
       - name: checkout repo
@@ -92,6 +92,7 @@ jobs:
 
   create-issue:
     needs: build
+    if: github.ref == 'refs/heads/master'
     runs-on: ubuntu-latest
     steps:
       - name: checkout repo
@@ -116,5 +117,5 @@ jobs:
           token: ${{ secrets.GITHUB_TOKEN }}
           issue-number: ${{ steps.create-issue.outputs.number }}
           body: |
-            Hey, @${{ github.actor }}!
+            Hey, @${{ github.repository_owner }}!
             You can type slash command `/deploy` or `/reject` in the first line, to start or stop a release.

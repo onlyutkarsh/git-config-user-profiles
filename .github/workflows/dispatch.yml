@@ -1,4 +1,4 @@
-name: dispatch-comamnd
+name: "dispatch events"
 on:
   issue_comment:
     types:
@@ -6,14 +6,26 @@ on:
 jobs:
   dispatch:
     runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/master'
     steps:
       - run: |
           echo login: ${{ github.event.comment.user.login }}
           echo actor: ${{ github.actor }}
+          echo owner: ${{ github.repository_owner }}
 
       - name: dispatch command
+        if: github.repository_owner == github.event.comment.user.login
         uses: peter-evans/slash-command-dispatch@v2
         with:
           token: ${{ secrets.REPO_ACCESS_TOKEN }}
           reaction-token: ${{ secrets.REPO_ACCESS_TOKEN }}
           commands: deploy, reject
+
+      - name: update comment if command is not from owner
+        uses: peter-evans/create-or-update-comment@v1
+        if: github.repository_owner != github.event.comment.user.login
+        with:
+          token: ${{ secrets.REPO_ACCESS_TOKEN }}
+          issue-number: ${{ github.event.issue.number }}
+          body: |
+            Dispatch command can only be triggerred by ${{ github.repository_owner }}.

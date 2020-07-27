@@ -14,4 +14,4 @@ jobs:
           comment-id: ${{ github.event.client_payload.github.payload.comment.id }}
           reaction-type: "+1"
           body: |
-            '/reject' command triggerred by ${{ github.actor }}. You may now close this issue.
+            `/reject` command triggerred by ${{ github.actor }}. You may now close this issue.
