@@ -99,7 +99,7 @@ jobs:
         uses: actions/checkout@v2
 
       - run: |
-          echo "VSIX Version is ${{ needs.build.outputs.vsix-version }}"
+          echo "VSIX Version is ${{ needs.ci.outputs.vsix-version }}"
 
       # create issue if it is not triggered by dispatch event and watch for commands
       - name: create an issue and watch for '/deploy' or '/reject'
