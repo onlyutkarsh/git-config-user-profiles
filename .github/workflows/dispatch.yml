@@ -8,7 +8,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - run: |
-          echo ${{ github.event.comment.user.login }}
+          echo login: ${{ github.event.comment.user.login }}
+          echo actor: ${{ github.actor }}
 
       - name: dispatch command
         uses: peter-evans/slash-command-dispatch@v2
