@@ -20,12 +20,3 @@ jobs:
           token: ${{ secrets.REPO_ACCESS_TOKEN }}
           reaction-token: ${{ secrets.REPO_ACCESS_TOKEN }}
           commands: deploy, reject
-
-      - name: update comment if command is not from owner
-        uses: peter-evans/create-or-update-comment@v1
-        if: github.repository_owner != github.event.comment.user.login
-        with:
-          token: ${{ secrets.REPO_ACCESS_TOKEN }}
-          issue-number: ${{ github.event.client_payload.github.payload.issue.number }}
-          body: |
-            Dispatch command can only be triggerred by ${{ github.repository_owner }}.
