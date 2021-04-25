@@ -1,6 +1,6 @@
 import * as sgit from "simple-git/promise";
 import { commands, window, workspace } from "vscode";
-import { getProfiles, saveProfile } from "./config";
+import { getProfile, getProfileByEmail, getProfiles, saveProfile } from "./config";
 import { isValidWorkspace, validateEmail, validateProfileName, validateUserName, getCurrentConfig, trimLabelIcons } from "./util";
 import * as Constants from "./constants";
 import { MultiStepInput, State } from "./controls";
@@ -9,7 +9,7 @@ import { Logger } from "./util/logger";
 
 export async function createUserProfile() {
     const state = {} as Partial<State>;
-    await MultiStepInput.run(input => pickProfileName(input, state));
+    await MultiStepInput.run((input) => pickProfileName(input, state));
 
     let profile: Profile = {
         label: state.profileName || "",
@@ -23,7 +23,7 @@ export async function createUserProfile() {
 
 function shouldResume() {
     // Could show a notification with the option to resume.
-    return new Promise<boolean>((resolve, reject) => { });
+    return new Promise<boolean>((resolve, reject) => {});
 }
 
 async function pickProfileName(input: MultiStepInput, state: Partial<State>, create: boolean = true) {
@@ -34,7 +34,7 @@ async function pickProfileName(input: MultiStepInput, state: Partial<State>, cre
         prompt: "Enter name for the profile",
         value: state.profileName || "",
         placeholder: "Work",
-        validate: input => validateProfileName(input, create),
+        validate: (input) => validateProfileName(input, create),
         shouldResume: shouldResume,
         ignoreFocusOut: true,
     });
@@ -79,7 +79,7 @@ export async function getUserProfile(fromStatusBar: boolean = false, notProfileS
         userName: "NA",
     };
 
-    let selectedProfileFromConfig = profilesInConfig.filter(x => x.selected) || [];
+    let selectedProfileFromConfig = profilesInConfig.filter((x) => x.selected) || [];
     let selectedProfile: Profile = selectedProfileFromConfig.length > 0 ? selectedProfileFromConfig[0] : emptyProfile;
 
     //TODO: Show error if the user deliberately deletes the username or email property from config
@@ -91,8 +91,9 @@ export async function getUserProfile(fromStatusBar: boolean = false, notProfileS
     let validWorkspace = await isValidWorkspace();
 
     let configInSync = false;
+    let currentConfig;
     if (validWorkspace.isValid && validWorkspace.folder) {
-        let currentConfig = await getCurrentConfig(validWorkspace.folder);
+        currentConfig = await getCurrentConfig(validWorkspace.folder);
         configInSync = currentConfig.email.toLowerCase() === selectedProfile.email.toLowerCase() && currentConfig.userName.toLowerCase() === selectedProfile.userName.toLowerCase();
     }
 
@@ -105,6 +106,23 @@ export async function getUserProfile(fromStatusBar: boolean = false, notProfileS
 
         if (validWorkspace.isValid === false) {
             return emptyProfile;
+        }
+
+        //issue #31
+        if (!configInSync && currentConfig !== null && currentConfig !== undefined) {
+            //make currently selected profile as false
+            if (selectedProfile !== emptyProfile) {
+                selectedProfile.selected = false;
+                await saveProfile(Object.assign({}, selectedProfile));
+            }
+
+            //get the profile matching what is in git config
+            let currentProfile: Profile = getProfileByEmail(currentConfig.email) || emptyProfile;
+            currentProfile.selected = true;
+            await saveProfile(Object.assign({}, currentProfile));
+
+            let selectedProfile1 = await getUserProfile(false, false); //dont show popup if user is switching profile
+            return selectedProfile1;
         }
 
         //if configs found, but none are selected, if from statusbar show picklist else silent
@@ -144,8 +162,8 @@ export async function getUserProfile(fromStatusBar: boolean = false, notProfileS
             let message = configInSync
                 ? `Git config is already in sync with profile '${trimLabelIcons(selectedProfile.label)}'. What do you want to do?`
                 : `Git config is not using this profile. Do you want to use profile '${trimLabelIcons(selectedProfile.label)}' for this repo? (user: ${
-                selectedProfile.userName
-                }, email: ${selectedProfile.email}) `;
+                      selectedProfile.userName
+                  }, email: ${selectedProfile.email}) `;
 
             response = await window.showInformationMessage(message, ...options);
         }
@@ -172,7 +190,7 @@ export async function getUserProfile(fromStatusBar: boolean = false, notProfileS
             //show picklist only if no profile is marked as selected in config.
             //this can happen only when setting up config for the first time or user deliberately changed config
             let pickedProfile = await window.showQuickPick<Profile>(
-                profilesInConfig.map(x => {
+                profilesInConfig.map((x) => {
                     return {
                         label: x.label,
                         userName: x.userName,
@@ -218,7 +236,7 @@ export async function editUserProfile() {
     }
 
     let pickedProfile = await window.showQuickPick<Profile>(
-        profilesInConfig.map(x => {
+        profilesInConfig.map((x) => {
             return {
                 label: trimLabelIcons(x.label),
                 userName: x.userName,
@@ -243,7 +261,7 @@ export async function editUserProfile() {
             userName: pickedProfile.userName,
             profileName: pickedProfile.label,
         };
-        await MultiStepInput.run(input => pickProfileName(input, state, false));
+        await MultiStepInput.run((input) => pickProfileName(input, state, false));
 
         let profile: Profile = {
             label: state.profileName || "",

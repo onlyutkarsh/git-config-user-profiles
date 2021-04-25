@@ -6,7 +6,7 @@ export function getProfiles(): Profile[] {
     let profiles = workspace.getConfiguration("gitConfigUser").get<Profile[]>("profiles");
 
     if (profiles) {
-        return profiles.map(x => {
+        return profiles.map((x) => {
             return {
                 label: trimCheckIcon(x.label),
                 userName: x.userName,
@@ -25,12 +25,12 @@ export async function saveProfile(profile: Profile, oldProfileName?: string): Pr
     profile = trimProperties(profile);
     let existingProfileIndex = -1;
     if (oldProfileName) {
-        existingProfileIndex = profiles.findIndex(x => x.label.toLowerCase() === oldProfileName.toLowerCase());
+        existingProfileIndex = profiles.findIndex((x) => x.label.toLowerCase() === oldProfileName.toLowerCase());
     } else {
-        existingProfileIndex = profiles.findIndex(x => x.label.toLowerCase() === profile.label.toLowerCase());
+        existingProfileIndex = profiles.findIndex((x) => x.label.toLowerCase() === profile.label.toLowerCase());
         if (existingProfileIndex > -1) {
             // set existing to false if user is making a selection of profile (not updating the profile)
-            profiles.forEach(x => {
+            profiles.forEach((x) => {
                 x.selected = false;
                 x.label = x.label.replace("$(check)", "").trim();
             });
@@ -45,7 +45,15 @@ export async function saveProfile(profile: Profile, oldProfileName?: string): Pr
 }
 
 export function getProfile(profileName: string): Profile | undefined {
-    let filtered = getProfiles().filter(x => x.label.toLowerCase() === profileName.toLowerCase());
+    let filtered = getProfiles().filter((x) => x.label.toLowerCase() === profileName.toLowerCase());
+    if (filtered && filtered.length > 0) {
+        return Object.assign({}, filtered[0]);
+    }
+    return undefined;
+}
+
+export function getProfileByEmail(email: string): Profile | undefined {
+    let filtered = getProfiles().filter((x) => x.email.toLowerCase() === email.toLowerCase());
     if (filtered && filtered.length > 0) {
         return Object.assign({}, filtered[0]);
     }
