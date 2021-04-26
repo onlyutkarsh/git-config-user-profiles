@@ -1,7 +1,7 @@
-import * as sgit from "simple-git/promise";
+import sgit from "simple-git/promise";
 import { workspace, window } from "vscode";
 import { getProfile } from "./../config";
-import * as gitconfig from "gitconfiglocal";
+import gitconfig from "gitconfiglocal";
 import { Profile } from "../models";
 import { Messages } from "../constants";
 import { Logger } from "../util";
@@ -20,13 +20,13 @@ export async function isValidWorkspace(): Promise<{ isValid: boolean; message: s
         if (foldersCount > 1) {
             return {
                 message: Messages.DOES_NOT_SUPPORT_MULTI_ROOT,
-                isValid: false
+                isValid: false,
             };
         }
         if (foldersCount === 0) {
             return {
                 message: Messages.OPEN_REPO_FIRST,
-                isValid: false
+                isValid: false,
             };
         }
         if (foldersCount === 1) {
@@ -37,19 +37,19 @@ export async function isValidWorkspace(): Promise<{ isValid: boolean; message: s
             if (!validGitRepo) {
                 return {
                     message: Messages.NOT_A_VALID_REPO,
-                    isValid: false
+                    isValid: false,
                 };
             }
             return {
                 message: "",
                 isValid: true,
-                folder: folderPath
+                folder: folderPath,
             };
         }
     }
     return {
         message: Messages.NOT_A_VALID_REPO,
-        isValid: false
+        isValid: false,
     };
 }
 
@@ -64,7 +64,7 @@ export async function getCurrentConfig(gitFolder: string): Promise<{ userName: s
             if (config.user && config.user.name && config.user.email) {
                 let currentConfig = {
                     userName: config.user.name,
-                    email: config.user.email
+                    email: config.user.email,
                 };
                 Logger.instance.logInfo(`Config details found: ${JSON.stringify(currentConfig)}`);
                 resolve(currentConfig);
@@ -122,6 +122,6 @@ export function trimProperties(profile: Profile): Profile {
         email: profile.email.trim(),
         userName: profile.userName.trim(),
         selected: profile.selected,
-        detail: undefined
+        detail: undefined,
     };
 }

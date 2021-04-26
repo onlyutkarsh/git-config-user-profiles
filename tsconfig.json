@@ -1,18 +1,27 @@
 {
     "compilerOptions": {
         "module": "commonjs",
+        "esModuleInterop": true,
         "target": "es6",
         "outDir": "out",
-        "lib": ["es6", "dom"],
+        "lib": [
+            "es6",
+            "dom"
+        ],
         "sourceMap": true,
         "rootDir": "src",
         "strict": true,
-        "typeRoots": ["./node_modules/@types", "./src/typings/"],
+        "typeRoots": [
+            "./node_modules/@types",
+            "./src/typings/"
+        ],
         "strictPropertyInitialization": false
     },
-    "include": ["src/**/*"],
+    "include": [
+        "src/**/*"
+    ],
     "exclude": [
-        "node_modules", 
+        "node_modules",
         ".vscode-test"
     ]
 }

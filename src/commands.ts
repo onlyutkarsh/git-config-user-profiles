@@ -1,4 +1,4 @@
-import * as sgit from "simple-git/promise";
+import sgit from "simple-git/promise";
 import { commands, window, workspace } from "vscode";
 import { getProfiles, saveProfile } from "./config";
 import { isValidWorkspace, validateEmail, validateProfileName, validateUserName, getCurrentConfig, trimLabelIcons } from "./util";
@@ -23,7 +23,7 @@ export async function createUserProfile() {
 
 function shouldResume() {
     // Could show a notification with the option to resume.
-    return new Promise<boolean>((resolve, reject) => { });
+    return new Promise<boolean>((resolve, reject) => {});
 }
 
 async function pickProfileName(input: MultiStepInput, state: Partial<State>, create: boolean = true) {
@@ -144,8 +144,8 @@ export async function getUserProfile(fromStatusBar: boolean = false, notProfileS
             let message = configInSync
                 ? `Git config is already in sync with profile '${trimLabelIcons(selectedProfile.label)}'. What do you want to do?`
                 : `Git config is not using this profile. Do you want to use profile '${trimLabelIcons(selectedProfile.label)}' for this repo? (user: ${
-                selectedProfile.userName
-                }, email: ${selectedProfile.email}) `;
+                      selectedProfile.userName
+                  }, email: ${selectedProfile.email}) `;
 
             response = await window.showInformationMessage(message, ...options);
         }
