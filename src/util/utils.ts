@@ -1,10 +1,10 @@
-import sgit from "simple-git/promise";
-import { workspace, window } from "vscode";
-import { getProfile } from "./../config";
-import gitconfig from "gitconfiglocal";
-import { Profile } from "../models";
+import * as gitconfig from "gitconfiglocal";
+import * as sgit from "simple-git/promise";
+import { workspace } from "vscode";
 import { Messages } from "../constants";
+import { Profile } from "../models";
 import { Logger } from "../util";
+import { getProfile } from "./../config";
 
 export async function isGitRepository(path: string): Promise<boolean> {
     try {
@@ -16,7 +16,7 @@ export async function isGitRepository(path: string): Promise<boolean> {
 
 export async function isValidWorkspace(): Promise<{ isValid: boolean; message: string; folder?: string }> {
     if (workspace.workspaceFolders) {
-        let foldersCount = workspace.workspaceFolders.length;
+        const foldersCount = workspace.workspaceFolders.length;
         if (foldersCount > 1) {
             return {
                 message: Messages.DOES_NOT_SUPPORT_MULTI_ROOT,
@@ -30,9 +30,9 @@ export async function isValidWorkspace(): Promise<{ isValid: boolean; message: s
             };
         }
         if (foldersCount === 1) {
-            let folderPath = workspace.workspaceFolders[0].uri.fsPath;
+            const folderPath = workspace.workspaceFolders[0].uri.fsPath;
 
-            let validGitRepo = await isGitRepository(folderPath);
+            const validGitRepo = await isGitRepository(folderPath);
 
             if (!validGitRepo) {
                 return {
@@ -62,7 +62,7 @@ export async function getCurrentConfig(gitFolder: string): Promise<{ userName: s
     return await new Promise((resolve, reject) => {
         gitconfig(gitFolder, (error, config) => {
             if (config.user && config.user.name && config.user.email) {
-                let currentConfig = {
+                const currentConfig = {
                     userName: config.user.name,
                     email: config.user.email,
                 };
@@ -88,12 +88,12 @@ export function isBlank(str: string) {
     return !str || /^\s*$/.test(str);
 }
 
-export function validateProfileName(input: string, checkForDuplicates: boolean = true) {
+export function validateProfileName(input: string, checkForDuplicates = true) {
     if (isEmpty(input) || isBlank(input)) {
         return Messages.ENTER_A_VALID_STRING;
     }
     if (checkForDuplicates) {
-        let existingProfile = getProfile(input);
+        const existingProfile = getProfile(input);
         if (existingProfile) {
             return `Oops! Profile with the same name '${input}' already exists!`;
         }
@@ -109,7 +109,7 @@ export function validateUserName(input: string) {
 }
 
 export function validateEmail(input: string) {
-    let validEmail = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    const validEmail = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!validEmail.test(input)) {
         return Messages.NOT_A_VALID_EMAIL;
     }

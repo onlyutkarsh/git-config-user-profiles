@@ -3,6 +3,7 @@
     // for the documentation about the extensions.json format
     "recommendations": [
         "coenraads.bracket-pair-colorizer",
-        "remimarsal.prettier-now"
+        "remimarsal.prettier-now",
+        "dbaeumer.vscode-eslint"
     ]
 }
