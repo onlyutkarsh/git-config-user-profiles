@@ -70,6 +70,7 @@ jobs:
       - name: set vsix path as environment variable
         id: vsix
         run: |
+          echo "::set-output name=vsix_name::git-config-user-profiles-${{steps.gitversion.outputs.semVer}}.vsix"
           echo "::set-output name=vsix_path::${{github.workspace}}/git-config-user-profiles-${{steps.gitversion.outputs.semVer}}.vsix"
 
       - name: print vsix path
@@ -79,9 +80,21 @@ jobs:
       - name: upload vsix as artifact of build
         uses: actions/upload-artifact@v1
         with:
-          name: git-config-user-profiles-${{steps.gitversion.outputs.semVer}}.vsix
+          name: ${{steps.vsix.outputs.vsix_name}}
           path: ${{github.workspace}}/git-config-user-profiles-${{steps.gitversion.outputs.semVer}}.vsix
 
     outputs:
       vsix-version: ${{ steps.gitversion.outputs.semVer }}
       vsix-path: "${{ steps.vsix.outputs.vsix_path }}"
+
+  cd:
+    runs-on: windows-latest
+    needs: ci
+    steps:
+      - name: download artifact
+        uses: actions/download-artifact@v2
+        with:
+          name: ${{ needs.ci.outputs.vsix-path}}
+
+      - name: display structure of downloaded artifacts
+        run: ls -R
