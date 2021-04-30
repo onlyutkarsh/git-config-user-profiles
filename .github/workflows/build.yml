@@ -33,7 +33,7 @@ jobs:
 
       - name: execute gitversion
         id: gitversion # step id used as reference for output values
-        uses: gittools/actions/gitversion/execute@v0.9.4
+        uses: gittools/actions/gitversion/execute@v0.9.7
 
       - name: print gitversion
         run: |
@@ -71,7 +71,7 @@ jobs:
 
       - name: set vsix path as environment variable
         run: |
-          echo "::set-env name=VSIX_PATH::${{github.workspace}}/git-config-user-profiles-${{steps.gitversion.outputs.semVer}}.vsix"
+          echo "VSIX_PATH=${{github.workspace}}/git-config-user-profiles-${{steps.gitversion.outputs.semVer}}.vsix" >> $GITHUB_ENV
 
       - name: print vsix path
         run: |
