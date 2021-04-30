@@ -95,6 +95,7 @@ jobs:
         uses: actions/download-artifact@v2
         with:
           name: ${{ needs.ci.outputs.vsix_name}}
+          path: ${{ github.workspace }}/vsix
 
       - name: display structure of downloaded artifacts
-        run: ls -R
+        run: ls -R ${{ github.workspace }}/vsix
