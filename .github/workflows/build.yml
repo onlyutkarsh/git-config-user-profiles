@@ -75,8 +75,8 @@ jobs:
 
       - name: print vsix path
         run: |
-          echo "VSIX Path: {{ env.VSIX_PATH }}"
-          echo "VSIX2 Path: {{ env.VSIX_PATH2 }}"
+          echo "VSIX Path: ${{ env.VSIX_PATH }}"
+          echo "VSIX2 Path: ${{ env.VSIX_PATH2 }}"
 
       - name: upload vsix as artifact of build
         uses: actions/upload-artifact@v1
