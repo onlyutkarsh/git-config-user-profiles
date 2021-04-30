@@ -66,17 +66,15 @@ jobs:
 
       - name: compile and create vsix
         run: npm run package
-        env:
-          VSIX_PATH2: ${{github.workspace}}/git-config-user-profiles-${{steps.gitversion.outputs.semVer}}
 
       - name: set vsix path as environment variable
+        id: vsix
         run: |
-          echo "VSIX_PATH=${{github.workspace}}/git-config-user-profiles-${{steps.gitversion.outputs.semVer}}.vsix" >> $GITHUB_ENV
+          echo "::set-output name=vsix_path::${{github.workspace}}/git-config-user-profiles-${{steps.gitversion.outputs.semVer}}.vsix"
 
       - name: print vsix path
         run: |
-          echo "VSIX Path: ${{ env.VSIX_PATH }}"
-          echo "VSIX2 Path: ${{ env.VSIX_PATH2 }}"
+          echo "VSIX Path: ${{ steps.vsix.outputs.vsix_path }}"
 
       - name: upload vsix as artifact of build
         uses: actions/upload-artifact@v1
@@ -86,3 +84,4 @@ jobs:
 
     outputs:
       vsix-version: ${{ steps.gitversion.outputs.semVer }}
+      vsix-path: "${{ steps.vsix.outputs.vsix_path }}"
