@@ -23,7 +23,7 @@
     ],
     "license": "MIT",
     "engines": {
-        "vscode": "^1.34.0"
+        "vscode": "^1.55.0"
     },
     "activationEvents": [
         "*"
@@ -47,22 +47,19 @@
     "devDependencies": {
         "@types/gitconfiglocal": "^2.0.0",
         "@types/glob": "^7.1.3",
-        "@types/node": "~12.12.17",
-        "@types/vscode": "^1.34.0",
+        "@types/node": "~12.12.70",
+        "@types/vscode": "^1.55.0",
         "@typescript-eslint/eslint-plugin": "^4.22.0",
         "@typescript-eslint/parser": "^4.22.0",
-        "auto-changelog": "^2.2.0",
-        "esbuild": "^0.11.15",
+        "auto-changelog": "^2.2.1",
+        "esbuild": "^0.11.16",
         "eslint": "^7.25.0",
         "glob": "^7.1.6",
-        "mocha": "^8.0.1",
-        "prettier": "^2.0.5",
-        "rimraf": "^2.7.1",
-        "tslint": "^6.1.2",
-        "tslint-config-prettier": "^1.18.0",
-        "tslint-plugin-prettier": "^2.3.0",
+        "mocha": "^8.3.2",
+        "prettier": "^2.2.1",
+        "rimraf": "^3.0.2",
         "typescript": "~3.6.3",
-        "vsce": "~1.87.1"
+        "vsce": "~1.88.0"
     },
     "dependencies": {
         "gitconfiglocal": "^2.1.0",
