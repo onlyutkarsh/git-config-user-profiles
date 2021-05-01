@@ -1,15 +1,15 @@
 import sgit from "simple-git/promise";
 import { commands, window } from "vscode";
-import { getProfiles, saveProfile } from "./config";
-import * as Constants from "./constants";
-import { MultiStepInput, State } from "./controls";
+import * as config from "./config";
+import * as constants from "./constants";
+import * as controls from "./controls";
 import { Profile } from "./models";
-import { getCurrentConfig, isValidWorkspace, trimLabelIcons, validateEmail, validateProfileName, validateUserName } from "./util";
+import * as util from "./util";
 import { Logger } from "./util/logger";
 
 export async function createUserProfile() {
-  const state = {} as Partial<State>;
-  await MultiStepInput.run(input => pickProfileName(input, state));
+  const state = {} as Partial<controls.State>;
+  await controls.MultiStepInput.run(input => pickProfileName(input, state));
 
   const profile: Profile = {
     label: state.profileName || "",
@@ -18,7 +18,7 @@ export async function createUserProfile() {
     selected: false,
   };
 
-  await saveProfile(profile);
+  await config.saveProfile(profile);
 }
 
 function shouldResume() {
@@ -26,7 +26,7 @@ function shouldResume() {
   return new Promise<boolean>((resolve, reject) => {});
 }
 
-async function pickProfileName(input: MultiStepInput, state: Partial<State>, create = true) {
+async function pickProfileName(input: controls.MultiStepInput, state: Partial<controls.State>, create = true) {
   state.profileName = await input.showInputBox({
     title: create ? "Create a profile" : "Edit profile",
     step: 1,
@@ -34,14 +34,14 @@ async function pickProfileName(input: MultiStepInput, state: Partial<State>, cre
     prompt: "Enter name for the profile",
     value: state.profileName || "",
     placeholder: "Work",
-    validate: input => validateProfileName(input, create),
+    validate: input => util.validateProfileName(input, create),
     shouldResume: shouldResume,
     ignoreFocusOut: true,
   });
-  return (input: MultiStepInput) => pickUserName(input, state, create);
+  return (input: controls.MultiStepInput) => pickUserName(input, state, create);
 }
 
-async function pickUserName(input: MultiStepInput, state: Partial<State>, create = true) {
+async function pickUserName(input: controls.MultiStepInput, state: Partial<controls.State>, create = true) {
   state.userName = await input.showInputBox({
     title: create ? "Create a profile" : "Edit profile",
     step: 2,
@@ -49,14 +49,14 @@ async function pickUserName(input: MultiStepInput, state: Partial<State>, create
     prompt: "Enter the user name",
     value: state.userName || "",
     placeholder: "John Smith",
-    validate: validateUserName,
+    validate: util.validateUserName,
     shouldResume: shouldResume,
     ignoreFocusOut: true,
   });
-  return (input: MultiStepInput) => pickEmail(input, state, create);
+  return (input: controls.MultiStepInput) => pickEmail(input, state, create);
 }
 
-async function pickEmail(input: MultiStepInput, state: Partial<State>, create = true) {
+async function pickEmail(input: controls.MultiStepInput, state: Partial<controls.State>, create = true) {
   state.email = await input.showInputBox({
     title: create ? "Create a profile" : "Edit profile",
     step: 3,
@@ -64,16 +64,16 @@ async function pickEmail(input: MultiStepInput, state: Partial<State>, create = 
     prompt: "Enter the email",
     value: state.email || "",
     placeholder: "john.smith@myorg.com",
-    validate: validateEmail,
+    validate: util.validateEmail,
     shouldResume: shouldResume,
     ignoreFocusOut: true,
   });
 }
 export async function getUserProfile(fromStatusBar = false, notProfileSwitch = true): Promise<Profile> {
   Logger.instance.logInfo(`Getting user profiles. Triggerred from status bar = ${fromStatusBar}`);
-  const profilesInConfig = getProfiles();
+  const profilesInConfig = config.getProfiles();
   const emptyProfile = <Profile>{
-    label: Constants.Application.APPLICATION_NAME,
+    label: constants.Application.APPLICATION_NAME,
     selected: false,
     email: "NA",
     userName: "NA",
@@ -88,13 +88,28 @@ export async function getUserProfile(fromStatusBar = false, notProfileSwitch = t
     return emptyProfile;
   }
 
-  const validWorkspace = await isValidWorkspace();
+  const validWorkspace = await util.isValidWorkspace();
 
   let configInSync = false;
-  let currentConfig;
   if (validWorkspace.isValid && validWorkspace.folder) {
-    const currentConfig = await getCurrentConfig(validWorkspace.folder);
+    const currentConfig = await util.getCurrentConfig(validWorkspace.folder);
     configInSync = currentConfig.email.toLowerCase() === selectedProfile.email.toLowerCase() && currentConfig.userName.toLowerCase() === selectedProfile.userName.toLowerCase();
+    //issue #31
+    // if (!configInSync && currentConfig !== null && currentConfig !== undefined) {
+    //   //make currently selected profile as false
+    //   if (selectedProfile !== emptyProfile) {
+    //     selectedProfile.selected = false;
+    //     await config.saveProfile(Object.assign({}, selectedProfile));
+    //   }
+
+    //   //get the profile matching what is in git config
+    //   const currentProfile: Profile = config.getProfileByEmail(currentConfig.email) || emptyProfile;
+    //   currentProfile.selected = true;
+    //   await config.saveProfile(Object.assign({}, currentProfile));
+
+    //   const selectedProfile1 = await getUserProfile(false, false); //dont show popup if user is switching profile
+    //   return selectedProfile1;
+    // }
   }
 
   if (!fromStatusBar) {
@@ -108,23 +123,6 @@ export async function getUserProfile(fromStatusBar = false, notProfileSwitch = t
       return emptyProfile;
     }
 
-    //issue #31
-    if (!configInSync && currentConfig !== null && currentConfig !== undefined) {
-      //make currently selected profile as false
-      if (selectedProfile !== emptyProfile) {
-        selectedProfile.selected = false;
-        await saveProfile(Object.assign({}, selectedProfile));
-      }
-
-      //get the profile matching what is in git config
-      const currentProfile: Profile = getProfileByEmail(currentConfig.email) || emptyProfile;
-      currentProfile.selected = true;
-      await saveProfile(Object.assign({}, currentProfile));
-
-      const selectedProfile1 = await getUserProfile(false, false); //dont show popup if user is switching profile
-      return selectedProfile1;
-    }
-
     //if configs found, but none are selected, if from statusbar show picklist else silent
     //if multiple items have selected = true (due to manual change) return the first one
     return selectedProfile;
@@ -135,7 +133,7 @@ export async function getUserProfile(fromStatusBar = false, notProfileSwitch = t
       //if no profiles in config, prompt user to create (even if its non git workspace)
       const selected = await window.showInformationMessage("No user profiles defined. Do you want to define one now?", "Yes", "No");
       if (selected === "Yes") {
-        await commands.executeCommand(Constants.CommandIds.CREATE_USER_PROFILE);
+        await commands.executeCommand(constants.CommandIds.CREATE_USER_PROFILE);
       }
       return emptyProfile;
     }
@@ -160,10 +158,10 @@ export async function getUserProfile(fromStatusBar = false, notProfileSwitch = t
 
       const options = configInSync ? syncOptions : notSyncOptions;
       const message = configInSync
-        ? `Git config is already in sync with profile '${trimLabelIcons(selectedProfile.label)}'. What do you want to do?`
-        : `Git config is not using this profile. Do you want to use profile '${trimLabelIcons(selectedProfile.label)}' for this repo? (user: ${selectedProfile.userName}, email: ${
-            selectedProfile.email
-          }) `;
+        ? `Git config is already in sync with profile '${util.trimLabelIcons(selectedProfile.label)}'. What do you want to do?`
+        : `Git config is not using this profile. Do you want to use profile '${util.trimLabelIcons(selectedProfile.label)}' for this repo? (user: ${
+            selectedProfile.userName
+          }, email: ${selectedProfile.email}) `;
 
       response = await window.showInformationMessage(message, ...options);
     }
@@ -211,7 +209,7 @@ export async function getUserProfile(fromStatusBar = false, notProfileSwitch = t
         pickedProfile.detail = undefined;
         pickedProfile.label = pickedProfile.label;
         pickedProfile.selected = true;
-        await saveProfile(Object.assign({}, pickedProfile));
+        await config.saveProfile(Object.assign({}, pickedProfile));
         const selectedProfile = await getUserProfile(true, false); //dont show popup if user is switching profile
         return selectedProfile;
       } else {
@@ -228,7 +226,7 @@ export async function getUserProfile(fromStatusBar = false, notProfileSwitch = t
 }
 
 export async function editUserProfile() {
-  const profilesInConfig = getProfiles();
+  const profilesInConfig = config.getProfiles();
 
   if (profilesInConfig.length === 0) {
     window.showWarningMessage("No profiles found");
@@ -238,7 +236,7 @@ export async function editUserProfile() {
   const pickedProfile = await window.showQuickPick<Profile>(
     profilesInConfig.map(x => {
       return {
-        label: trimLabelIcons(x.label),
+        label: util.trimLabelIcons(x.label),
         userName: x.userName,
         email: x.email,
         selected: x.selected,
@@ -256,12 +254,12 @@ export async function editUserProfile() {
   if (pickedProfile) {
     pickedProfile.detail = undefined;
     pickedProfile.label = pickedProfile.label;
-    const state: Partial<State> = {
+    const state: Partial<controls.State> = {
       email: pickedProfile.email,
       userName: pickedProfile.userName,
       profileName: pickedProfile.label,
     };
-    await MultiStepInput.run(input => pickProfileName(input, state, false));
+    await controls.MultiStepInput.run(input => pickProfileName(input, state, false));
 
     const profile: Profile = {
       label: state.profileName || "",
@@ -270,7 +268,7 @@ export async function editUserProfile() {
       selected: pickedProfile.selected,
     };
 
-    await saveProfile(profile, pickedProfile.label);
+    await config.saveProfile(profile, pickedProfile.label);
   }
   return undefined;
 }
