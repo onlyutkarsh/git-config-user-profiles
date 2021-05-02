@@ -14,7 +14,9 @@
                 "--disable-extensions",
                 "--extensionDevelopmentPath=${workspaceFolder}"
             ],
-            "outFiles": ["${workspaceFolder}/dist/**/*.js"]
+            "outFiles": [
+                "${workspaceFolder}/dist/**/*.js"
+            ]
         },
         {
             "name": "Extension Tests",
@@ -25,8 +27,9 @@
                 "--extensionDevelopmentPath=${workspaceFolder}",
                 "--extensionTestsPath=${workspaceFolder}/out/test/"
             ],
-            "outFiles": ["${workspaceFolder}/out/test/**/*.js"],
-            "preLaunchTask": "npm: test-compile"
+            "outFiles": [
+                "${workspaceFolder}/out/test/**/*.js"
+            ]
         }
     ]
 }
