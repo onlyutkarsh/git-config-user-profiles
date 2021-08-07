@@ -1,8 +1,8 @@
-import { commands, ConfigurationTarget, workspace } from "vscode";
+import { ConfigurationTarget, workspace } from "vscode";
 import { Profile } from "./models";
 import { trimProperties, trimLabelIcons as trimCheckIcon } from "./util";
 
-export function getProfiles(): Profile[] {
+export function getVscProfiles(): Profile[] {
     let profiles = workspace.getConfiguration("gitConfigUser").get<Profile[]>("profiles");
 
     if (profiles) {
@@ -19,13 +19,13 @@ export function getProfiles(): Profile[] {
     return [];
 }
 
-export async function saveProfile(profile: Profile, oldProfileName?: string): Promise<void> {
+export async function saveVscProfile(profile: Profile, oldProfileLabel?: string): Promise<void> {
     //get existing profiles
-    let profiles = getProfiles();
+    let profiles = getVscProfiles();
     profile = trimProperties(profile);
     let existingProfileIndex = -1;
-    if (oldProfileName) {
-        existingProfileIndex = profiles.findIndex(x => x.label.toLowerCase() === oldProfileName.toLowerCase());
+    if (oldProfileLabel) {
+        existingProfileIndex = profiles.findIndex(x => x.label.toLowerCase() === oldProfileLabel.toLowerCase());
     } else {
         existingProfileIndex = profiles.findIndex(x => x.label.toLowerCase() === profile.label.toLowerCase());
         if (existingProfileIndex > -1) {
@@ -44,8 +44,8 @@ export async function saveProfile(profile: Profile, oldProfileName?: string): Pr
     await workspace.getConfiguration("gitConfigUser").update("profiles", profiles, ConfigurationTarget.Global);
 }
 
-export function getProfile(profileName: string): Profile | undefined {
-    let filtered = getProfiles().filter(x => x.label.toLowerCase() === profileName.toLowerCase());
+export function getVscProfile(profileName: string): Profile | undefined {
+    let filtered = getVscProfiles().filter(x => x.label.toLowerCase() === profileName.toLowerCase());
     if (filtered && filtered.length > 0) {
         return Object.assign({}, filtered[0]);
     }

@@ -79,6 +79,10 @@
             {
                 "command": "git-config-user-profiles.editUserProfile",
                 "title": "Git Config User Profiles: Edit a existing user profile"
+            },
+            {
+                "command": "git-config-user-profiles.syncVscProfilesWithGitConfig",
+                "title": "Git Config User Profiles: Synchronize VS code user profile with local git config"
             }
         ],
         "configuration": {

@@ -1,6 +1,6 @@
 import * as sgit from "simple-git/promise";
 import { workspace, window } from "vscode";
-import { getProfile } from "./../config";
+import { getVscProfile } from "./../config";
 import * as gitconfig from "gitconfiglocal";
 import { Profile } from "../models";
 import { Messages } from "../constants";
@@ -93,7 +93,7 @@ export function validateProfileName(input: string, checkForDuplicates: boolean =
         return Messages.ENTER_A_VALID_STRING;
     }
     if (checkForDuplicates) {
-        let existingProfile = getProfile(input);
+        let existingProfile = getVscProfile(input);
         if (existingProfile) {
             return `Oops! Profile with the same name '${input}' already exists!`;
         }
@@ -126,7 +126,14 @@ export function trimProperties(profile: Profile): Profile {
     };
 }
 
-export function hasSameNameAndEmail(profile1: any, profile2: any): boolean {
+export function hasSameNameAndEmail(
+    profile1: { email: string, userName: string },
+    profile2: { email: string, userName: string },
+): boolean {
     return profile1.email.toLowerCase() === profile2.email.toLowerCase()
         && profile1.userName.toLowerCase() === profile2.userName.toLowerCase();
+}
+
+export function isNameAndEmailEmpty(profile: { email: string, userName: string }): boolean {
+    return !(profile.email || profile.userName);
 }

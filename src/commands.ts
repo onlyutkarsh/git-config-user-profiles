@@ -1,6 +1,6 @@
 import * as sgit from "simple-git/promise";
 import { commands, window, workspace } from "vscode";
-import { getProfiles, saveProfile } from "./config";
+import { getVscProfiles, saveVscProfile } from "./config";
 import {
     isValidWorkspace,
     validateEmail,
@@ -9,6 +9,7 @@ import {
     getCurrentGitConfig,
     trimLabelIcons,
     hasSameNameAndEmail,
+    isNameAndEmailEmpty,
 } from "./util";
 import * as Constants from "./constants";
 import { MultiStepInput, State } from "./controls";
@@ -26,7 +27,7 @@ export async function createUserProfile() {
         selected: false,
     };
 
-    await saveProfile(profile);
+    await saveVscProfile(profile);
 }
 
 function shouldResume() {
@@ -86,7 +87,7 @@ async function pickEmail(input: MultiStepInput, state: Partial<State>, create: b
  */
 export async function getUserProfile(fromStatusBar: boolean = false, notProfileSwitch: boolean = true): Promise<Profile> {
     Logger.instance.logInfo(`Getting user profiles. Triggerred from status bar = ${fromStatusBar}`);
-    let profilesInVscConfig = getProfiles();
+    let profilesInVscConfig = getVscProfiles();
     let emptyProfile = <Profile>{
         label: Constants.Application.APPLICATION_NAME,
         selected: false,
@@ -108,7 +109,8 @@ export async function getUserProfile(fromStatusBar: boolean = false, notProfileS
     let configInSync = false;
     if (validatedWorkspace.isValid && validatedWorkspace.folder) {
         let currentGitConfig = await getCurrentGitConfig(validatedWorkspace.folder);
-        configInSync = hasSameNameAndEmail(currentGitConfig, selectedVscProfile);
+        configInSync = !isNameAndEmailEmpty(currentGitConfig)
+            && hasSameNameAndEmail(currentGitConfig, selectedVscProfile);
     }
 
     if (!fromStatusBar) {
@@ -207,7 +209,7 @@ export async function getUserProfile(fromStatusBar: boolean = false, notProfileS
                 pickedProfile.detail = undefined;
                 pickedProfile.label = pickedProfile.label;
                 pickedProfile.selected = true;
-                await saveProfile(Object.assign({}, pickedProfile));
+                await saveVscProfile(Object.assign({}, pickedProfile));
                 let selectedProfile = await getUserProfile(true, false); //dont show popup if user is switching profile
                 return selectedProfile;
             } else {
@@ -224,7 +226,7 @@ export async function getUserProfile(fromStatusBar: boolean = false, notProfileS
 }
 
 export async function editUserProfile() {
-    let profilesInConfig = getProfiles();
+    let profilesInConfig = getVscProfiles();
 
     if (profilesInConfig.length === 0) {
         window.showWarningMessage("No profiles found");
@@ -266,7 +268,72 @@ export async function editUserProfile() {
             selected: pickedProfile.selected,
         };
 
-        await saveProfile(profile, pickedProfile.label);
+        await saveVscProfile(profile, pickedProfile.label);
     }
     return undefined;
+}
+
+/**
+ * Read local git `config` and update the profiles in VSC config. If git config profile exists,
+ * only the corresponding profile in VSC config would be set `selected = true`. If git config profile
+ * doesn't have corresponding profile in VSC config, then it would be added.
+ * @returns local git config profile if exists, otherwise an object with `userName` and `email` are empty string.
+ */
+export async function syncVscProfilesWithGitConfig(): Promise<void> {
+
+    console.log("there");
+    // check if is valid git workspace
+    const validatedWorkspace = await isValidWorkspace();
+    if (!(validatedWorkspace.isValid && validatedWorkspace.folder)) {
+        // window.showWarningMessage(Constants.Messages.NOT_A_VALID_REPO);
+        return;
+    }
+
+    // get git config profile
+    let gitProfile: { userName: string; email: string };
+    gitProfile = await getCurrentGitConfig(validatedWorkspace.folder);
+
+    // return an empty object if no git profile found
+    if (isNameAndEmailEmpty(gitProfile)) {
+        // TODO ask user to create a local git config
+        // window.showInformationMessage(
+        //     "No local Git config file found. Do you want to create one now?",
+        //     "Yes",
+        //     "No",
+        // );
+        return;
+    }
+
+    // get all existing vsc profiles
+    const vscProfiles = getVscProfiles();
+
+    // set selected = false for all selected vsc profiles
+    await Promise.all(
+        vscProfiles.filter(vscProfile => vscProfile.selected)
+            .map(async vscProfile => {
+                vscProfile.selected = false;
+                await saveVscProfile(vscProfile, vscProfile.label);
+            })
+    );
+
+    // update corresponding vsc profile, if it exists, otherwise add it to vsc cofig
+    const correspondingVscProfile = vscProfiles
+        .filter(vscProfile => hasSameNameAndEmail(vscProfile, gitProfile));
+
+    if (correspondingVscProfile.length >= 1) {
+        // only select the first appearance
+        correspondingVscProfile[0].selected = true;
+        await saveVscProfile(correspondingVscProfile[0], correspondingVscProfile[0].label);
+
+    } else {
+        // add the git config profile to vsc config
+        const newProfile: Profile = {
+            label: trimLabelIcons(gitProfile.userName),
+            userName: gitProfile.userName,
+            email: gitProfile.email,
+            selected: true,
+            detail: `${gitProfile.userName} (${gitProfile.email}) `
+        };
+        await saveVscProfile(newProfile);
+    }
 }
