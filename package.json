@@ -25,6 +25,9 @@
     "engines": {
         "vscode": "^1.55.0"
     },
+    "extensionKind": [
+        "workspace"
+    ],
     "activationEvents": [
         "*"
     ],
@@ -38,6 +41,7 @@
         "esbuild": "npm run -S esbuild-base -- --sourcemap",
         "esbuild-watch": "npm run -S esbuild-base -- --sourcemap --watch",
         "compile": "tsc -p ./",
+        "dev": "npm run compile && npm run esbuild-watch",
         "package": "vsce package",
         "deploy": "vsce publish -p",
         "clean": "git clean -fdX",
@@ -88,6 +92,10 @@
             {
                 "command": "git-config-user-profiles.editUserProfile",
                 "title": "Git Config User Profiles: Edit a existing user profile"
+            },
+            {
+                "command": "git-config-user-profiles.syncVscProfilesWithGitConfig",
+                "title": "Git Config User Profiles: Synchronize VS code user profile with local git config"
             }
         ],
         "configuration": {

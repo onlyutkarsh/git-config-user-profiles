@@ -20,6 +20,7 @@ export async function activate(context: ExtensionContext) {
     Logger.instance.logInfo("Initializing commands");
     context.subscriptions.push(statusBar.instance.StatusBar);
     context.subscriptions.push(commands.registerCommand(constants.CommandIds.CREATE_USER_PROFILE, cmd.createUserProfile));
+    context.subscriptions.push(commands.registerCommand(constants.CommandIds.SYNC_VSC_PROFILES_WITH_GIT_CONFIG, cmd.syncVscProfilesWithGitConfig));
     context.subscriptions.push(commands.registerCommand(constants.CommandIds.EDIT_USER_PROFILE, cmd.editUserProfile));
     context.subscriptions.push(
       commands.registerCommand(constants.CommandIds.GET_USER_PROFILE, async (fromStatusBar = true) => {
@@ -27,7 +28,7 @@ export async function activate(context: ExtensionContext) {
         const validWorkspace = await util.isValidWorkspace();
         let configInSync = false;
         if (validWorkspace.isValid && validWorkspace.folder) {
-          const currentConfig = await util.getCurrentConfig(validWorkspace.folder);
+          const currentConfig = await util.getCurrentGitConfig(validWorkspace.folder);
           configInSync =
             currentConfig.email.toLowerCase() === selectedProfile.email.toLowerCase() && currentConfig.userName.toLowerCase() === selectedProfile.userName.toLowerCase();
         }
@@ -36,6 +37,7 @@ export async function activate(context: ExtensionContext) {
       })
     );
     Logger.instance.logInfo("Initializing commands complete.");
+    await commands.executeCommand(constants.CommandIds.SYNC_VSC_PROFILES_WITH_GIT_CONFIG);
     await commands.executeCommand(constants.CommandIds.GET_USER_PROFILE, false);
   } catch (error) {
     Logger.instance.logError("Error ocurred", error);

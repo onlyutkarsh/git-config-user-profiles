@@ -4,7 +4,7 @@ import { workspace } from "vscode";
 import { Messages } from "../constants";
 import { Profile } from "../models";
 import { Logger } from "../util";
-import { getProfile } from "./../config";
+import { getVscProfile } from "./../config";
 
 export async function isGitRepository(path: string): Promise<boolean> {
   try {
@@ -57,10 +57,10 @@ export function isEmpty(str: string | undefined | null) {
   return !str || 0 === str.length;
 }
 
-export async function getCurrentConfig(gitFolder: string): Promise<{ userName: string; email: string }> {
+export async function getCurrentGitConfig(gitFolder: string): Promise<{ userName: string; email: string }> {
   Logger.instance.logInfo(`Getting details from config file in ${gitFolder}`);
-  return await new Promise((resolve, reject) => {
-    gitconfig(gitFolder, (error, config) => {
+  return await new Promise((resolve) => {
+    gitconfig(gitFolder, (_, config) => {
       if (config.user && config.user.name && config.user.email) {
         const currentConfig = {
           userName: config.user.name,
@@ -93,7 +93,7 @@ export function validateProfileName(input: string, checkForDuplicates = true) {
     return Messages.ENTER_A_VALID_STRING;
   }
   if (checkForDuplicates) {
-    const existingProfile = getProfile(input);
+    const existingProfile = getVscProfile(input);
     if (existingProfile) {
       return `Oops! Profile with the same name '${input}' already exists!`;
     }
@@ -124,4 +124,12 @@ export function trimProperties(profile: Profile): Profile {
     selected: profile.selected,
     detail: undefined,
   };
+}
+
+export function hasSameNameAndEmail(profile1: { email: string; userName: string }, profile2: { email: string; userName: string }): boolean {
+  return profile1.email.toLowerCase() === profile2.email.toLowerCase() && profile1.userName.toLowerCase() === profile2.userName.toLowerCase();
+}
+
+export function isNameAndEmailEmpty(profile: { email: string; userName: string }): boolean {
+  return !(profile.email || profile.userName);
 }
