@@ -57,7 +57,7 @@ export function isEmpty(str: string | undefined | null) {
     return !str || 0 === str.length;
 }
 
-export async function getCurrentConfig(gitFolder: string): Promise<{ userName: string; email: string }> {
+export async function getCurrentGitConfig(gitFolder: string): Promise<{ userName: string; email: string }> {
     Logger.instance.logInfo(`Getting details from config file in ${gitFolder}`);
     return await new Promise((resolve, reject) => {
         gitconfig(gitFolder, (error, config) => {
@@ -124,4 +124,9 @@ export function trimProperties(profile: Profile): Profile {
         selected: profile.selected,
         detail: undefined
     };
+}
+
+export function hasSameNameAndEmail(profile1: any, profile2: any): boolean {
+    return profile1.email.toLowerCase() === profile2.email.toLowerCase()
+        && profile1.userName.toLowerCase() === profile2.userName.toLowerCase();
 }

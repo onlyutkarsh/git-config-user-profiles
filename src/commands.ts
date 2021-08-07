@@ -1,7 +1,15 @@
 import * as sgit from "simple-git/promise";
 import { commands, window, workspace } from "vscode";
 import { getProfiles, saveProfile } from "./config";
-import { isValidWorkspace, validateEmail, validateProfileName, validateUserName, getCurrentConfig, trimLabelIcons } from "./util";
+import {
+    isValidWorkspace,
+    validateEmail,
+    validateProfileName,
+    validateUserName,
+    getCurrentGitConfig,
+    trimLabelIcons,
+    hasSameNameAndEmail,
+} from "./util";
 import * as Constants from "./constants";
 import { MultiStepInput, State } from "./controls";
 import { Profile } from "./models";
@@ -69,9 +77,16 @@ async function pickEmail(input: MultiStepInput, state: Partial<State>, create: b
         ignoreFocusOut: true,
     });
 }
+
+/**
+ * Get current saved profile & Switch between profiles & Apply profile
+ * @description **The use of the parameters is just my personal assumption !** — *Shaokun-X*
+ * @param fromStatusBar if the function is called from sidebar or not
+ * @param notProfileSwitch when has selected profile and want to select new one
+ */
 export async function getUserProfile(fromStatusBar: boolean = false, notProfileSwitch: boolean = true): Promise<Profile> {
     Logger.instance.logInfo(`Getting user profiles. Triggerred from status bar = ${fromStatusBar}`);
-    let profilesInConfig = getProfiles();
+    let profilesInVscConfig = getProfiles();
     let emptyProfile = <Profile>{
         label: Constants.Application.APPLICATION_NAME,
         selected: false,
@@ -79,41 +94,41 @@ export async function getUserProfile(fromStatusBar: boolean = false, notProfileS
         userName: "NA",
     };
 
-    let selectedProfileFromConfig = profilesInConfig.filter(x => x.selected) || [];
-    let selectedProfile: Profile = selectedProfileFromConfig.length > 0 ? selectedProfileFromConfig[0] : emptyProfile;
+    let selectedProfileInVscConfig = profilesInVscConfig.filter(x => x.selected) || [];
+    let selectedVscProfile: Profile = selectedProfileInVscConfig.length > 0 ? selectedProfileInVscConfig[0] : emptyProfile;
 
     //TODO: Show error if the user deliberately deletes the username or email property from config
-    if (selectedProfile.label === undefined || selectedProfile.userName === undefined || selectedProfile.email === undefined) {
+    if (selectedVscProfile.label === undefined || selectedVscProfile.userName === undefined || selectedVscProfile.email === undefined) {
         window.showErrorMessage("One of label, userName or email properties is missing in the config. Please verify.");
         return emptyProfile;
     }
 
-    let validWorkspace = await isValidWorkspace();
+    let validatedWorkspace = await isValidWorkspace();
 
     let configInSync = false;
-    if (validWorkspace.isValid && validWorkspace.folder) {
-        let currentConfig = await getCurrentConfig(validWorkspace.folder);
-        configInSync = currentConfig.email.toLowerCase() === selectedProfile.email.toLowerCase() && currentConfig.userName.toLowerCase() === selectedProfile.userName.toLowerCase();
+    if (validatedWorkspace.isValid && validatedWorkspace.folder) {
+        let currentGitConfig = await getCurrentGitConfig(validatedWorkspace.folder);
+        configInSync = hasSameNameAndEmail(currentGitConfig, selectedVscProfile);
     }
 
     if (!fromStatusBar) {
-        if (profilesInConfig.length === 0) {
+        if (profilesInVscConfig.length === 0) {
             //if profile loaded automatically and no config found
             //OR if no config found and user clicks on "no profile" on status bar, send undefined to show picklist
             return emptyProfile;
         }
 
-        if (validWorkspace.isValid === false) {
+        if (validatedWorkspace.isValid === false) {
             return emptyProfile;
         }
 
         //if configs found, but none are selected, if from statusbar show picklist else silent
         //if multiple items have selected = true (due to manual change) return the first one
-        return selectedProfile;
+        return selectedVscProfile;
     }
 
     if (fromStatusBar) {
-        if (profilesInConfig.length === 0) {
+        if (profilesInVscConfig.length === 0) {
             //if no profiles in config, prompt user to create (even if its non git workspace)
             let selected = await window.showInformationMessage("No user profiles defined. Do you want to define one now?", "Yes", "No");
             if (selected === "Yes") {
@@ -124,14 +139,14 @@ export async function getUserProfile(fromStatusBar: boolean = false, notProfileS
 
         let response;
 
-        if (validWorkspace.isValid === false) {
-            window.showErrorMessage(validWorkspace.message);
+        if (validatedWorkspace.isValid === false) {
+            window.showErrorMessage(validatedWorkspace.message);
             return emptyProfile;
         }
-        let workspaceFolder = validWorkspace.folder ? validWorkspace.folder : ".\\";
-        if (selectedProfileFromConfig.length === 0) {
+        let workspaceFolder = validatedWorkspace.folder ? validatedWorkspace.folder : ".\\";
+        if (selectedProfileInVscConfig.length === 0) {
             response = await window.showInformationMessage(
-                `You have ${profilesInConfig.length} profile(s) in settings. What do you want to do?`,
+                `You have ${profilesInVscConfig.length} profile(s) in settings. What do you want to do?`,
                 "Pick a profile",
                 "Edit existing",
                 "Create new"
@@ -142,37 +157,36 @@ export async function getUserProfile(fromStatusBar: boolean = false, notProfileS
 
             let options = configInSync ? syncOptions : notSyncOptions;
             let message = configInSync
-                ? `Git config is already in sync with profile '${trimLabelIcons(selectedProfile.label)}'. What do you want to do?`
-                : `Git config is not using this profile. Do you want to use profile '${trimLabelIcons(selectedProfile.label)}' for this repo? (user: ${
-                selectedProfile.userName
-                }, email: ${selectedProfile.email}) `;
+                ? `Git config is already in sync with profile '${trimLabelIcons(selectedVscProfile.label)}'. What do you want to do?`
+                : `Git config is not using this profile. Do you want to use profile '${trimLabelIcons(selectedVscProfile.label)}' for this repo? (user: ${selectedVscProfile.userName
+                }, email: ${selectedVscProfile.email}) `;
 
             response = await window.showInformationMessage(message, ...options);
         }
 
         if (response === undefined) {
-            return selectedProfile;
+            return selectedVscProfile;
         }
         if (response === "Edit existing") {
             await editUserProfile();
-            return selectedProfile;
+            return selectedVscProfile;
         }
         if (response === "Yes, apply" || response === "Apply again") {
             //no chance of getting undefined value here as validWorkSpace.result will always be true
-            await sgit(workspaceFolder).addConfig("user.name", selectedProfile.userName);
-            await sgit(workspaceFolder).addConfig("user.email", selectedProfile.email);
+            await sgit(workspaceFolder).addConfig("user.name", selectedVscProfile.userName);
+            await sgit(workspaceFolder).addConfig("user.email", selectedVscProfile.email);
             window.showInformationMessage("User name and email updated in git config file.");
-            return selectedProfile;
+            return selectedVscProfile;
         }
         if (response === "Create new") {
             await createUserProfile();
-            return selectedProfile;
+            return selectedVscProfile;
         }
         if (response === "No, pick another" || response === "Pick a profile") {
             //show picklist only if no profile is marked as selected in config.
             //this can happen only when setting up config for the first time or user deliberately changed config
             let pickedProfile = await window.showQuickPick<Profile>(
-                profilesInConfig.map(x => {
+                profilesInVscConfig.map(x => {
                     return {
                         label: x.label,
                         userName: x.userName,
@@ -200,8 +214,8 @@ export async function getUserProfile(fromStatusBar: boolean = false, notProfileS
                 // profile is already set in the statusbar,
                 // user clicks statusbar, picklist is shown to switch profiles, but user does not pick anything
                 // leave selected as is
-                if (selectedProfileFromConfig.length > 0 && fromStatusBar) {
-                    return selectedProfile;
+                if (selectedProfileInVscConfig.length > 0 && fromStatusBar) {
+                    return selectedVscProfile;
                 }
             }
         }

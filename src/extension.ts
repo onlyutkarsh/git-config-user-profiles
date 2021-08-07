@@ -3,7 +3,7 @@ import { createUserProfile, editUserProfile, getUserProfile } from "./commands";
 import { Profile } from "./models";
 import { ProfileStatusBar as statusBar } from "./controls";
 import * as constants from "./constants";
-import { getCurrentConfig, isValidWorkspace } from "./util";
+import { getCurrentGitConfig, isValidWorkspace } from "./util";
 import { Logger } from "./util/logger";
 
 export async function activate(context: ExtensionContext) {
@@ -31,7 +31,7 @@ export async function activate(context: ExtensionContext) {
                 let validWorkspace = await isValidWorkspace();
                 let configInSync = false;
                 if (validWorkspace.isValid && validWorkspace.folder) {
-                    let currentConfig = await getCurrentConfig(validWorkspace.folder);
+                    let currentConfig = await getCurrentGitConfig(validWorkspace.folder);
                     configInSync =
                         currentConfig.email.toLowerCase() === selectedProfile.email.toLowerCase() &&
                         currentConfig.userName.toLowerCase() === selectedProfile.userName.toLowerCase();
@@ -47,4 +47,4 @@ export async function activate(context: ExtensionContext) {
     }
 }
 
-export function deactivate() {}
+export function deactivate() { }
