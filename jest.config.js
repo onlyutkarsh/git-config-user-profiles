@@ -1,5 +1,4 @@
 module.exports = {
-	roots: ['./test'],
 	transform: {
 		'^.+\\.ts$': 'ts-jest',
 	},
@@ -7,7 +6,7 @@ module.exports = {
 	moduleFileExtensions: ['ts', 'js'],
 	globals: {
 		'ts-jest': {
-			tsconfig: 'test/tsconfig.json'
+			tsconfig: '<rootDir>/test/tsconfig.json'
 		}
 	},
 	collectCoverageFrom: [
