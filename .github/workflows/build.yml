@@ -34,10 +34,18 @@ jobs:
         with:
           node-version: "12.x"
 
-      - name: clean install dependencies
-        run: npm ci
+      - name: 💎 install cached dependencies
+        uses: actions/cache@v2
+        with:
+          path: ~/.npm
+          key: ${{ runner.os }}-node-${{ hashFiles('**/package-lock.json') }}
+          restore-keys: |
+            ${{ runner.os }}-node-
 
-      - name: update metadata in package.json
+      - name: 🚧 install dependencies
+        run: npm install
+
+      - name: 🛠 update metadata in package.json
         uses: onlyutkarsh/patch-files-action@v1.0.1
         with:
           files: "${{github.workspace}}/package.json"
@@ -46,19 +54,19 @@ jobs:
             = /displayName => "Git Config User Profiles"
             = /description => "Define multiple git config user profiles and switch them easily using status bar"
 
-      - name: compile extension
+      - name: ⛑ compile extension
         run: |
           npm run compile
 
-      - name: run tests
+      - name: 🧪 run tests
         run: |
           npm run test
 
-      - name: update CHANGELOG.md
+      - name: 📝 update CHANGELOG.md
         run: |
           npm run update-changelog
 
-      - name: compile and create vsix
+      - name: 📦 compile and create vsix
         run: npm run package
 
       - name: set vsix path as environment variable
@@ -71,7 +79,7 @@ jobs:
         run: |
           echo "VSIX Path: ${{ steps.vsix.outputs.vsix_path }}"
 
-      - name: upload vsix as artifact of build
+      - name: 🏁 upload vsix as artifact of build
         uses: actions/upload-artifact@v1
         with:
           name: ${{steps.vsix.outputs.vsix_name}}
