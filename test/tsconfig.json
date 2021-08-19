@@ -1,0 +1,23 @@
+{
+    "compilerOptions": {
+        "declaration": true,
+        "lib": [
+            "es6"
+        ],
+        "module": "commonjs",
+        "noFallthroughCasesInSwitch": true,
+        "noImplicitAny": true,
+        "noUnusedLocals": true,
+        "noUnusedParameters": true,
+        "removeComments": true,
+        "sourceMap": true,
+        "strict": true,
+        "target": "es6",
+        "types": [
+            "jest",
+            "node",
+            "vscode",
+            "../src/utils/@types/node"
+        ]
+    }
+}
