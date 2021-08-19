@@ -1,0 +1,110 @@
+name: "CI"
+
+on:
+  workflow_dispatch:
+    inputs:
+      action:
+        description: Trigger build
+        required: true
+        default: "ci"
+  pull_request:
+  push:
+    branches:
+      - feature/** # match an pushes on feature/* and feature/<any sub branch>/*
+      - master
+    paths-ignore: # dont run when changes made to these folders
+      - .vscode/**
+      - images/**
+
+jobs:
+  ci:
+    runs-on: ubuntu-latest
+    steps:
+      - name: checkout repo with all histrory and tags
+        uses: actions/checkout@v2
+        with:
+          fetch-depth: 0
+
+      - name: Set VERSION variable to 1.0.${{ github.run_number }}
+        run: |
+          echo "VERSION=1.0.${{ github.run_number }}" >> $GITHUB_ENV
+
+      - name: setup node
+        uses: actions/setup-node@v1
+        with:
+          node-version: "12.x"
+
+      - name: 💎 install cached dependencies
+        uses: actions/cache@v2
+        with:
+          path: ~/.npm
+          key: ${{ runner.os }}-node-${{ hashFiles('**/package-lock.json') }}
+          restore-keys: |
+            ${{ runner.os }}-node-
+
+      - name: 🚧 install dependencies
+        run: npm install
+
+      - name: 🛠 update metadata in package.json
+        uses: onlyutkarsh/patch-files-action@v1.0.1
+        with:
+          files: "${{github.workspace}}/package.json"
+          patch-syntax: |
+            = /version => "${{ env.VERSION }}"
+            = /displayName => "Git Config User Profiles"
+            = /description => "Define multiple git config user profiles and switch them easily using status bar"
+
+      - name: ⛑ compile extension
+        run: |
+          npm run compile
+
+      - name: 🧪 run tests
+        run: |
+          npm run test-ci
+
+      - name: upload jest test results
+        uses: actions/upload-artifact@v2 # upload test results
+        if: success() || failure() # run this step even if previous step failed
+        with:
+          name: test-results
+          path: ${{github.workspace}}/test/reports/jest-junit.xml
+
+      - name: 📝 update CHANGELOG.md
+        run: |
+          npm run update-changelog
+
+      - name: 📦 compile and create vsix
+        run: npm run package
+
+      - name: set vsix path as environment variable
+        id: vsix
+        run: |
+          echo "::set-output name=vsix_name::git-config-user-profiles-${{ env.VERSION }}.vsix"
+          echo "::set-output name=vsix_path::${{github.workspace}}/git-config-user-profiles-${{ env.VERSION }}.vsix"
+
+      - name: print vsix path
+        run: |
+          echo "VSIX Path: ${{ steps.vsix.outputs.vsix_path }}"
+
+      - name: 🏁 upload vsix as artifact of build
+        uses: actions/upload-artifact@v1
+        with:
+          name: ${{steps.vsix.outputs.vsix_name}}
+          path: ${{github.workspace}}/git-config-user-profiles-${{ env.VERSION }}.vsix
+
+    outputs:
+      vsix-version: ${{  env.VERSION  }}
+      vsix-path: "${{ steps.vsix.outputs.vsix_path }}"
+
+  cd:
+    runs-on: windows-latest
+    needs: ci
+    steps:
+      - name: download artifact
+        uses: actions/download-artifact@v2
+        with:
+          name: ${{ needs.ci.outputs.vsix_name}}
+          path: ${{ github.workspace }}/vsix
+
+      - name: display structure of downloaded artifacts
+        run: ls -R ${{ github.workspace }}/vsix

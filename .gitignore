@@ -1,9 +1,9 @@
-out
+out/
 node_modules
 .vscode-test/
 *.vsix
-dist/
-
+test/**/*.js*
+test/**/reports/
 # Logs
 logs
 *.log

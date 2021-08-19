@@ -1,0 +1,6 @@
+.eslintrc
+webpack.*.js
+**/.gitignore
+**/.spellignore
+tsconfig.json
+.vscode/**/*
