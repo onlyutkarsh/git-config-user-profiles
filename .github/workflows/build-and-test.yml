@@ -61,15 +61,13 @@ jobs:
       - name: 🧪 run tests
         run: |
           npm run test-ci
-        env:
-          TEST_REPORT_FILENAME: jest-junit.xml
 
       - name: upload jest test results
         uses: actions/upload-artifact@v2 # upload test results
         if: success() || failure() # run this step even if previous step failed
         with:
           name: test-results
-          path: jest-junit.xml
+          path: ${{github.workspace}}/test/reports/jest-junit.xml
 
       - name: 📝 update CHANGELOG.md
         run: |
