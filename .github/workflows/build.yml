@@ -27,11 +27,7 @@ jobs:
 
       - name: Set VERSION variable to 1.0.${{ github.run_number }}
         run: |
-          run: echo "VERSION=1.0.${{ github.run_number }}" >> $GITHUB_ENV
-
-      - name: print version
-        run: |
-          echo "${env.VERSION}"
+          echo "VERSION=1.0.${{ github.run_number }}" >> $GITHUB_ENV
 
       - name: setup node
         uses: actions/setup-node@v1
