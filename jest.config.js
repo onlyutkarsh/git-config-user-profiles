@@ -13,12 +13,17 @@ module.exports = {
 		}
 	},
 	reporters: [
+		'default',
 		[
-			'default',
 			'jest-junit', 
 			{
-				savePath: '<rootDir>/test/reports/junit',
-				outputName: "jest-junit.xml"
+				outputDirectory: '<rootDir>/test/reports/junit',
+				outputName: "jest-junit.xml",
+				ancestorSeparator: ' > ',
+				uniqueOutputName: false,
+				suiteNameTemplate: '{filepath}',
+				classNameTemplate: '{classname}',
+				titleTemplate: '{title}'
 			}
 		]
 	],
