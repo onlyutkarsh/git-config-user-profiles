@@ -1,7 +1,7 @@
 name: "test report"
 on:
   workflow_run:
-    workflows: ["build"] # runs after 'build' workflow
+    workflows: ["CI"] # runs after 'build' workflow
     types:
       - completed
 jobs:
