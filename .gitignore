@@ -3,8 +3,7 @@ node_modules
 .vscode-test/
 *.vsix
 test/**/*.js*
-junit.xml
-
+test/**/reports/
 # Logs
 logs
 *.log

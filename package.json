@@ -52,6 +52,15 @@
         "test": "jest --verbose",
         "test-ci": "jest --coverage --reporters=jest-junit"
     },
+    "jest-junit": {
+        "outputDirectory": "<rootDir>/test/reports",
+        "outputName": "jest-junit.xml",
+        "ancestorSeparator": " › ",
+        "uniqueOutputName": "false",
+        "suiteNameTemplate": "{filepath}",
+        "classNameTemplate": "{classname}",
+        "titleTemplate": "{title}"
+    },
     "devDependencies": {
         "@types/fs-extra": "^9.0.12",
         "@types/gitconfiglocal": "^2.0.1",
@@ -69,6 +78,7 @@
         "glob": "^7.1.7",
         "jest": "^27.0.6",
         "jest-junit": "^12.2.0",
+        "jest-standard-reporter": "^2.0.0",
         "mocha-explorer-launcher-scripts": "^0.3.0",
         "prettier": "^2.3.2",
         "rimraf": "^3.0.2",

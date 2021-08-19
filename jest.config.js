@@ -12,20 +12,12 @@ module.exports = {
 			tsconfig: '<rootDir>/test/tsconfig.json'
 		}
 	},
+	collectCoverage: true,
+    coverageDirectory: 'coverage',
+    coverageReporters: ['json', 'text', 'lcov', 'clover'],
 	reporters: [
-		'default',
-		[
-			'jest-junit', 
-			{
-				outputDirectory: '<rootDir>/test/reports/junit',
-				outputName: "jest-junit.xml",
-				ancestorSeparator: ' > ',
-				uniqueOutputName: false,
-				suiteNameTemplate: '{filepath}',
-				classNameTemplate: '{classname}',
-				titleTemplate: '{title}'
-			}
-		]
+		'default', 
+		'jest-junit'
 	],
 	collectCoverageFrom: [
 		// This option requires collectCoverage to be set to true or Jest to be invoked with --coverage
