@@ -49,7 +49,8 @@
         "update-changelog": "auto-changelog -p",
         "test-base": "rimraf out/test && esbuild ./test/*/** --outdir=out/test/ --format=cjs --platform=node",
         "test-watch": "npm run -S test-base -- --sourcemap --watch",
-        "test": "jest --verbose"
+        "test": "jest --verbose",
+        "test-with-coverage": "jest --verbose --coverage"
     },
     "devDependencies": {
         "@types/fs-extra": "^9.0.12",
