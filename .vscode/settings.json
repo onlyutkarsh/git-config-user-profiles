@@ -21,15 +21,5 @@
     "editor.codeActionsOnSave": {
         "source.fixAll.eslint": true,
         "source.organizeImports": true
-    },
-    "mochaExplorer.files": "out/test/*.test.js",
-    "mochaExplorer.ui": "tdd",
-    "mochaExplorer.launcherScript": "node_modules/mocha-explorer-launcher-scripts/vscode-test",
-    "mochaExplorer.autoload": false,
-    "mochaExplorer.ipcRole": "server",
-    "mochaExplorer.ipcTimeout": 5000,
-    "mochaExplorer.env": {
-        "VSCODE_VERSION": "insiders",
-        "ELECTRON_RUN_AS_NODE": null
     }
 }

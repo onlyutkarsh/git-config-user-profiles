@@ -60,7 +60,7 @@ jobs:
 
       - name: 🧪 run tests
         run: |
-          npm run test-with-coverage
+          npm run test-ci
 
       - name: upload jest test results
         uses: actions/upload-artifact@v2 # upload test results

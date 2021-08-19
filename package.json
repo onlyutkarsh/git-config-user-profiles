@@ -50,7 +50,7 @@
         "test-base": "rimraf out/test && esbuild ./test/*/** --outdir=out/test/ --format=cjs --platform=node",
         "test-watch": "npm run -S test-base -- --sourcemap --watch",
         "test": "jest --verbose",
-        "test-with-coverage": "jest --verbose --coverage"
+        "test-ci": "jest --coverage --reporters=jest-junit"
     },
     "devDependencies": {
         "@types/fs-extra": "^9.0.12",
@@ -68,6 +68,7 @@
         "fs-extra": "^10.0.0",
         "glob": "^7.1.7",
         "jest": "^27.0.6",
+        "jest-junit": "^12.2.0",
         "mocha-explorer-launcher-scripts": "^0.3.0",
         "prettier": "^2.3.2",
         "rimraf": "^3.0.2",
