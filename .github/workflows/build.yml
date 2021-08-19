@@ -20,28 +20,18 @@ jobs:
   ci:
     runs-on: windows-latest
     steps:
-      - name: checkout repo
+      - name: checkout repo with all histrory and tags
         uses: actions/checkout@v2
-
-      - name: fetch all history and tags from all branches for gitversion
-        run: git fetch --prune --unshallow
-
-      - name: install gitversion tool
-        uses: gittools/actions/gitversion/setup@v0.9.7
         with:
-          versionSpec: "5.x"
+          fetch-depth: 0
 
-      - name: execute gitversion
-        id: gitversion # step id used as reference for output values
-        uses: gittools/actions/gitversion/execute@v0.9.7
-
-      - name: print gitversion
+      - name: Set VERSION variable to 1.0.${{ github.run_number }}
         run: |
-          echo "Major: ${{ steps.gitversion.outputs.major }}"
-          echo "Minor: ${{ steps.gitversion.outputs.minor }}"
-          echo "Patch: ${{ steps.gitversion.outputs.patch }}"
-          echo "MajorMinorPatch: ${{ steps.gitversion.outputs.majorMinorPatch }}"
-          echo "SemVer: ${{ steps.gitversion.outputs.semVer }}"
+          run: echo "VERSION=1.0.${{ github.run_number }}" >> $GITHUB_ENV
+
+      - name: print version
+        run: |
+          echo "${env.VERSION}"
 
       - name: setup node
         uses: actions/setup-node@v1
@@ -56,9 +46,17 @@ jobs:
         with:
           files: "${{github.workspace}}/package.json"
           patch-syntax: |
-            = /version => "${{ steps.gitversion.outputs.semVer }}"
+            = /version => "${{ env.VERSION }}"
             = /displayName => "Git Config User Profiles"
             = /description => "Define multiple git config user profiles and switch them easily using status bar"
+
+      - name: compile extension
+        run: |
+          npm run compile
+
+      - name: run tests
+        run: |
+          npm run test
 
       - name: update CHANGELOG.md
         run: |
@@ -70,8 +68,8 @@ jobs:
       - name: set vsix path as environment variable
         id: vsix
         run: |
-          echo "::set-output name=vsix_name::git-config-user-profiles-${{steps.gitversion.outputs.semVer}}.vsix"
-          echo "::set-output name=vsix_path::${{github.workspace}}/git-config-user-profiles-${{steps.gitversion.outputs.semVer}}.vsix"
+          echo "::set-output name=vsix_name::git-config-user-profiles-${{ env.VERSION }}.vsix"
+          echo "::set-output name=vsix_path::${{github.workspace}}/git-config-user-profiles-${{ env.VERSION }}.vsix"
 
       - name: print vsix path
         run: |
@@ -81,10 +79,10 @@ jobs:
         uses: actions/upload-artifact@v1
         with:
           name: ${{steps.vsix.outputs.vsix_name}}
-          path: ${{github.workspace}}/git-config-user-profiles-${{steps.gitversion.outputs.semVer}}.vsix
+          path: ${{github.workspace}}/git-config-user-profiles-${{ env.VERSION }}.vsix
 
     outputs:
-      vsix-version: ${{ steps.gitversion.outputs.semVer }}
+      vsix-version: ${{  env.VERSION  }}
       vsix-path: "${{ steps.vsix.outputs.vsix_path }}"
 
   cd:
