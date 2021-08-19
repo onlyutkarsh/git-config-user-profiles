@@ -61,6 +61,8 @@ jobs:
       - name: 🧪 run tests
         run: |
           npm run test-ci
+        env:
+          TEST_REPORT_FILENAME: jest-junit.xml
 
       - name: upload jest test results
         uses: actions/upload-artifact@v2 # upload test results
