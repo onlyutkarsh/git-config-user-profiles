@@ -52,34 +52,33 @@
         "test": "jest --verbose"
     },
     "devDependencies": {
-        "@types/chai": "^4.2.17",
-        "@types/fs-extra": "^9.0.11",
-        "@types/gitconfiglocal": "^2.0.0",
-        "@types/glob": "^7.1.3",
+        "@types/fs-extra": "^9.0.12",
+        "@types/gitconfiglocal": "^2.0.1",
+        "@types/glob": "^7.1.4",
         "@types/jest": "^27.0.1",
         "@types/node": "~12.12.70",
         "@types/vscode": "^1.55.0",
-        "@typescript-eslint/eslint-plugin": "^4.22.0",
+        "@typescript-eslint/eslint-plugin": "^4.29.2",
         "@typescript-eslint/parser": "^4.22.0",
-        "auto-changelog": "^2.2.1",
+        "auto-changelog": "^2.3.0",
         "chai": "^4.3.4",
-        "esbuild": "^0.11.16",
-        "eslint": "^7.25.0",
-        "fs-extra": "^9.1.0",
-        "glob": "^7.1.6",
+        "esbuild": "^0.12.21",
+        "eslint": "^7.32.0",
+        "fs-extra": "^10.0.0",
+        "glob": "^7.1.7",
         "jest": "^27.0.6",
         "mocha-explorer-launcher-scripts": "^0.3.0",
-        "prettier": "^2.2.1",
+        "prettier": "^2.3.2",
         "rimraf": "^3.0.2",
         "source-map-support": "^0.5.19",
         "ts-jest": "^27.0.5",
         "typescript": "~4.3.5",
-        "vsce": "~1.88.0",
-        "vscode-test": "^1.5.2"
+        "vsce": "~1.96.1",
+        "vscode-test": "^1.6.1"
     },
     "dependencies": {
         "gitconfiglocal": "^2.1.0",
-        "simple-git": "~2.15.0"
+        "simple-git": "~2.44.0"
     },
     "contributes": {
         "commands": [
