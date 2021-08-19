@@ -271,7 +271,6 @@ export async function editUserProfile() {
  * @returns local git config profile if exists, otherwise an object with `userName` and `email` are empty string.
  */
 export async function syncVscProfilesWithGitConfig(): Promise<void> {
-  console.log("there");
   // check if is valid git workspace
   const validatedWorkspace = await util.isValidWorkspace();
   if (!(validatedWorkspace.isValid && validatedWorkspace.folder)) {
@@ -285,12 +284,12 @@ export async function syncVscProfilesWithGitConfig(): Promise<void> {
 
   // return an empty object if no git profile found
   if (util.isNameAndEmailEmpty(gitProfile)) {
-    // TODO ask user to create a local git config
-    // window.showInformationMessage(
-    //     "No local Git config file found. Do you want to create one now?",
-    //     "Yes",
-    //     "No",
-    // );
+    //TODO: ask user to create a local git config
+    const response = await window.showInformationMessage("No local Git config file found. Do you want to create one now?", "Yes", "No");
+    if (response == undefined || response == "No") {
+      return;
+    }
+    await createUserProfile();
     return;
   }
 
