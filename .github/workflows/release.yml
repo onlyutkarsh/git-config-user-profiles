@@ -1,0 +1,78 @@
+name: release
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        required: true
+        description: Version to bump `package.json` to
+
+jobs:
+  ci:
+    runs-on: ubuntu-latest
+    steps:
+      - name: checkout repo with all histrory and tags
+        uses: actions/checkout@v2
+
+      - run: |
+          git config --global user.email "onlyutkarsh@users.noreply.github.com"
+          git config --global user.name "Utkarsh Shigihalli"
+
+      - name: setup node
+        uses: actions/setup-node@v1
+        with:
+          node-version: "12.x"
+
+      - name: 📍 set version in package.json
+        run: npm version ${{ github.event.inputs.version }}
+
+      - name: 💎 install cached dependencies
+        uses: actions/cache@v2
+        with:
+          path: ~/.npm
+          key: ${{ runner.os }}-node-${{ hashFiles('**/package-lock.json') }}
+          restore-keys: |
+            ${{ runner.os }}-node-
+
+      - name: 🚧 install dependencies
+        run: npm install
+
+      - name: 📝 update CHANGELOG.md
+        run: |
+          npm run update-changelog
+
+      - name: 📦 compile and create vsix
+        run: npm run package
+
+      - name: create release
+        id: create_release
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: "release-v${{ github.event.inputs.version }}"
+          release_name: "v${{ github.event.inputs.version }}"
+          draft: false
+          prerelease: false
+
+      - name: upload release asset
+        id: upload-release-asset
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: ./git-config-user-profiles-${{ github.event.inputs.version }}.vsix
+          asset_name: git-config-user-profiles-${{ github.event.inputs.version }}.vsix
+          asset_content_type: application/vsix
+
+      - name: publish to marketplace
+        uses: HaaLeo/publish-vscode-extension@v0
+        with:
+          pat: ${{ secrets.VS_MARKETPLACE_PAT }}
+          registryUrl: https://marketplace.visualstudio.com
+          extensionFile: ./git-config-user-profiles-${{ github.event.inputs.version }}.vsix
+          packagePath: ""
+
+      - name: 🎉 publish changes to github
+        run: git push
