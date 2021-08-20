@@ -23,7 +23,7 @@ jobs:
         with:
           node-version: "12.x"
 
-      - name: 📍 set version in package.json
+      - name: 📍 set version ${{ github.event.inputs.version }} in package.json
         run: npm version ${{ github.event.inputs.version }}
 
       - name: 💎 install cached dependencies
