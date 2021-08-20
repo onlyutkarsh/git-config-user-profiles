@@ -11,7 +11,7 @@ on:
   push:
     branches:
       - feature/** # match an pushes on feature/* and feature/<any sub branch>/*
-      - master
+      - main
     paths-ignore: # dont run when changes made to these folders
       - .vscode/**
       - images/**
