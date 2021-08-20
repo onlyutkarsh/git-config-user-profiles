@@ -44,6 +44,14 @@ jobs:
       - name: 📦 compile and create vsix
         run: npm run package
 
+      - name: 🎉 publish to marketplace
+        uses: HaaLeo/publish-vscode-extension@v0
+        with:
+          pat: ${{ secrets.VS_MARKETPLACE_PAT }}
+          registryUrl: https://marketplace.visualstudio.com
+          extensionFile: ./git-config-user-profiles-${{ github.event.inputs.version }}.vsix
+          packagePath: ""
+
       - name: create release
         id: create_release
         uses: actions/create-release@v1
@@ -65,14 +73,6 @@ jobs:
           asset_path: ./git-config-user-profiles-${{ github.event.inputs.version }}.vsix
           asset_name: git-config-user-profiles-${{ github.event.inputs.version }}.vsix
           asset_content_type: application/vsix
-
-      - name: 🎉 publish to marketplace
-        uses: HaaLeo/publish-vscode-extension@v0
-        with:
-          pat: ${{ secrets.VS_MARKETPLACE_PAT }}
-          registryUrl: https://marketplace.visualstudio.com
-          extensionFile: ./git-config-user-profiles-${{ github.event.inputs.version }}.vsix
-          packagePath: ""
 
       - name: publish changes to github
         run: git push
