@@ -45,15 +45,6 @@ jobs:
       - name: 🚧 install dependencies
         run: npm install
 
-      - name: 🛠 update metadata in package.json
-        uses: onlyutkarsh/patch-files-action@v1.0.1
-        with:
-          files: "${{github.workspace}}/package.json"
-          patch-syntax: |
-            = /version => "${{ env.VERSION }}"
-            = /displayName => "Git Config User Profiles"
-            = /description => "Define multiple git config user profiles and switch them easily using status bar"
-
       - name: ⛑ compile extension
         run: |
           npm run compile

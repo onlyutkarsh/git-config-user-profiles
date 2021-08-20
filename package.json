@@ -46,7 +46,7 @@
         "package": "vsce package",
         "deploy": "vsce publish -p",
         "clean": "git clean -fdX",
-        "update-changelog": "auto-changelog -p",
+        "update-changelog": "auto-changelog -p && git add CHANGELOG.md",
         "test-base": "rimraf out/test && esbuild ./test/*/** --outdir=out/test/ --format=cjs --platform=node",
         "test-watch": "npm run -S test-base -- --sourcemap --watch",
         "test": "jest --verbose",
