@@ -53,7 +53,16 @@ jobs:
         run: |
           npm run test-ci
 
-      - name: upload jest test results
+      - name: 📦 compile and create vsix
+        run: npm run package
+
+      - name: upload vsix as artifact build artifact
+        uses: actions/upload-artifact@v1
+        with:
+          name: vsix
+          path: dist/git-config-user-profiles-${{ env.VERSION }}.vsix
+
+      - name: upload jest test results as build artifact
         uses: actions/upload-artifact@v2 # upload test results
         if: success() || failure() # run this step even if previous step failed
         with:
