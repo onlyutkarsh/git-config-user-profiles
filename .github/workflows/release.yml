@@ -44,13 +44,6 @@ jobs:
 
       - name: relese-it
         run: npm run release
-        if: ${{ github.event.inputs.prerelease == false }}
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: relese-it prerelease
-        if: ${{ github.event.inputs.prerelease == true }}
-        run: npm run release -- --pre-release=beta
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
@@ -74,8 +67,8 @@ jobs:
         with:
           tag_name: "v${{ github.event.inputs.version }}"
           release_name: "v${{ github.event.inputs.version }}"
-          draft: false
-          prerelease: false
+          draft: ${{ github.event.inputs.version }}
+          prerelease: ${{ github.event.inputs.prerelease }}
 
       - name: upload release asset
         id: upload-release-asset
