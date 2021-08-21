@@ -63,7 +63,7 @@ jobs:
         with:
           pat: ${{ secrets.VS_MARKETPLACE_PAT }}
           registryUrl: https://marketplace.visualstudio.com
-          extensionFile: ./git-config-user-profiles-${{ github.event.inputs.version }}.vsix
+          extensionFile: ./git-config-user-profiles-*.vsix
           packagePath: ""
 
       # these two steps are required. Using release-it creates release prior to releasing it to marketplace.
