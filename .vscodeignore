@@ -1,6 +1,5 @@
 .vscode/**
 .vscode-test/**
-out/**
 src/**
 .gitignore
 vsc-extension-quickstart.md
@@ -17,3 +16,6 @@ marketplace/
 .eslintignore
 .spellignore
 .eslintrc.js
+jest.config.js
+coverage/
+test/

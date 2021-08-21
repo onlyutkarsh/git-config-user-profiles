@@ -23,6 +23,10 @@ jobs:
         with:
           node-version: "12.x"
 
+      - name: 📝 update CHANGELOG.md
+        run: |
+          npm run update-changelog
+
       - name: 📍 set version ${{ github.event.inputs.version }} in package.json
         run: npm version ${{ github.event.inputs.version }}
 
@@ -36,10 +40,6 @@ jobs:
 
       - name: 🚧 install dependencies
         run: npm install
-
-      - name: 📝 update CHANGELOG.md
-        run: |
-          npm run update-changelog
 
       - name: 📦 compile and create vsix
         run: npm run package
