@@ -63,7 +63,7 @@ jobs:
       - name: upload vsix as artifact build artifact
         uses: actions/upload-artifact@v1
         with:
-          name: ${{steps.vsix.outputs.vsix_name}}
+          name: git-config-user-profiles-${{ env.VERSION }}.vsix
           path: ${{github.workspace}}/git-config-user-profiles-${{ env.VERSION }}.vsix
 
       - name: upload jest test results as build artifact
