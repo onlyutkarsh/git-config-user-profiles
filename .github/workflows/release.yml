@@ -7,7 +7,7 @@ on:
         required: true
         description: Version to bump `package.json` to
       publishtovsm:
-        required: true
+        required: false
         description: publish to marketplace
         default: false
       prerelease:
