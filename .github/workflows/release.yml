@@ -23,13 +23,6 @@ jobs:
         with:
           node-version: "12.x"
 
-      - name: 📝 update CHANGELOG.md
-        run: |
-          npm run update-changelog
-
-      - name: 📍 set version ${{ github.event.inputs.version }} in package.json
-        run: npm version ${{ github.event.inputs.version }}
-
       - name: 💎 install cached dependencies
         uses: actions/cache@v2
         with:
@@ -40,6 +33,13 @@ jobs:
 
       - name: 🚧 install dependencies
         run: npm install
+
+      - name: 📝 update CHANGELOG.md
+        run: |
+          npm run update-changelog
+
+      - name: 📍 set version ${{ github.event.inputs.version }} in package.json
+        run: npm version ${{ github.event.inputs.version }}
 
       - name: 📦 compile and create vsix
         run: npm run package
