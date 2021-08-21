@@ -56,11 +56,15 @@ jobs:
       - name: 📦 compile and create vsix
         run: npm run package
 
+      - name: print vsix path
+        run: |
+          echo "VSIX Path: ${{github.workspace}}/git-config-user-profiles-${{ env.VERSION }}.vsix"
+
       - name: upload vsix as artifact build artifact
         uses: actions/upload-artifact@v1
         with:
-          name: vsix
-          path: dist/git-config-user-profiles-${{ env.VERSION }}.vsix
+          name: ${{steps.vsix.outputs.vsix_name}}
+          path: ${{github.workspace}}/git-config-user-profiles-${{ env.VERSION }}.vsix
 
       - name: upload jest test results as build artifact
         uses: actions/upload-artifact@v2 # upload test results
