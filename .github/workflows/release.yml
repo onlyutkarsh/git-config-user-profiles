@@ -34,17 +34,8 @@ jobs:
       - name: 🚧 install dependencies
         run: npm install
 
-      - name: 🛠 update metadata in package.json
-        uses: onlyutkarsh/patch-files-action@v1.0.1
-        with:
-          files: "${{github.workspace}}/package.json"
-          patch-syntax: |
-            = /version => "${{ github.event.inputs.version }}"
-            = /displayName => "Git Config User Profiles"
-            = /description => "Define multiple git config user profiles and switch them easily using status bar"
-
       - name: 📍 set version ${{ github.event.inputs.version }} in package.json
-        run: npm version
+        run: npm version ${{ github.event.inputs.version }}
 
       - name: 📦 compile and create vsix
         run: npm run package

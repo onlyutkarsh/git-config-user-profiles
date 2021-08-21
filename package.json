@@ -2,7 +2,7 @@
     "name": "git-config-user-profiles",
     "displayName": "Git Config User Profiles",
     "description": "Define multiple git config user profiles and switch them easily using status bar",
-    "version": "1.1.1",
+    "version": "1.1.2",
     "publisher": "onlyutkarsh",
     "author": "Utkarsh Shigihalli",
     "repository": {
@@ -55,7 +55,8 @@
         "test-base": "rimraf out/test && esbuild ./test/*/** --outdir=out/test/ --format=cjs --platform=node",
         "test-watch": "npm run -S test-base -- --sourcemap --watch",
         "test": "jest --verbose",
-        "test-ci": "jest --coverage --reporters=jest-junit"
+        "test-ci": "jest --coverage --reporters=jest-junit",
+        "release": "release-it"
     },
     "jest-junit": {
         "outputDirectory": "<rootDir>/test/reports",
@@ -86,6 +87,7 @@
         "jest-standard-reporter": "^2.0.0",
         "mocha-explorer-launcher-scripts": "^0.3.0",
         "prettier": "^2.3.2",
+        "release-it": "^14.11.5",
         "rimraf": "^3.0.2",
         "source-map-support": "^0.5.19",
         "ts-jest": "^27.0.5",
