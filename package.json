@@ -67,6 +67,17 @@
         "classNameTemplate": "{classname}",
         "titleTemplate": "{title}"
     },
+    "release-it": {
+        "git": {
+            "commitMessage": "chore: release v${version}"
+        },
+        "github": {
+            "release": true
+        },
+        "npm": {
+            "publish": false
+        }
+    },
     "devDependencies": {
         "@types/fs-extra": "^9.0.12",
         "@types/gitconfiglocal": "^2.0.1",
