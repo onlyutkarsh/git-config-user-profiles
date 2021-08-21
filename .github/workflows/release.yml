@@ -8,11 +8,11 @@ on:
         description: Version to bump `package.json` to
       publishtovsm:
         required: false
-        description: publish to marketplace
+        description: publish to marketplace (true/false)
         default: false
       prerelease:
         required: false
-        description: whether to publish a prerelease
+        description: whether to publish a prerelease (true/false)
         default: true
 
 jobs:
@@ -50,7 +50,7 @@ jobs:
 
       - name: relese-it prerelease
         if: ${{ github.event.inputs.prerelease == true }}
-        run: npm run release
+        run: npm run release -- --pre-release=beta
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 

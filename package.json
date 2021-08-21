@@ -56,7 +56,7 @@
         "test-watch": "npm run -S test-base -- --sourcemap --watch",
         "test": "jest --verbose",
         "test-ci": "jest --coverage --reporters=jest-junit",
-        "release": "release-it"
+        "release": "release-it --ci"
     },
     "jest-junit": {
         "outputDirectory": "<rootDir>/test/reports",
