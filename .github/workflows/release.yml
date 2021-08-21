@@ -65,26 +65,3 @@ jobs:
           registryUrl: https://marketplace.visualstudio.com
           extensionFile: ./git-config-user-profiles-*.vsix
           packagePath: ""
-
-      # these two steps are required. Using release-it creates release prior to releasing it to marketplace.
-      - name: create release
-        id: create_release
-        uses: actions/create-release@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          tag_name: "v${{ github.event.inputs.version }}"
-          release_name: "v${{ github.event.inputs.version }}"
-          draft: ${{ env.PUBLISH_TO_VSM  }}
-          prerelease: ${{ env.PUBLISH_TO_VSM }}
-
-      - name: upload release asset
-        id: upload-release-asset
-        uses: actions/upload-release-asset@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: ./git-config-user-profiles-${{ github.event.inputs.version }}.vsix
-          asset_name: git-config-user-profiles-${{ github.event.inputs.version }}.vsix
-          asset_content_type: application/vsix
