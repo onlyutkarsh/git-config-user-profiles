@@ -53,12 +53,17 @@ jobs:
         run: |
           npm run test-ci
 
+      - name: 🛠 update metadata in package.json
+        uses: onlyutkarsh/patch-files-action@v1.0.1
+        with:
+          files: "${{github.workspace}}/package.json"
+          patch-syntax: |
+            = /version => "${{ env.VERSION }}"
+            = /displayName => "Git Config User Profiles"
+            = /description => "Define multiple git config user profiles and switch them easily using status bar"
+
       - name: 📦 compile and create vsix
         run: npm run package
-
-      - name: print vsix path
-        run: |
-          echo "VSIX Path: ${{github.workspace}}/git-config-user-profiles-${{ env.VERSION }}.vsix"
 
       - name: upload vsix as artifact build artifact
         uses: actions/upload-artifact@v1
