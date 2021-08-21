@@ -8,12 +8,8 @@ on:
         description: Version to bump `package.json` to
       publishtovsm:
         required: false
-        description: publish to marketplace (true/false)
+        description: Publish to VS Marketplace (true/false - default is false)
         default: false
-      prerelease:
-        required: false
-        description: whether to publish a prerelease (true/false)
-        default: true
 
 jobs:
   release:
@@ -42,8 +38,19 @@ jobs:
       - name: 🚧 install dependencies
         run: npm install
 
-      - name: relese-it
-        run: npm run release
+      - name: relese-it for marketplace
+        if: ${{ github.event.inputs.publishtovsm == true }}
+        run: |
+          npm run release
+          echo "PUBLISH_TO_VSM=true" >> $GITHUB_ENV
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: relese-it (prerelease) for testing
+        if: ${{ github.event.inputs.publishtovsm == false}}
+        run: |
+          npm run release -- --preRelease=beta
+          echo "PUBLISH_TO_VSM=false" >> $GITHUB_ENV
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
@@ -59,6 +66,7 @@ jobs:
           extensionFile: ./git-config-user-profiles-${{ github.event.inputs.version }}.vsix
           packagePath: ""
 
+      # these two steps are required. Using release-it creates release prior to releasing it to marketplace.
       - name: create release
         id: create_release
         uses: actions/create-release@v1
@@ -67,8 +75,8 @@ jobs:
         with:
           tag_name: "v${{ github.event.inputs.version }}"
           release_name: "v${{ github.event.inputs.version }}"
-          draft: ${{ github.event.inputs.version }}
-          prerelease: ${{ github.event.inputs.prerelease }}
+          draft: ${{ env.PUBLISH_TO_VSM  }}
+          prerelease: ${{ env.PUBLISH_TO_VSM }}
 
       - name: upload release asset
         id: upload-release-asset
