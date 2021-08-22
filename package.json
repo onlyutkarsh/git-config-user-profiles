@@ -55,7 +55,8 @@
         "test-base": "rimraf out/test && esbuild ./test/*/** --outdir=out/test/ --format=cjs --platform=node",
         "test-watch": "npm run -S test-base -- --sourcemap --watch",
         "test": "jest --verbose",
-        "test-ci": "jest --coverage --reporters=jest-junit"
+        "test-ci": "jest --coverage --reporters=jest-junit",
+        "release": "release-it --ci --disable-metrics"
     },
     "jest-junit": {
         "outputDirectory": "<rootDir>/test/reports",
@@ -65,6 +66,22 @@
         "suiteNameTemplate": "{filepath}",
         "classNameTemplate": "{classname}",
         "titleTemplate": "{title}"
+    },
+    "release-it": {
+        "git": {
+            "changelog": "npx auto-changelog --stdout -u --template ./.vscode/changelog.template.hbs",
+            "requireCleanWorkingDir": false,
+            "tagName": "v${version}"
+        },
+        "hooks": {
+            "after:bump": "npx auto-changelog -p"
+        },
+        "npm": {
+            "publish": false
+        },
+        "github": {
+            "release": false
+        }
     },
     "devDependencies": {
         "@types/fs-extra": "^9.0.12",
@@ -90,7 +107,8 @@
         "source-map-support": "^0.5.19",
         "ts-jest": "^27.0.5",
         "typescript": "~4.3.5",
-        "vsce": "~1.96.1"
+        "vsce": "~1.96.1",
+        "release-it": "^14.11.5"
     },
     "dependencies": {
         "gitconfiglocal": "^2.1.0",

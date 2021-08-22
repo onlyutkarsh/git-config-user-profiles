@@ -42,9 +42,10 @@ jobs:
         run: |
           sed -i -e "s/\"version\": \".*\"/\"version\": \"${{ github.event.inputs.version }}\"/g" package.json
 
-      - name: update CHANGELOG.md
-        run: |
-          npm run autochangelog
+      - name: relese-it
+        run: npm run release
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: 📦 compile and create vsix
         run: npm run package
@@ -66,8 +67,8 @@ jobs:
         with:
           tag_name: "v${{ github.event.inputs.version }}"
           release_name: "v${{ github.event.inputs.version }}"
-          draft: true
-          prerelease: true
+          draft: false
+          prerelease: ${{ github.event.inputs.publishtovsm == false }} # pre-release when publishing to VS Marketplace is false
 
       - name: Upload Release Asset
         id: upload-release-asset
@@ -79,7 +80,3 @@ jobs:
           asset_path: ./git-config-user-profiles-${{ github.event.inputs.version }}.vsix
           asset_name: git-config-user-profiles-${{ github.event.inputs.version }}.vsix
           asset_content_type: application/vsix
-
-      - name: push to github
-        run: |
-          npm run pushchanges
