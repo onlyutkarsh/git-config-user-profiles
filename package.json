@@ -69,7 +69,7 @@
     },
     "release-it": {
         "git": {
-            "changelog": "npx auto-changelog --stdout -u --template ./.vscode/changelog.template.hbs",
+            "changelog": "npx auto-changelog --stdout -u --template ./.vscode/templates/changelog.template.hbs",
             "requireCleanWorkingDir": false,
             "tagName": "v${version}"
         },
