@@ -42,10 +42,12 @@ jobs:
         run: |
           sed -i -e "s/\"version\": \".*\"/\"version\": \"${{ github.event.inputs.version }}\"/g" package.json
 
-      - name: relese-it
-        run: npm run release
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Generate Changelog
+        id: changelog
+        uses: mindsers/changelog-reader-action@v2
+        with:
+          version: ${{ github.event.inputs.version }}
+          path: ./CHANGELOG.md
 
       - name: 📦 compile and create vsix
         run: npm run package
@@ -67,6 +69,7 @@ jobs:
         with:
           tag_name: "v${{ github.event.inputs.version }}"
           release_name: "v${{ github.event.inputs.version }}"
+          body: ${{ steps.changelog.outputs.changes }}
           draft: false
           prerelease: ${{ github.event.inputs.publishtovsm == false }} # pre-release when publishing to VS Marketplace is false
 
