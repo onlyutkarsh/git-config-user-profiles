@@ -44,7 +44,7 @@ jobs:
 
       - name: update CHANGELOG.md
         run: |
-          npm version
+          npm version --force
 
       - name: 📦 compile and create vsix
         run: npm run package
@@ -79,7 +79,3 @@ jobs:
           asset_path: ./git-config-user-profiles-${{ github.event.inputs.version }}.vsix
           asset_name: git-config-user-profiles-${{ github.event.inputs.version }}.vsix
           asset_content_type: application/vsix
-
-      - name: update the repo with latest CHANGLOG.md
-        run: |
-          git push
