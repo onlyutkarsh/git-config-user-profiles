@@ -38,21 +38,13 @@ jobs:
       - name: 🚧 install dependencies
         run: npm install
 
-      - name: relese-it for marketplace
-        if: ${{ github.event.inputs.publishtovsm == true }}
+      - name: update package.json with v${{ github.event.inputs.version }}
         run: |
-          npm run release
-          echo "PUBLISH_TO_VSM=true" >> $GITHUB_ENV
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          sed -i -e "s/\"version\": \".*\"/\"version\": \"${{ github.event.inputs.version }}\"/g" package.json
 
-      - name: relese-it (prerelease) for testing
-        if: ${{ github.event.inputs.publishtovsm == false}}
+      - name: update CHANGELOG.md
         run: |
-          npm run release -- --preRelease=beta
-          echo "PUBLISH_TO_VSM=false" >> $GITHUB_ENV
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          npm version
 
       - name: 📦 compile and create vsix
         run: npm run package
@@ -65,3 +57,29 @@ jobs:
           registryUrl: https://marketplace.visualstudio.com
           extensionFile: ./git-config-user-profiles-*.vsix
           packagePath: ""
+
+      - name: Create Release
+        id: create_release
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: "v${{ github.event.inputs.version }}"
+          release_name: "v${{ github.event.inputs.version }}"
+          draft: true
+          prerelease: true
+
+      - name: Upload Release Asset
+        id: upload-release-asset
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: ./git-config-user-profiles-${{ github.event.inputs.version }}.vsix
+          asset_name: git-config-user-profiles-${{ github.event.inputs.version }}.vsix
+          asset_content_type: application/vsix
+
+      - name: update the repo with latest CHANGLOG.md
+        run: |
+          git push

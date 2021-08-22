@@ -50,13 +50,12 @@
         "package": "vsce package",
         "deploy": "vsce publish -p",
         "clean": "git clean -fdX",
-        "version": "auto-changelog -p && git add CHANGELOG.md",
+        "version": "auto-changelog --package --unreleased --template ./.vscode/changelog-template/keepachangelog.hbs",
         "postversion": "git push && git push --tags",
         "test-base": "rimraf out/test && esbuild ./test/*/** --outdir=out/test/ --format=cjs --platform=node",
         "test-watch": "npm run -S test-base -- --sourcemap --watch",
         "test": "jest --verbose",
-        "test-ci": "jest --coverage --reporters=jest-junit",
-        "release": "release-it --ci --disable-metrics"
+        "test-ci": "jest --coverage --reporters=jest-junit"
     },
     "jest-junit": {
         "outputDirectory": "<rootDir>/test/reports",
@@ -66,25 +65,6 @@
         "suiteNameTemplate": "{filepath}",
         "classNameTemplate": "{classname}",
         "titleTemplate": "{title}"
-    },
-    "release-it": {
-        "git": {
-            "commitMessage": "chore: release v${version}",
-            "changelog": "npx auto-changelog --stdout -u --template https://raw.githubusercontent.com/release-it/release-it/master/templates/keepachangelog.hbs",
-            "requireCleanWorkingDir": false
-        },
-        "hooks": {
-            "after:bump": "npx auto-changelog -p"
-        },
-        "npm": {
-            "publish": false
-        },
-        "github": {
-            "release": true,
-            "assets": [
-                "*.vsix"
-            ]
-        }
     },
     "devDependencies": {
         "@types/fs-extra": "^9.0.12",
@@ -106,7 +86,6 @@
         "jest-standard-reporter": "^2.0.0",
         "mocha-explorer-launcher-scripts": "^0.3.0",
         "prettier": "^2.3.2",
-        "release-it": "^14.11.5",
         "rimraf": "^3.0.2",
         "source-map-support": "^0.5.19",
         "ts-jest": "^27.0.5",
