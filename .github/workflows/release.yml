@@ -40,6 +40,9 @@ jobs:
       - name: 🚧 install dependencies
         run: npm install
 
+      - name: update package version to ${{ github.event.inputs.version }}
+        uses: technote-space/package-version-check-action@v1
+
       - name: generate changelog
         id: generate-changelog
         uses: ScottBrenner/generate-changelog-action@v1.3.3
@@ -62,8 +65,8 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          tag_name: "v${{ github.event.inputs.version }}"
-          release_name: "v${{ github.event.inputs.version }}"
+          tag_name: "v${{ github.ref }}"
+          release_name: "v${{ github.ref }}"
           body: |
             ${{ steps.generate-changelog.outputs.changelog }}
           draft: false
