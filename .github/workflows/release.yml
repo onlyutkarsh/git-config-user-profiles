@@ -40,6 +40,15 @@ jobs:
       - name: 🚧 install dependencies
         run: npm install
 
+      - name: create tag ${{ github.event.inputs.version }}
+        uses: pkgdeps/git-tag-action@v2
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          github_repo: ${{ github.repository }}
+          version: ${{ github.event.inputs.version }}
+          git_commit_sha: ${{ github.sha }}
+          git_tag_prefix: "v"
+
       - name: update package version to ${{ github.event.inputs.version }}
         uses: technote-space/package-version-check-action@v1
 
