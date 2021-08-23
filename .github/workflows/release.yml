@@ -40,10 +40,6 @@ jobs:
       - name: 🚧 install dependencies
         run: npm install
 
-      - name: update package.json with v${{ github.event.inputs.version }}
-        run: |
-          sed -i -e "s/\"version\": \".*\"/\"version\": \"${{ github.event.inputs.version }}\"/g" package.json
-
       - name: generate changelog
         id: generate-changelog
         uses: ScottBrenner/generate-changelog-action@v1.3.3
