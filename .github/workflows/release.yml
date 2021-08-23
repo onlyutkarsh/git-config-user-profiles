@@ -17,6 +17,8 @@ jobs:
     steps:
       - name: checkout repo with all histrory and tags
         uses: actions/checkout@v2
+        with:
+          fetch-depth: 0
 
       - run: |
           git config --global user.email "onlyutkarsh@users.noreply.github.com"
@@ -42,12 +44,9 @@ jobs:
         run: |
           sed -i -e "s/\"version\": \".*\"/\"version\": \"${{ github.event.inputs.version }}\"/g" package.json
 
-      - name: Generate Changelog
-        id: changelog
-        uses: mindsers/changelog-reader-action@v2
-        with:
-          version: ${{ github.event.inputs.version }}
-          path: ./CHANGELOG.md
+      - name: generate changelog
+        id: generate-changelog
+        uses: ScottBrenner/generate-changelog-action@v1.3.3
 
       - name: 📦 compile and create vsix
         run: npm run package
@@ -69,7 +68,8 @@ jobs:
         with:
           tag_name: "v${{ github.event.inputs.version }}"
           release_name: "v${{ github.event.inputs.version }}"
-          body: ${{ steps.changelog.outputs.changes }}
+          body: |
+            ${{ steps.generate-changelog.outputs.changelog }}
           draft: false
           prerelease: ${{ github.event.inputs.publishtovsm == false }} # pre-release when publishing to VS Marketplace is false
 
