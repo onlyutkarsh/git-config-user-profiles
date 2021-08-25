@@ -40,21 +40,19 @@ jobs:
       - name: 🚧 install dependencies
         run: npm install
 
-      - name: create tag ${{ github.event.inputs.version }}
-        uses: pkgdeps/git-tag-action@v2
+      - name: Generate changelog
+        # You may pin to the exact commit or the version.
+        # uses: heinrichreimer/action-github-changelog-generator@854576bb5274851427527d8199fba0061552dff5
+        uses: heinrichreimer/action-github-changelog-generator@v2.2
+        id: gen_changelog
         with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
-          github_repo: ${{ github.repository }}
-          version: ${{ github.event.inputs.version }}
-          git_commit_sha: ${{ github.sha }}
-          git_tag_prefix: "v"
-
-      - name: update package version to ${{ github.event.inputs.version }}
-        uses: technote-space/package-version-check-action@v1
-
-      - name: generate changelog
-        id: generate-changelog
-        uses: ScottBrenner/generate-changelog-action@v1.3.3
+          token: ${{ secrets.GITHUB_TOKEN }}
+          headerLabel: "## Changelog"
+          stripGeneratorNotice: true
+          output: CHANGELOG.md
+          futureRelease: v${{ github.event.inputs.version }}
+          unreleased: true
+          issues: true
 
       - name: 📦 compile and create vsix
         run: npm run package
@@ -68,6 +66,11 @@ jobs:
           extensionFile: ./git-config-user-profiles-*.vsix
           packagePath: ""
 
+      - uses: stefanzweifel/git-auto-commit-action@v4
+        with:
+          commit_message: Update Changelog for PR
+          file_pattern: CHANGELOG.md
+
       - name: Create Release
         id: create_release
         uses: actions/create-release@v1
@@ -77,7 +80,7 @@ jobs:
           tag_name: "v${{ github.ref }}"
           release_name: "v${{ github.ref }}"
           body: |
-            ${{ steps.generate-changelog.outputs.changelog }}
+            ${{ steps.gen_changelog.outputs.changelog }}
           draft: false
           prerelease: ${{ github.event.inputs.publishtovsm == false }} # pre-release when publishing to VS Marketplace is false
 
@@ -88,6 +91,6 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: ./git-config-user-profiles-${{ github.event.inputs.version }}.vsix
+          asset_path: ${{github.workspace}}/git-config-user-profiles-${{ github.event.inputs.version }}.vsix
           asset_name: git-config-user-profiles-${{ github.event.inputs.version }}.vsix
           asset_content_type: application/vsix
