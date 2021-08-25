@@ -40,26 +40,6 @@ jobs:
       - name: 🚧 install dependencies
         run: npm install
 
-      #- name: Generate changelog
-      # You may pin to the exact commit or the version.
-      # uses: heinrichreimer/action-github-changelog-generator@854576bb5274851427527d8199fba0061552dff5
-      # uses: heinrichreimer/action-github-changelog-generator@v2.2
-      # id: gen_changelog
-      # with:
-      #   token: ${{ secrets.GITHUB_TOKEN }}
-      #   headerLabel: "## Changelog"
-      #   stripGeneratorNotice: true
-      #   output: CHANGELOG.md
-      #   futureRelease: v${{ github.event.inputs.version }}
-      #   unreleased: true
-      #   issues: true
-
-      - name: generate changelog
-        uses: scottbrenner/generate-changelog-action@master
-        id: gen_changelog
-        with:
-          to-tag: HEAD
-
       - name: update metadata in package.json
         uses: onlyutkarsh/patch-files-action@v1.0.1
         with:
@@ -68,6 +48,12 @@ jobs:
             = /version => "${{ github.event.inputs.version }}"
             = /displayName => "Git Config User Profiles"
             = /description => "Define multiple git config user profiles and switch them easily using status bar"
+
+      - name: generate changelog
+        uses: scottbrenner/generate-changelog-action@master
+        id: gen_changelog
+        with:
+          to-tag: HEAD
 
       - name: 📦 compile and create vsix
         run: npm run package
