@@ -40,21 +40,21 @@ jobs:
       - name: 🚧 install dependencies
         run: npm install
 
-      - name: Generate changelog
-        # You may pin to the exact commit or the version.
-        # uses: heinrichreimer/action-github-changelog-generator@854576bb5274851427527d8199fba0061552dff5
-        # uses: heinrichreimer/action-github-changelog-generator@v2.2
-        # id: gen_changelog
-        # with:
-        #   token: ${{ secrets.GITHUB_TOKEN }}
-        #   headerLabel: "## Changelog"
-        #   stripGeneratorNotice: true
-        #   output: CHANGELOG.md
-        #   futureRelease: v${{ github.event.inputs.version }}
-        #   unreleased: true
-        #   issues: true
+      #- name: Generate changelog
+      # You may pin to the exact commit or the version.
+      # uses: heinrichreimer/action-github-changelog-generator@854576bb5274851427527d8199fba0061552dff5
+      # uses: heinrichreimer/action-github-changelog-generator@v2.2
+      # id: gen_changelog
+      # with:
+      #   token: ${{ secrets.GITHUB_TOKEN }}
+      #   headerLabel: "## Changelog"
+      #   stripGeneratorNotice: true
+      #   output: CHANGELOG.md
+      #   futureRelease: v${{ github.event.inputs.version }}
+      #   unreleased: true
+      #   issues: true
 
-      - name: Changelog
+      - name: generate changelog
         uses: scottbrenner/generate-changelog-action@master
         id: gen_changelog
         with:
