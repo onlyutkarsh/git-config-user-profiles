@@ -1,6 +1,6 @@
 ##
 
-## [v1.1.12](https://github.com/onlyutkarsh/git-config-user-profiles/tree/v1.1.12) (2021-08-23)
+## [vrefs/heads/feature/release-it](https://github.com/onlyutkarsh/git-config-user-profiles/tree/vrefs/heads/feature/release-it) (2021-08-25)
 
 ## [v1.1.11](https://github.com/onlyutkarsh/git-config-user-profiles/tree/v1.1.11) (2021-08-23)
 
