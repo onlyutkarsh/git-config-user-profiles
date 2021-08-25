@@ -54,9 +54,14 @@ jobs:
           unreleased: true
           issues: true
 
-      - name: update pacakge.json
-        run: |
-          sed -i -e "s/^version.*/version = '${{ github.event.inputs.version }}'/" package.json
+      - name: update metadata in package.json
+        uses: onlyutkarsh/patch-files-action@v1.0.1
+        with:
+          files: "${{github.workspace}}/package.json"
+          patch-syntax: |
+            = /version => "${{ github.event.inputs.version }}"
+            = /displayName => "Git Config User Profiles"
+            = /description => "Define multiple git config user profiles and switch them easily using status bar"
 
       - name: 📦 compile and create vsix
         run: npm run package
