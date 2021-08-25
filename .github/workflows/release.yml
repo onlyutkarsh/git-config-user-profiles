@@ -54,6 +54,10 @@ jobs:
           unreleased: true
           issues: true
 
+      - name: update pacakge.json
+        run: |
+          sed -i -e "s/^version.*/version = '${{ github.event.inputs.version }}'/" package.json
+
       - name: 📦 compile and create vsix
         run: npm run package
 
