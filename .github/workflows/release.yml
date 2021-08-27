@@ -67,11 +67,6 @@ jobs:
           extensionFile: ./git-config-user-profiles-*.vsix
           packagePath: ""
 
-      - uses: stefanzweifel/git-auto-commit-action@v4
-        with:
-          commit_message: Update Changelog for PR
-          file_pattern: CHANGELOG.md
-
       - name: Create Release
         id: create_release
         uses: actions/create-release@v1
