@@ -3,13 +3,12 @@ name: release
 on:
   workflow_dispatch:
     inputs:
-      version:
-        required: true
-        description: Version to bump `package.json` to
       publishtovsm:
         required: false
         description: Publish to VS Marketplace (true/false - default is false)
         default: false
+env:
+  BASE_VERSION: 1.1
 
 jobs:
   release:
@@ -20,9 +19,8 @@ jobs:
         with:
           fetch-depth: 0
 
-      - run: |
-          git config --global user.email "onlyutkarsh@users.noreply.github.com"
-          git config --global user.name "Utkarsh Shigihalli"
+      - name: Set VERSION variable to ${{ env.BASE_VERSION }}.${{ github.run_number }}
+        run: echo "VERSION=${{ env.BASE_VERSION }}.${{ github.run_number }}" >> $GITHUB_ENV
 
       - name: setup node
         uses: actions/setup-node@v1
@@ -45,7 +43,7 @@ jobs:
         with:
           files: "${{github.workspace}}/package.json"
           patch-syntax: |
-            = /version => "${{ github.event.inputs.version }}"
+            = /version => "${{ env.VERSION }}"
             = /displayName => "Git Config User Profiles"
             = /description => "Define multiple git config user profiles and switch them easily using status bar"
 
@@ -73,8 +71,8 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          tag_name: "v${{ github.event.inputs.version }}"
-          release_name: "v${{ github.event.inputs.version }}"
+          tag_name: "v${{ env.VERSION }}"
+          release_name: "v${{ env.VERSION }}"
           body: |
             ${{ steps.gen_changelog.outputs.changelog }}
           draft: false
@@ -87,6 +85,6 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: ${{github.workspace}}/git-config-user-profiles-${{ github.event.inputs.version }}.vsix
-          asset_name: git-config-user-profiles-${{ github.event.inputs.version }}.vsix
+          asset_path: ${{github.workspace}}/git-config-user-profiles-${{ env.VERSION }}.vsix
+          asset_name: git-config-user-profiles-${{ env.VERSION }}.vsix
           asset_content_type: application/vsix

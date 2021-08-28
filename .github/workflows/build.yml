@@ -53,6 +53,13 @@ jobs:
         run: |
           npm run test-ci
 
+      - uses: dorny/test-reporter@v1.5.0
+        with:
+          artifact: test-results # artifact name
+          name: jest tests # Name of the check run which will be created
+          path: "*.xml" # Path to test results (inside artifact .zip)
+          reporter: jest-junit # Format of test results
+
       - name: 🛠 update metadata in package.json
         uses: onlyutkarsh/patch-files-action@v1.0.1
         with:
