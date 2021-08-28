@@ -53,6 +53,13 @@ jobs:
         run: |
           npm run test-ci
 
+      - name: upload jest test results as build artifact
+        uses: actions/upload-artifact@v2 # upload test results
+        if: success() || failure() # run this step even if previous step failed
+        with:
+          name: test-results
+          path: ${{github.workspace}}/test/reports/jest-junit.xml
+
       - uses: dorny/test-reporter@v1.5.0
         with:
           artifact: test-results # artifact name
@@ -77,10 +84,3 @@ jobs:
         with:
           name: git-config-user-profiles-${{ env.VERSION }}.vsix
           path: ${{github.workspace}}/git-config-user-profiles-${{ env.VERSION }}.vsix
-
-      - name: upload jest test results as build artifact
-        uses: actions/upload-artifact@v2 # upload test results
-        if: success() || failure() # run this step even if previous step failed
-        with:
-          name: test-results
-          path: ${{github.workspace}}/test/reports/jest-junit.xml
