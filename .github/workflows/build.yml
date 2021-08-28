@@ -56,7 +56,7 @@ jobs:
       - uses: dorny/test-reporter@v1.5.0
         with:
           name: jest tests # Name of the check run which will be created
-          path: reports/*.xml # Path to test results (inside artifact .zip)
+          path: ${{github.workspace}}/test/reports/jest-*.xml # Path to test results (inside artifact .zip)
           reporter: jest-junit # Format of test results
 
       - name: 🛠 update metadata in package.json
