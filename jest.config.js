@@ -13,7 +13,7 @@ module.exports = {
 		}
 	},
 	collectCoverage: true,
-    coverageDirectory: 'coverage',
+    coverageDirectory: '<rootDir>/test/reports',
     coverageReporters: ['json', 'text', 'lcov', 'clover'],
 	reporters: [
 		'default', 

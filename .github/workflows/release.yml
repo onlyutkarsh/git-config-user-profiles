@@ -3,9 +3,12 @@ name: release
 on:
   workflow_dispatch:
     inputs:
-      version:
-        required: true
-        description: Version to bump `package.json` to
+      publishtovsm:
+        required: false
+        description: Publish to VS Marketplace (true/false - default is false)
+        default: false
+env:
+  BASE_VERSION: 1.1
 
 jobs:
   release:
@@ -13,10 +16,11 @@ jobs:
     steps:
       - name: checkout repo with all histrory and tags
         uses: actions/checkout@v2
+        with:
+          fetch-depth: 0
 
-      - run: |
-          git config --global user.email "onlyutkarsh@users.noreply.github.com"
-          git config --global user.name "Utkarsh Shigihalli"
+      - name: Set VERSION variable to ${{ env.BASE_VERSION }}.${{ github.run_number }}
+        run: echo "VERSION=${{ env.BASE_VERSION }}.${{ github.run_number }}" >> $GITHUB_ENV
 
       - name: setup node
         uses: actions/setup-node@v1
@@ -34,38 +38,53 @@ jobs:
       - name: 🚧 install dependencies
         run: npm install
 
-      - name: 📍 set version ${{ github.event.inputs.version }} in package.json
-        run: npm version ${{ github.event.inputs.version }}
+      - name: update metadata in package.json
+        uses: onlyutkarsh/patch-files-action@v1.0.1
+        with:
+          files: "${{github.workspace}}/package.json"
+          patch-syntax: |
+            = /version => "${{ env.VERSION }}"
+            = /displayName => "Git Config User Profiles"
+            = /description => "Define multiple git config user profiles and switch them easily using status bar"
+
+      - name: generate changelog
+        uses: scottbrenner/generate-changelog-action@master
+        id: gen_changelog
+        with:
+          to-tag: HEAD
 
       - name: 📦 compile and create vsix
         run: npm run package
 
       - name: 🎉 publish to marketplace
+        if: ${{ github.event.inputs.publishtovsm == true }}
         uses: HaaLeo/publish-vscode-extension@v0
         with:
           pat: ${{ secrets.VS_MARKETPLACE_PAT }}
           registryUrl: https://marketplace.visualstudio.com
-          extensionFile: ./git-config-user-profiles-${{ github.event.inputs.version }}.vsix
+          extensionFile: ./git-config-user-profiles-*.vsix
           packagePath: ""
 
-      - name: create release
+      - name: Create Release
         id: create_release
         uses: actions/create-release@v1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          tag_name: "release-v${{ github.event.inputs.version }}"
-          release_name: "v${{ github.event.inputs.version }}"
+          tag_name: "v${{ env.VERSION }}"
+          release_name: "v${{ env.VERSION }}"
+          body: |
+            ${{ steps.gen_changelog.outputs.changelog }}
           draft: false
-          prerelease: false
+          prerelease: ${{ github.event.inputs.publishtovsm == false }} # pre-release when publishing to VS Marketplace is false
 
-      - name: upload release asset
+      - name: Upload Release Asset
         id: upload-release-asset
         uses: actions/upload-release-asset@v1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: ./git-config-user-profiles-${{ github.event.inputs.version }}.vsix
-          asset_name: git-config-user-profiles-${{ github.event.inputs.version }}.vsix
+          asset_path: ${{github.workspace}}/git-config-user-profiles-${{ env.VERSION }}.vsix
+          asset_name: git-config-user-profiles-${{ env.VERSION }}.vsix
           asset_content_type: application/vsix
