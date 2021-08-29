@@ -1,1 +1,162 @@
-{"name":"git-config-user-profiles","displayName":"Git Config User Profiles","description":"Define multiple git config user profiles and switch them easily using status bar","version":"1.1.39","publisher":"onlyutkarsh","author":"Utkarsh Shigihalli","repository":{"type":"git","url":"https://github.com/onlyutkarsh/git-config-user-profiles.git"},"icon":"images/icon.png","galleryBanner":{"color":"#F2F2F2","theme":"light"},"categories":["Other"],"keywords":["git","config"],"license":"MIT","engines":{"vscode":"^1.55.0"},"extensionKind":["workspace"],"capabilities":{"untrustedWorkspaces":{"supported":true}},"activationEvents":["*"],"extensionDependencies":["vscode.git"],"main":"./out/extension.js","scripts":{"vscode:prepublish":"npm run -S esbuild-base -- --minify","esbuild-base":"rimraf out && esbuild ./src/extension.ts --tsconfig=src/tsconfig.json --bundle --outfile=out/extension.js --external:vscode --format=cjs --platform=node","esbuild":"npm run -S esbuild-base -- --sourcemap","esbuild-watch":"npm run -S esbuild-base -- --sourcemap --watch","compile":"tsc -p ./src","dev":"npm run compile && npm run esbuild-watch","package":"vsce package","deploy":"vsce publish -p","clean":"git clean -fdX","autochangelog":"auto-changelog --package --unreleased --template ./.vscode/changelog-template/keepachangelog.hbs && git add CHANGELOG.md","pushchanges":"git push && git push --tags","test-base":"rimraf out/test && esbuild ./test/*/** --outdir=out/test/ --format=cjs --platform=node","test-watch":"npm run -S test-base -- --sourcemap --watch","test":"jest --verbose","test-ci":"jest --coverage --reporters=jest-junit"},"jest-junit":{"outputDirectory":"<rootDir>/test/reports","outputName":"jest-junit.xml","ancestorSeparator":" › ","uniqueOutputName":"false","suiteNameTemplate":"{filepath}","classNameTemplate":"{classname}","titleTemplate":"{title}"},"release-it":{"git":{"changelog":"npx auto-changelog --stdout -u --template ./.vscode/templates/changelog.template.hbs","requireCleanWorkingDir":false,"tagName":"v${version}"},"hooks":{"after:bump":"npx auto-changelog -p"},"npm":{"publish":false},"github":{"release":false}},"devDependencies":{"@types/fs-extra":"^9.0.12","@types/gitconfiglocal":"^2.0.1","@types/glob":"^7.1.4","@types/jest":"^27.0.1","@types/node":"~12.12.70","@types/vscode":"^1.55.0","@typescript-eslint/eslint-plugin":"^4.29.3","@typescript-eslint/parser":"^4.29.3","esbuild":"^0.12.24","eslint":"^7.32.0","fs-extra":"^10.0.0","glob":"^7.1.7","jest":"^27.1.0","jest-junit":"^12.2.0","jest-standard-reporter":"^2.0.0","mocha-explorer-launcher-scripts":"^0.3.0","prettier":"^2.3.2","rimraf":"^3.0.2","source-map-support":"^0.5.19","ts-jest":"^27.0.5","typescript":"~4.3.5","vsce":"~1.96.1"},"dependencies":{"gitconfiglocal":"^2.1.0","simple-git":"~2.44.0"},"contributes":{"commands":[{"command":"git-config-user-profiles.selectUserProfile","title":"Git Config User Profiles: Select a git config user profile"},{"command":"git-config-user-profiles.createUserProfile","title":"Git Config User Profiles: Create a git config user profile"},{"command":"git-config-user-profiles.editUserProfile","title":"Git Config User Profiles: Edit a existing user profile"},{"command":"git-config-user-profiles.syncVscProfilesWithGitConfig","title":"Git Config User Profiles: Synchronize VS code user profile with local git config"}],"configuration":{"type":"object","title":"Git Config User Profiles","properties":{"gitConfigUser.profiles":{"type":"array","items":{"type":"object","title":"inner objects","properties":{"name":{"type":"string","description":"Name of profile. E.g: Work, Home"},"username":{"type":"string","description":"user name"},"email":{"type":"string","description":"User email"}}},"default":[],"description":"Git Config User Profiles configuration"}}}}}
+{
+    "name": "git-config-user-profiles",
+    "displayName": "Git Config User Profiles",
+    "description": "Define multiple git config user profiles and switch them easily using status bar",
+    "version": "1.1.39",
+    "publisher": "onlyutkarsh",
+    "author": "Utkarsh Shigihalli",
+    "repository": {
+        "type": "git",
+        "url": "https://github.com/onlyutkarsh/git-config-user-profiles.git"
+    },
+    "icon": "images/icon.png",
+    "galleryBanner": {
+        "color": "#F2F2F2",
+        "theme": "light"
+    },
+    "categories": [
+        "Other"
+    ],
+    "keywords": [
+        "git",
+        "config"
+    ],
+    "license": "MIT",
+    "engines": {
+        "vscode": "^1.55.0"
+    },
+    "extensionKind": [
+        "workspace"
+    ],
+    "capabilities": {
+        "untrustedWorkspaces": {
+            "supported": true
+        }
+    },
+    "activationEvents": [
+        "*"
+    ],
+    "extensionDependencies": [
+        "vscode.git"
+    ],
+    "main": "./out/extension.js",
+    "scripts": {
+        "vscode:prepublish": "npm run -S esbuild-base -- --minify",
+        "esbuild-base": "rimraf out && esbuild ./src/extension.ts --tsconfig=src/tsconfig.json --bundle --outfile=out/extension.js --external:vscode --format=cjs --platform=node",
+        "esbuild": "npm run -S esbuild-base -- --sourcemap",
+        "esbuild-watch": "npm run -S esbuild-base -- --sourcemap --watch",
+        "compile": "tsc -p ./src",
+        "dev": "npm run compile && npm run esbuild-watch",
+        "package": "vsce package",
+        "deploy": "vsce publish -p",
+        "clean": "git clean -fdX",
+        "autochangelog": "auto-changelog --package --unreleased --template ./.vscode/changelog-template/keepachangelog.hbs && git add CHANGELOG.md",
+        "pushchanges": "git push && git push --tags",
+        "test-base": "rimraf out/test && esbuild ./test/*/** --outdir=out/test/ --format=cjs --platform=node",
+        "test-watch": "npm run -S test-base -- --sourcemap --watch",
+        "test": "jest --verbose",
+        "test-ci": "jest --coverage --reporters=jest-junit"
+    },
+    "jest-junit": {
+        "outputDirectory": "<rootDir>/test/reports",
+        "outputName": "jest-junit.xml",
+        "ancestorSeparator": " › ",
+        "uniqueOutputName": "false",
+        "suiteNameTemplate": "{filepath}",
+        "classNameTemplate": "{classname}",
+        "titleTemplate": "{title}"
+    },
+    "release-it": {
+        "git": {
+            "changelog": "npx auto-changelog --stdout -u --template ./.vscode/templates/changelog.template.hbs",
+            "requireCleanWorkingDir": false,
+            "tagName": "v${version}"
+        },
+        "hooks": {
+            "after:bump": "npx auto-changelog -p"
+        },
+        "npm": {
+            "publish": false
+        },
+        "github": {
+            "release": false
+        }
+    },
+    "devDependencies": {
+        "@types/fs-extra": "^9.0.12",
+        "@types/gitconfiglocal": "^2.0.1",
+        "@types/glob": "^7.1.4",
+        "@types/jest": "^27.0.1",
+        "@types/node": "~12.12.70",
+        "@types/vscode": "^1.55.0",
+        "@typescript-eslint/eslint-plugin": "^4.29.3",
+        "@typescript-eslint/parser": "^4.29.3",
+        "esbuild": "^0.12.24",
+        "eslint": "^7.32.0",
+        "fs-extra": "^10.0.0",
+        "glob": "^7.1.7",
+        "jest": "^27.1.0",
+        "jest-junit": "^12.2.0",
+        "jest-standard-reporter": "^2.0.0",
+        "mocha-explorer-launcher-scripts": "^0.3.0",
+        "prettier": "^2.3.2",
+        "rimraf": "^3.0.2",
+        "source-map-support": "^0.5.19",
+        "ts-jest": "^27.0.5",
+        "typescript": "~4.3.5",
+        "vsce": "~1.96.1"
+    },
+    "dependencies": {
+        "gitconfiglocal": "^2.1.0",
+        "simple-git": "~2.44.0"
+    },
+    "contributes": {
+        "commands": [
+            {
+                "command": "git-config-user-profiles.selectUserProfile",
+                "title": "Git Config User Profiles: Select a git config user profile"
+            },
+            {
+                "command": "git-config-user-profiles.createUserProfile",
+                "title": "Git Config User Profiles: Create a git config user profile"
+            },
+            {
+                "command": "git-config-user-profiles.editUserProfile",
+                "title": "Git Config User Profiles: Edit a existing user profile"
+            },
+            {
+                "command": "git-config-user-profiles.syncVscProfilesWithGitConfig",
+                "title": "Git Config User Profiles: Synchronize VS code user profile with local git config"
+            }
+        ],
+        "configuration": {
+            "type": "object",
+            "title": "Git Config User Profiles",
+            "properties": {
+                "gitConfigUser.profiles": {
+                    "type": "array",
+                    "items": {
+                        "type": "object",
+                        "title": "inner objects",
+                        "properties": {
+                            "name": {
+                                "type": "string",
+                                "description": "Name of profile. E.g: Work, Home"
+                            },
+                            "username": {
+                                "type": "string",
+                                "description": "user name"
+                            },
+                            "email": {
+                                "type": "string",
+                                "description": "User email"
+                            }
+                        }
+                    },
+                    "default": [],
+                    "description": "Git Config User Profiles configuration"
+                }
+            }
+        }
+    }
+}
