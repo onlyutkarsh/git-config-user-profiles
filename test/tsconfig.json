@@ -1,6 +1,6 @@
 {
     "compilerOptions": {
-        "declaration": true,
+        "outDir": "./out",
         "lib": [
             "es6"
         ],
@@ -15,10 +15,8 @@
         "strict": true,
         "target": "es6",
         "types": [
-            "jest",
             "node",
-            "vscode",
-            "../src/utils/@types/node"
+            "vscode"
         ]
     }
 }
