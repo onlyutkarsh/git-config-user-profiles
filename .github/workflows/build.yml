@@ -7,7 +7,6 @@ on:
         description: Trigger build
         required: true
         default: "ci"
-  pull_request:
   push:
     branches:
       - feature/** # match an pushes on feature/* and feature/<any sub branch>/*
