@@ -53,7 +53,7 @@ jobs:
 
       - name: 🚀 publish to marketplace
         if: ${{ github.event.inputs.publishtovsm == true }}
-        uses: HaaLeo/publish-vscode-extension@v0
+        uses: HaaLeo/publish-vscode-extension@v1
         with:
           pat: ${{ secrets.VS_MARKETPLACE_PAT }}
           registryUrl: https://marketplace.visualstudio.com
