@@ -1,0 +1,40 @@
+name: validate pr
+
+# read-only repo token
+# no access to secrets
+on:
+  pull_request:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:        
+      - name: checkout repo with all histrory and tags
+        uses: actions/checkout@v2
+        with:
+          fetch-depth: 0
+
+      - name: setup node
+        uses: actions/setup-node@v1
+        with:
+          node-version: "12.x"
+
+      - name: 💎 install cached dependencies
+        uses: actions/cache@v2
+        with:
+          path: ~/.npm
+          key: ${{ runner.os }}-node-${{ hashFiles('**/package-lock.json') }}
+          restore-keys: |
+            ${{ runner.os }}-node-
+
+      - name: 🚧 install dependencies
+        run: npm install
+
+      - name: ⛑ compile extension
+        run: |
+          npm run compile
+
+      - name: 🧪 run tests
+        run: |
+          npm run test-ci
