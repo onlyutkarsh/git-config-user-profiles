@@ -8,7 +8,6 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
-
     steps:        
       - name: checkout repo with all histrory and tags
         uses: actions/checkout@v2
@@ -16,8 +15,8 @@ jobs:
           fetch-depth: 0
       
       - name: Set VERSION variable to 1.0.${{ github.run_number }}
-      run: |
-        echo "VERSION=1.0.${{ github.run_number }}" >> $GITHUB_ENV
+        run: |
+          echo "VERSION=1.0.${{ github.run_number }}" >> $GITHUB_ENV
 
       - name: setup node
         uses: actions/setup-node@v1
