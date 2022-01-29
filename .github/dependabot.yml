@@ -1,0 +1,11 @@
+version: 2
+updates:
+  ##########################################
+  # Maintain dependencies for GitHub Actions
+  ##########################################
+  # On the interval, dependabot will scan for any updates to GH Actions (steps)
+  # Then it open PRs to the default branch for each action that has an updated version
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
