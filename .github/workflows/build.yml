@@ -72,7 +72,7 @@ jobs:
         run: npm run package
 
       - name: upload vsix as artifact build artifact
-        uses: actions/upload-artifact@v1
+        uses: actions/upload-artifact@v2.3.1
         with:
           name: git-config-user-profiles-${{ env.VERSION }}.vsix
           path: ${{github.workspace}}/git-config-user-profiles-${{ env.VERSION }}.vsix
