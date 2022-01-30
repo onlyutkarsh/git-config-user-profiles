@@ -1,4 +1,4 @@
-import sgit from "simple-git/promise";
+import sgit from "simple-git";
 import { commands, window } from "vscode";
 import { getVscProfiles, saveVscProfile } from "./config";
 import * as constants from "./constants";

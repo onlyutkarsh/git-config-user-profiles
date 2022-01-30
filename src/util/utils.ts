@@ -1,5 +1,5 @@
 import gitconfig from "gitconfiglocal";
-import sgit from "simple-git/promise";
+import sgit from "simple-git";
 import { workspace } from "vscode";
 import { Messages } from "../constants";
 import { Profile } from "../models";
