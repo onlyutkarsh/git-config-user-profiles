@@ -59,7 +59,7 @@ jobs:
           reporter: jest-junit # Format of test results
 
       - name: 🛠 update metadata in package.json
-        uses: onlyutkarsh/patch-files-action@v1.0.1
+        uses: onlyutkarsh/patch-files-action@v1.0.3
         with:
           files: "${{github.workspace}}/package.json"
           patch-syntax: |
