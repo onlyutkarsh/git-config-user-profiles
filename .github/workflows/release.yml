@@ -23,7 +23,7 @@ jobs:
         run: echo "VERSION=${{ env.BASE_VERSION }}.${{ github.run_number }}" >> $GITHUB_ENV
 
       - name: setup node
-        uses: actions/setup-node@v2.5.1
+        uses: actions/setup-node@v3.3.0
         with:
           node-version: "16.x"
 
