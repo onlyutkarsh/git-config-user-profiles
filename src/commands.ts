@@ -1,3 +1,4 @@
+import { basename } from "path";
 import sgit from "simple-git";
 import { commands, window } from "vscode";
 import { getVscProfiles, saveVscProfile } from "./config";
@@ -149,10 +150,10 @@ export async function getUserProfile(fromStatusBar = false, notProfileSwitch = t
 
       const options = configInSync ? syncOptions : notSyncOptions;
       const message = configInSync
-        ? `Git config is already in sync with profile '${util.trimLabelIcons(selectedVscProfile.label)}'. What do you want to do?`
-        : `Git config is not using this profile. Do you want to use profile '${util.trimLabelIcons(selectedVscProfile.label)}' for this repo? (user: ${
-            selectedVscProfile.userName
-          }, email: ${selectedVscProfile.email}) `;
+        ? `Repo '${basename(workspaceFolder)}' is already using user details from the profile '${util.trimLabelIcons(selectedVscProfile.label)}'. What do you want to do?`
+        : `You have selected profile '${util.trimLabelIcons(selectedVscProfile.label)}', but the repo '${basename(
+            workspaceFolder
+          )}' is not using user details from this profile. Do you want to apply the user details from profile '${util.trimLabelIcons(selectedVscProfile.label)}'?`;
 
       response = await window.showInformationMessage(message, ...options);
     }
@@ -284,8 +285,12 @@ export async function syncVscProfilesWithGitConfig(): Promise<void> {
 
   // return an empty object if no git profile found
   if (util.isNameAndEmailEmpty(gitProfile)) {
-    //TODO: ask user to create a local git config
-    const response = await window.showInformationMessage("No local Git config file found. Do you want to create one now?", "Yes", "No");
+    //UTK ask user to create a local git config
+    const response = await window.showInformationMessage(
+      `No user details found in git config of the repo '${basename(validatedWorkspace.folder)}'. Do you want to create a new user detail profile now?`,
+      "Yes",
+      "No"
+    );
     if (response == undefined || response == "No") {
       return;
     }

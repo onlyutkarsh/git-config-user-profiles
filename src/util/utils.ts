@@ -1,6 +1,6 @@
 import gitconfig from "gitconfiglocal";
 import sgit from "simple-git";
-import { workspace } from "vscode";
+import { window, workspace, WorkspaceFolder } from "vscode";
 import { Messages } from "../constants";
 import { Profile } from "../models";
 import { Logger } from "../util";
@@ -14,42 +14,50 @@ export async function isGitRepository(path: string): Promise<boolean> {
   }
 }
 
+export async function getCurrentFolder(): Promise<string | undefined> {
+  const editor = window.activeTextEditor;
+  let folder: WorkspaceFolder | undefined;
+  if (!workspace.workspaceFolders || workspace.workspaceFolders.length === 0) {
+    return undefined;
+  }
+  if (editor) {
+    // If we have a file:// resource we resolve the WorkspaceFolder this file is from and update
+    // the status accordingly.
+    const resource = editor.document.uri;
+    if (resource.scheme !== "file") {
+      return undefined;
+    }
+    folder = workspace.getWorkspaceFolder(resource);
+  } else {
+    //if no file is open in the editor, we use the first workspace folder
+    folder = workspace.workspaceFolders[0];
+  }
+
+  if (!folder) {
+    return undefined;
+  }
+  return folder.uri.fsPath;
+}
+
 export async function isValidWorkspace(): Promise<{ isValid: boolean; message: string; folder?: string }> {
-  if (workspace.workspaceFolders) {
-    const foldersCount = workspace.workspaceFolders.length;
-    if (foldersCount > 1) {
-      return {
-        message: Messages.DOES_NOT_SUPPORT_MULTI_ROOT,
-        isValid: false,
-      };
-    }
-    if (foldersCount === 0) {
-      return {
-        message: Messages.OPEN_REPO_FIRST,
-        isValid: false,
-      };
-    }
-    if (foldersCount === 1) {
-      const folderPath = workspace.workspaceFolders[0].uri.fsPath;
-
-      const validGitRepo = await isGitRepository(folderPath);
-
-      if (!validGitRepo) {
-        return {
-          message: Messages.NOT_A_VALID_REPO,
-          isValid: false,
-        };
-      }
-      return {
-        message: "",
-        isValid: true,
-        folder: folderPath,
-      };
-    }
+  const folderPath = await getCurrentFolder();
+  if (!folderPath) {
+    return {
+      message: Messages.OPEN_REPO_FIRST,
+      isValid: false,
+    };
+  }
+  const isGitRepo = await isGitRepository(folderPath);
+  if (!isGitRepo) {
+    return {
+      message: Messages.NOT_A_VALID_REPO,
+      isValid: false,
+    };
   }
   return {
-    message: Messages.NOT_A_VALID_REPO,
-    isValid: false,
+    message: "",
+    isValid: true,
+    folder: folderPath,
   };
 }
 

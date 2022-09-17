@@ -1,4 +1,4 @@
-import { commands, ExtensionContext, workspace } from "vscode";
+import { commands, ExtensionContext, window, workspace } from "vscode";
 import * as cmd from "./commands";
 import * as constants from "./constants";
 import { ProfileStatusBar as statusBar } from "./controls";
@@ -11,7 +11,12 @@ export async function activate(context: ExtensionContext) {
     Logger.instance.logInfo("Activating extension");
 
     Logger.instance.logInfo("Registering for config change event");
-    workspace.onDidChangeConfiguration(async () => await commands.executeCommand(constants.CommandIds.GET_USER_PROFILE, false));
+    context.subscriptions.push(workspace.onDidChangeConfiguration(async () => await commands.executeCommand(constants.CommandIds.GET_USER_PROFILE, false)));
+
+    context.subscriptions.push(window.onDidChangeActiveTextEditor(async () => await commands.executeCommand(constants.CommandIds.GET_USER_PROFILE, false)));
+    context.subscriptions.push(workspace.onDidChangeWorkspaceFolders(async () => await commands.executeCommand(constants.CommandIds.GET_USER_PROFILE, false)));
+    context.subscriptions.push(workspace.onDidOpenTextDocument(async () => await commands.executeCommand(constants.CommandIds.GET_USER_PROFILE, false)));
+    context.subscriptions.push(workspace.onDidCloseTextDocument(async () => await commands.executeCommand(constants.CommandIds.GET_USER_PROFILE, false)));
 
     Logger.instance.logInfo("Initializing status bar");
 
@@ -33,7 +38,7 @@ export async function activate(context: ExtensionContext) {
             currentConfig.email.toLowerCase() === selectedProfile.email.toLowerCase() && currentConfig.userName.toLowerCase() === selectedProfile.userName.toLowerCase();
         }
 
-        statusBar.instance.updateStatus(selectedProfile, configInSync);
+        await statusBar.instance.updateStatus(selectedProfile, configInSync);
       })
     );
     Logger.instance.logInfo("Initializing commands complete.");
