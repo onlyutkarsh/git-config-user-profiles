@@ -6,7 +6,7 @@ on:
       - "main"
 
 env:
-  BASE_VERSION: 1.2
+  BASE_VERSION: 1.2.0
   EXTENSION_NAME: Git Config User Profiles
   EXTENSION_DESC: "Define multiple git config user profiles and switch them easily using status bar"
   EXTENSION_SLUG: git-config-user-profiles
