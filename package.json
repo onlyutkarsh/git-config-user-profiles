@@ -95,7 +95,7 @@
   },
   "dependencies": {
     "gitconfiglocal": "^2.1.0",
-    "simple-git": "~3.14.0"
+    "simple-git": "~3.14.1"
   },
   "contributes": {
     "commands": [
