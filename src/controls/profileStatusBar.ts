@@ -1,7 +1,8 @@
-import { StatusBarAlignment, StatusBarItem, window } from "vscode";
+import { basename } from "path";
+import { StatusBarAlignment, StatusBarItem, ThemeColor, window } from "vscode";
 import * as Constants from "../constants";
 import { Profile } from "../models";
-import { Logger } from "../util/logger";
+import { getCurrentFolder, Logger } from "../util";
 
 export class ProfileStatusBar {
   private static _instance: ProfileStatusBar;
@@ -19,19 +20,22 @@ export class ProfileStatusBar {
     Logger.instance.logInfo("Initializing status bar complete.");
   }
 
-  public updateStatus(status: Profile | undefined | string, usedInRepo = false) {
-    let tooltip = `${Constants.Application.APPLICATION_NAME} - Click for more`;
+  public async updateStatus(status: Profile | undefined | string, usedInRepo = false) {
+    const folderPath = await getCurrentFolder();
+    let tooltip = `${Constants.Application.APPLICATION_NAME} - Click status bar icon for more options`;
 
-    if ((status as Profile).label) {
+    if (folderPath && (status as Profile).label) {
       const profile = status as Profile;
-      ProfileStatusBar._statusBar.text = `$(repo) ${profile.label}`;
+      ProfileStatusBar._statusBar.text = `$(source-control) ${profile.label}`;
       if (profile.label !== Constants.Application.APPLICATION_NAME) {
         if (usedInRepo) {
-          ProfileStatusBar._statusBar.text = `$(repo) ${profile.label.replace("$(check)", "").trim()} $(check)`;
-          tooltip = `${profile.userName} (${profile.email}) - Click for more`;
+          ProfileStatusBar._statusBar.text = `$(source-control) ${basename(folderPath)} $(arrow-small-right) ${profile.label.replace("$(check)", "").trim()} $(check)`;
+          ProfileStatusBar._statusBar.backgroundColor = new ThemeColor("statusBarItem.activeBackground");
+          tooltip = `Profile: ${profile.userName} (${profile.email})\r\nClick status bar icon for more options`;
         } else {
-          ProfileStatusBar._statusBar.text = `$(repo) ${profile.label.replace("$(alert)", "").trim()} $(alert)`;
-          tooltip = `${profile.userName} (${profile.email}) - Click for more`;
+          ProfileStatusBar._statusBar.text = `$(source-control) ${basename(folderPath)} $(arrow-small-right) ${profile.label.replace("$(alert)", "").trim()} $(alert)`;
+          ProfileStatusBar._statusBar.backgroundColor = new ThemeColor("statusBarItem.warningBackground");
+          tooltip = `Profile: ${profile.userName} (${profile.email})\r\nClick status bar icon for more options`;
         }
       }
     }
