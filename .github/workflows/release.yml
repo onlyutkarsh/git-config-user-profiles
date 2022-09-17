@@ -1,31 +1,30 @@
 name: release
 
 on:
-  workflow_dispatch:
-    inputs:
-      publishtovsm:
-        required: false
-        description: Publish to VS Marketplace (true/false - default is false)
-        default: false
+  push:
+    branches:
+      - "main"
+
 env:
-  BASE_VERSION: 1.1
+  BASE_VERSION: 1.2
+  EXTENSION_NAME: Git Config User Profiles
+  EXTENSION_DESC: "Define multiple git config user profiles and switch them easily using status bar"
+  EXTENSION_SLUG: git-config-user-profiles
 
 jobs:
   release:
     runs-on: ubuntu-latest
+    if: github.event_name != 'pull_request'
     steps:
       - name: checkout repo with all histrory and tags
         uses: actions/checkout@v2
         with:
           fetch-depth: 0
 
-      - name: Set VERSION variable to ${{ env.BASE_VERSION }}.${{ github.run_number }}
-        run: echo "VERSION=${{ env.BASE_VERSION }}.${{ github.run_number }}" >> $GITHUB_ENV
-
       - name: setup node
         uses: actions/setup-node@v2.5.1
         with:
-          node-version: "16.x"
+          node-version: "18.x"
 
       - name: 💎 install cached dependencies
         uses: actions/cache@v2
@@ -38,56 +37,16 @@ jobs:
       - name: 🚧 install dependencies
         run: npm install
 
-      - name: update metadata in package.json
-        run: |
-          sed -i -e "s/\"version\": \".*\"/\"version\": \"${{ env.VERSION }}\"/g" package.json
-
-      - name: generate changelog
-        uses: scottbrenner/generate-changelog-action@master
-        id: gen_changelog
-        with:
-          to-tag: HEAD
+      - name: semantic release
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: npx semantic-release
 
       - name: 📦 compile and create vsix
         run: npm run package
 
       - name: 🚀 publish to marketplace
-        if: ${{ github.event.inputs.publishtovsm == true }}
-        uses: HaaLeo/publish-vscode-extension@v1
-        with:
-          pat: ${{ secrets.VS_MARKETPLACE_PAT }}
-          registryUrl: https://marketplace.visualstudio.com
-          extensionFile: ./git-config-user-profiles-*.vsix
-          packagePath: ""
-
-      - name: create release
-        id: create_release
-        uses: actions/create-release@v1
+        if: success()
+        run: npm run deploy
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          tag_name: "v${{ env.VERSION }}"
-          release_name: "v${{ env.VERSION }}"
-          body: |
-            ${{ steps.gen_changelog.outputs.changelog }}
-          draft: false
-          prerelease: ${{ github.event.inputs.publishtovsm == false }} # pre-release when publishing to VS Marketplace is false
-
-      - name: 📦 upload vsix as release asset
-        id: upload-release-asset
-        uses: actions/upload-release-asset@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: ${{github.workspace}}/git-config-user-profiles-${{ env.VERSION }}.vsix
-          asset_name: git-config-user-profiles-${{ env.VERSION }}.vsix
-          asset_content_type: application/vsix
-
-      - name: commit package.json
-        uses: EndBug/add-and-commit@v8.0.1
-        with:
-          author_name: "Utkarsh Shigihalli"
-          author_email: onlyutkarsh@users.noreply.github.com
-          message: "ci(release): bump to ${{ env.VERSION }}"
-          add: "package.json"
+          VSCE_PAT: ${{ secrets.VS_MARKETPLACE_PAT }}
