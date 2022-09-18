@@ -67,6 +67,12 @@ jobs:
         if: steps.semantic-release.outputs.new_release_version != ''
         run: npm run package
 
+      - name: 📤 upload vsix to ovsx
+        if: steps.semantic-release.outputs.new_release_version != ''
+        run: npm run publish:ovsx
+        env:
+          OVSX_PAT: ${{ secrets.OPEN_VSX_TOKEN }}
+
       - name: 🚀 publish to marketplace
         if: success() && steps.semantic-release.outputs.new_release_version != ''
         run: npm run deploy
