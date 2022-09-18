@@ -4,6 +4,14 @@ on:
   push:
     branches:
       - "main"
+    paths-ignore:
+      - ".github/workflows/**"
+  workflow_dispatch:
+    inputs:
+      action:
+        description: Trigger build
+        required: true
+        default: "release"
 
 env:
   BASE_VERSION: 1.2.0
@@ -20,13 +28,30 @@ jobs:
         uses: actions/checkout@v3
         with:
           fetch-depth: 0
+          persist-credentials: false
 
       - name: setup node
         uses: actions/setup-node@v3.4.1
         with:
           node-version: "18.x"
 
+      - name: semantic release
+        id: "semantic-release"
+        uses: cycjimmy/semantic-release-action@v2
+        with:
+          semantic_version: 19.0.5
+          extra_plugins: |
+            @semantic-release/changelog
+            @semantic-release/github
+            @semantic-release/git
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: "print version"
+        run: echo "New version ${{ steps.semantic-release.outputs.new_release_version }}"
+
       - name: 💎 install cached dependencies
+        if: steps.semantic-release.outputs.new_release_version != ''
         uses: actions/cache@v2
         with:
           path: ~/.npm
@@ -35,18 +60,15 @@ jobs:
             ${{ runner.os }}-node-
 
       - name: 🚧 install dependencies
+        if: steps.semantic-release.outputs.new_release_version != ''
         run: npm install
 
-      - name: semantic release
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: npx semantic-release
-
       - name: 📦 compile and create vsix
+        if: steps.semantic-release.outputs.new_release_version != ''
         run: npm run package
 
       - name: 🚀 publish to marketplace
-        if: success()
+        if: success() && steps.semantic-release.outputs.new_release_version != ''
         run: npm run deploy
         env:
           VSCE_PAT: ${{ secrets.VS_MARKETPLACE_PAT }}
