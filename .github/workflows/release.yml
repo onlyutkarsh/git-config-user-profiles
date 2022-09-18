@@ -71,7 +71,7 @@ jobs:
         if: steps.semantic-release.outputs.new_release_version != ''
         run: npm run publish:ovsx
         env:
-          OVSX_PAT: ${{ secrets.OPEN_VSX_TOKEN }}
+          OVSX_PAT: ${{ secrets.OVSX_PAT }}
 
       - name: 🚀 publish to marketplace
         if: success() && steps.semantic-release.outputs.new_release_version != ''

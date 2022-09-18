@@ -50,6 +50,7 @@
     "dev": "npm run compile && npm run esbuild-watch",
     "package": "vsce package",
     "deploy": "vsce publish",
+    "publish:ovsx": "ovsx publish",
     "clean": "git clean -fdX",
     "pushchanges": "git push && git push --tags",
     "test-base": "rimraf out/test && esbuild ./test/*/** --outdir=out/test/ --format=cjs --platform=node",
