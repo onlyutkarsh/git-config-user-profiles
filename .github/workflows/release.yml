@@ -52,7 +52,7 @@ jobs:
 
       - name: 💎 install cached dependencies
         if: steps.semantic-release.outputs.new_release_version != ''
-        uses: actions/cache@v2
+        uses: actions/cache@v3
         with:
           path: ~/.npm
           key: ${{ runner.os }}-node-${{ secrets.CACHE_VERSION }}-${{ hashFiles('**/package-lock.json') }}
