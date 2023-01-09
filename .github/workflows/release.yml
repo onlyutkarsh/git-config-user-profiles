@@ -31,7 +31,7 @@ jobs:
           persist-credentials: false
 
       - name: setup node
-        uses: actions/setup-node@v3.4.1
+        uses: actions/setup-node@v3.6.0
         with:
           node-version: "18.x"
 
