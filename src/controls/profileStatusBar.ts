@@ -2,7 +2,7 @@ import { basename } from "path";
 import { StatusBarAlignment, StatusBarItem, ThemeColor, window } from "vscode";
 import * as Constants from "../constants";
 import { Profile } from "../models";
-import { getCurrentFolder, Logger } from "../util";
+import { Logger, getCurrentFolder } from "../util";
 
 export class ProfileStatusBar {
   private static _instance: ProfileStatusBar;
@@ -29,11 +29,11 @@ export class ProfileStatusBar {
       ProfileStatusBar._statusBar.text = `$(source-control) ${profile.label}`;
       if (profile.label !== Constants.Application.APPLICATION_NAME) {
         if (usedInRepo) {
-          ProfileStatusBar._statusBar.text = `$(source-control) ${basename(folderPath)} $(arrow-small-right) ${profile.label.replace("$(check)", "").trim()} $(check)`;
+          ProfileStatusBar._statusBar.text = `$(source-control) ${basename(folderPath.message!)} $(arrow-small-right) ${profile.label.replace("$(check)", "").trim()}`;
           ProfileStatusBar._statusBar.backgroundColor = new ThemeColor("statusBarItem.activeBackground");
           tooltip = `Profile: ${profile.userName} (${profile.email})\r\nClick status bar icon for more options`;
         } else {
-          ProfileStatusBar._statusBar.text = `$(source-control) ${basename(folderPath)} $(arrow-small-right) ${profile.label.replace("$(alert)", "").trim()} $(alert)`;
+          ProfileStatusBar._statusBar.text = `$(source-control) ${basename(folderPath.message!)} $(arrow-small-right) ${profile.label.replace("$(alert)", "").trim()}`;
           ProfileStatusBar._statusBar.backgroundColor = new ThemeColor("statusBarItem.warningBackground");
           tooltip = `Profile: ${profile.userName} (${profile.email})\r\nClick status bar icon for more options`;
         }

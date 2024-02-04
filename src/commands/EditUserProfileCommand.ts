@@ -1,8 +1,8 @@
 import { window } from "vscode";
 import { getVscProfiles, saveVscProfile } from "../config";
 import { Profile } from "../models";
+import { CreateOrLoadProfileCommand } from "./CreateOrLoadProfileCommand";
 import { ICommand, Result } from "./ICommand";
-import { PickOrLoadProfileCommand } from "./PickOrLoadProfileCommand";
 import { SelectProfileCommand } from "./SelectProfileCommand";
 
 export class EditUserProfileCommand implements ICommand<boolean> {
@@ -28,7 +28,7 @@ export class EditUserProfileCommand implements ICommand<boolean> {
       selectedProfile.detail = undefined;
       selectedProfile.label = selectedProfile.label;
 
-      const result = await new PickOrLoadProfileCommand(selectedProfile).execute();
+      const result = await new CreateOrLoadProfileCommand(selectedProfile).execute();
       const updatedProfile = result.result as Profile;
       if (updatedProfile) {
         selectedProfile = updatedProfile;

@@ -1,6 +1,6 @@
-import gitconfig from "gitconfiglocal";
 import sgit from "simple-git";
 import { window, workspace, WorkspaceFolder } from "vscode";
+import { Result } from "../commands/ICommand";
 import { Messages } from "../constants";
 import { Profile } from "../models";
 import { Logger } from "../util";
@@ -14,40 +14,58 @@ export async function isGitRepository(path: string): Promise<boolean> {
   }
 }
 
-export async function getCurrentFolder(): Promise<string | undefined> {
+export async function getCurrentFolder(): Promise<Result<boolean>> {
   const editor = window.activeTextEditor;
   let folder: WorkspaceFolder | undefined;
   if (!workspace.workspaceFolders || workspace.workspaceFolders.length === 0) {
-    return undefined;
+    return {
+      result: false,
+      message: Messages.NOT_A_VALID_REPO,
+    };
   }
   if (editor) {
     // If we have a file:// resource we resolve the WorkspaceFolder this file is from and update
     // the status accordingly.
     const resource = editor.document.uri;
     if (resource.scheme !== "file") {
-      return undefined;
+      return {
+        result: false,
+        message: "${resource.scheme} is not supported.",
+      };
     }
     folder = workspace.getWorkspaceFolder(resource);
+    if (!folder) {
+      return {
+        result: false,
+        message: "This file is not part of a workspace folder.",
+      };
+    }
   } else {
     //if no file is open in the editor, we use the first workspace folder
     folder = workspace.workspaceFolders[0];
   }
 
   if (!folder) {
-    return undefined;
+    return {
+      result: false,
+      message: Messages.NOT_A_VALID_REPO,
+    };
   }
-  return folder.uri.fsPath;
+  return {
+    result: true,
+    message: folder.uri.fsPath,
+  };
 }
 
 export async function isValidWorkspace(): Promise<{ isValid: boolean; message: string; folder?: string }> {
-  const folderPath = await getCurrentFolder();
-  if (!folderPath) {
+  const result = await getCurrentFolder();
+  if (!result.result) {
     return {
-      message: Messages.OPEN_REPO_FIRST,
+      message: result.message || Messages.NOT_A_VALID_REPO,
       isValid: false,
     };
   }
-  const isGitRepo = await isGitRepository(folderPath);
+  const isGitRepo = await isGitRepository(result.message as string);
   if (!isGitRepo) {
     return {
       message: Messages.NOT_A_VALID_REPO,
@@ -57,7 +75,7 @@ export async function isValidWorkspace(): Promise<{ isValid: boolean; message: s
   return {
     message: "",
     isValid: true,
-    folder: folderPath,
+    folder: result.message as string,
   };
 }
 
@@ -67,21 +85,19 @@ export function isEmpty(str: string | undefined | null) {
 
 export async function getCurrentGitConfig(gitFolder: string): Promise<{ userName: string; email: string }> {
   Logger.instance.logInfo(`Getting details from config file in ${gitFolder}`);
-  return await new Promise((resolve) => {
-    gitconfig(gitFolder, (_, config) => {
-      if (config.user && config.user.name && config.user.email) {
-        const currentConfig = {
-          userName: config.user.name,
-          email: config.user.email,
-        };
-        Logger.instance.logInfo(`Config details found: ${JSON.stringify(currentConfig)}`);
-        resolve(currentConfig);
-      } else {
-        Logger.instance.logInfo(`No config details found.`);
-        resolve({ userName: "", email: "" });
-      }
-    });
-  });
+  const git = sgit(gitFolder);
+  const userName = await git.getConfig("user.name", "local");
+  const email = await git.getConfig("user.email", "local");
+  if (userName && email) {
+    const currentConfig = {
+      userName: userName.value || "",
+      email: email.value || "",
+    };
+    Logger.instance.logInfo(`Config details found: ${JSON.stringify(currentConfig)}`);
+    return currentConfig;
+  }
+  Logger.instance.logInfo(`No config details found.`);
+  return { userName: "", email: "" };
 }
 
 export function trimLabelIcons(str: string) {

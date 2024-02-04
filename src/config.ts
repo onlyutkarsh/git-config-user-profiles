@@ -26,7 +26,7 @@ export async function saveVscProfile(profile: Profile, oldProfileId?: string): P
   profile = util.trimProperties(profile);
   let existingProfileIndex = -1;
   if (oldProfileId) {
-    // update existing profile
+    // user is updating existing profile, no need to make changes to selected field
     existingProfileIndex = profiles.findIndex((x) => {
       if (x.id) {
         return x.id?.toLowerCase() === oldProfileId.toLowerCase();
@@ -36,6 +36,7 @@ export async function saveVscProfile(profile: Profile, oldProfileId?: string): P
       }
     });
   } else {
+    // user is making a selection of profile (not updating the profile), so set selected to false
     existingProfileIndex = profiles.findIndex((x) => {
       if (x.id) {
         return x.id?.toLowerCase() === profile.id?.toLowerCase();
@@ -44,20 +45,15 @@ export async function saveVscProfile(profile: Profile, oldProfileId?: string): P
         return x.label.toLowerCase() === profile.label.toLowerCase();
       }
     });
-    // if (existingProfileIndex > -1) {
-    //   // set existing to false if user is making a selection of profile (not updating the profile)
-    //   profiles.forEach((x) => {
-    //     x.selected = false;
-    //     x.label = x.label.replace("$(check)", "").trim();
-    //   });
-    // }
+    if (existingProfileIndex > -1) {
+      // set existing to false if user is making a selection of profile (not updating the profile)
+      profiles.forEach((x) => {
+        x.selected = false;
+        x.label = x.label.replace("$(check)", "").trim();
+      });
+    }
   }
   if (existingProfileIndex > -1) {
-    // set existing to false if user is making a selection of profile (not updating the profile)s
-    profiles.forEach((x) => {
-      x.selected = false;
-      x.label = x.label.replace("$(check)", "").trim();
-    });
     profiles[existingProfileIndex] = profile;
   } else {
     profiles.push(profile);

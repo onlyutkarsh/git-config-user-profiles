@@ -141,7 +141,7 @@ export class MultiStepInput {
             if (item === QuickInputButtons.Back) {
               reject(InputFlowAction.back);
             } else {
-              resolve(<any>item);
+              resolve(item as any);
             }
           }),
           input.onDidAccept(async () => {

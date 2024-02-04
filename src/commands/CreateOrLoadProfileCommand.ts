@@ -3,7 +3,7 @@ import { Profile } from "../models";
 import * as util from "../util";
 import { ICommand, Result } from "./ICommand";
 
-export class PickOrLoadProfileCommand implements ICommand<Profile> {
+export class CreateOrLoadProfileCommand implements ICommand<Profile> {
   private preloadedProfile: Profile | undefined;
   private state: Partial<controls.State> = {};
 
