@@ -12,10 +12,7 @@
             "./node_modules/@types",
             "./typings/"
         ],
-        "types": [
-            "node",
-            "vscode"
-        ],
+
         "strictPropertyInitialization": false,
         "sourceMap": true,
         "rootDir": ".",

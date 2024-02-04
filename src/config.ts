@@ -13,28 +13,44 @@ export function getVscProfiles(): Profile[] {
         email: x.email,
         selected: x.selected,
         detail: undefined,
+        id: x.id,
       };
     });
   }
   return [];
 }
 
-export async function saveVscProfile(profile: Profile, oldProfileLabel?: string): Promise<void> {
+export async function saveVscProfile(profile: Profile, oldProfileId?: string): Promise<void> {
   //get existing profiles
   const profiles = getVscProfiles();
   profile = util.trimProperties(profile);
   let existingProfileIndex = -1;
-  if (oldProfileLabel) {
-    existingProfileIndex = profiles.findIndex((x) => x.label.toLowerCase() === oldProfileLabel.toLowerCase());
+  if (oldProfileId) {
+    // update existing profile
+    existingProfileIndex = profiles.findIndex((x) => {
+      if (x.id) {
+        return x.id?.toLowerCase() === oldProfileId.toLowerCase();
+      } else {
+        // for backward compatibility with old profiles without id
+        return x.label.toLowerCase() === oldProfileId.toLowerCase();
+      }
+    });
   } else {
-    existingProfileIndex = profiles.findIndex((x) => x.label.toLowerCase() === profile.label.toLowerCase());
-    if (existingProfileIndex > -1) {
-      // set existing to false if user is making a selection of profile (not updating the profile)
-      profiles.forEach((x) => {
-        x.selected = false;
-        x.label = x.label.replace("$(check)", "").trim();
-      });
-    }
+    existingProfileIndex = profiles.findIndex((x) => {
+      if (x.id) {
+        return x.id?.toLowerCase() === profile.id?.toLowerCase();
+      } else {
+        // for backward compatibility with old profiles without id
+        return x.label.toLowerCase() === profile.label.toLowerCase();
+      }
+    });
+    // if (existingProfileIndex > -1) {
+    //   // set existing to false if user is making a selection of profile (not updating the profile)
+    //   profiles.forEach((x) => {
+    //     x.selected = false;
+    //     x.label = x.label.replace("$(check)", "").trim();
+    //   });
+    // }
   }
   if (existingProfileIndex > -1) {
     // set existing to false if user is making a selection of profile (not updating the profile)s
@@ -42,8 +58,6 @@ export async function saveVscProfile(profile: Profile, oldProfileLabel?: string)
       x.selected = false;
       x.label = x.label.replace("$(check)", "").trim();
     });
-  }
-  if (existingProfileIndex > -1) {
     profiles[existingProfileIndex] = profile;
   } else {
     profiles.push(profile);

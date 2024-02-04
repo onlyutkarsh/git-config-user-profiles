@@ -39,8 +39,10 @@ export interface State {
   totalSteps: number;
   name: string;
   profileName: string;
-  userName: string;
-  email: string;
+  profileUserName: string;
+  profileEmail: string;
+  profileId: string;
+  profileSelected: boolean;
 }
 
 export class MultiStepInput {

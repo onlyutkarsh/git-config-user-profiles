@@ -8,25 +8,34 @@ import { Profile } from "./models";
 import * as util from "./util";
 import { Logger } from "./util/logger";
 
+/**
+ * @deprecated The method should not be used
+ */
 export async function createUserProfile() {
   const state = {} as Partial<controls.State>;
   await controls.MultiStepInput.run((input) => pickProfileName(input, state));
 
   const profile: Profile = {
     label: state.profileName || "",
-    email: state.email || "",
-    userName: state.userName || "",
+    email: state.profileEmail || "",
+    userName: state.profileUserName || "",
     selected: false,
   };
 
   await saveVscProfile(profile);
 }
 
+/**
+ * @deprecated The method should not be used
+ */
 function shouldResume() {
   // Could show a notification with the option to resume.
   return new Promise<boolean>(() => {});
 }
 
+/**
+ * @deprecated The method should not be used
+ */
 async function pickProfileName(input: controls.MultiStepInput, state: Partial<controls.State>, create = true) {
   state.profileName = await input.showInputBox({
     title: create ? "Create a profile" : "Edit profile",
@@ -42,13 +51,16 @@ async function pickProfileName(input: controls.MultiStepInput, state: Partial<co
   return (input: controls.MultiStepInput) => pickUserName(input, state, create);
 }
 
+/**
+ * @deprecated The method should not be used
+ */
 async function pickUserName(input: controls.MultiStepInput, state: Partial<controls.State>, create = true) {
-  state.userName = await input.showInputBox({
+  state.profileUserName = await input.showInputBox({
     title: create ? "Create a profile" : "Edit profile",
     step: 2,
     totalSteps: 3,
     prompt: "Enter the user name",
-    value: state.userName || "",
+    value: state.profileUserName || "",
     placeholder: "John Smith",
     validate: util.validateUserName,
     shouldResume: shouldResume,
@@ -57,13 +69,16 @@ async function pickUserName(input: controls.MultiStepInput, state: Partial<contr
   return (input: controls.MultiStepInput) => pickEmail(input, state, create);
 }
 
+/**
+ * @deprecated The method should not be used
+ */
 async function pickEmail(input: controls.MultiStepInput, state: Partial<controls.State>, create = true) {
-  state.email = await input.showInputBox({
+  state.profileEmail = await input.showInputBox({
     title: create ? "Create a profile" : "Edit profile",
     step: 3,
     totalSteps: 3,
     prompt: "Enter the email",
-    value: state.email || "",
+    value: state.profileEmail || "",
     placeholder: "john.smith@myorg.com",
     validate: util.validateEmail,
     shouldResume: shouldResume,
@@ -76,6 +91,9 @@ async function pickEmail(input: controls.MultiStepInput, state: Partial<controls
  * @description **The use of the parameters is just my personal assumption !** — *Shaokun-X*
  * @param fromStatusBar if the function is called from sidebar or not
  * @param notProfileSwitch when has selected profile and want to select new one
+ */
+/**
+ * @deprecated The method should not be used
  */
 export async function getUserProfile(fromStatusBar = false, notProfileSwitch = true): Promise<Profile> {
   Logger.instance.logInfo(`Getting user profiles. Triggerred from status bar = ${fromStatusBar}`);
@@ -173,7 +191,7 @@ export async function getUserProfile(fromStatusBar = false, notProfileSwitch = t
       return selectedVscProfile;
     }
     if (response === "Create new") {
-      await createUserProfile();
+      //TTTT await CreateUserProfileCommand.Instance.execute();
       return selectedVscProfile;
     }
     if (response === "No, pick another" || response === "Pick a profile") {
@@ -247,16 +265,16 @@ export async function editUserProfile() {
     pickedProfile.detail = undefined;
     pickedProfile.label = pickedProfile.label;
     const state: Partial<controls.State> = {
-      email: pickedProfile.email,
-      userName: pickedProfile.userName,
+      profileEmail: pickedProfile.email,
+      profileUserName: pickedProfile.userName,
       profileName: pickedProfile.label,
     };
-    await controls.MultiStepInput.run((input) => pickProfileName(input, state, false));
+    await commands.executeCommand(constants.CommandIds.CREATE_USER_PROFILE, state);
 
     const profile: Profile = {
       label: state.profileName || "",
-      email: state.email || "",
-      userName: state.userName || "",
+      email: state.profileEmail || "",
+      userName: state.profileUserName || "",
       selected: pickedProfile.selected,
     };
 
@@ -271,7 +289,10 @@ export async function editUserProfile() {
  * doesn't have corresponding profile in VSC config, then it would be added.
  * @returns local git config profile if exists, otherwise an object with `userName` and `email` are empty string.
  */
-export async function syncVscProfilesWithGitConfig(): Promise<void> {
+/**
+ * @deprecated The method should not be used
+ */
+export async function syncVscProfilesWithGitConfig(onStartup = true): Promise<void> {
   // check if is valid git workspace
   const validatedWorkspace = await util.isValidWorkspace();
   if (!(validatedWorkspace.isValid && validatedWorkspace.folder)) {
@@ -282,9 +303,11 @@ export async function syncVscProfilesWithGitConfig(): Promise<void> {
   // get git config profile
   // let gitProfile: { userName: string; email: string };
   const gitProfile = await util.getCurrentGitConfig(validatedWorkspace.folder);
+  // get all existing vsc profiles
+  const vscProfiles = getVscProfiles();
 
   // return an empty object if no git profile found
-  if (util.isNameAndEmailEmpty(gitProfile)) {
+  if (onStartup && util.isNameAndEmailEmpty(gitProfile)) {
     //UTK ask user to create a local git config
     const response = await window.showInformationMessage(
       `No user details found in git config of the repo '${basename(validatedWorkspace.folder)}'. Do you want to create a new user detail profile now?`,
@@ -294,12 +317,9 @@ export async function syncVscProfilesWithGitConfig(): Promise<void> {
     if (response == undefined || response == "No") {
       return;
     }
-    await createUserProfile();
+    //TTTT await CreateUserProfileCommand.Instance.execute();
     return;
   }
-
-  // get all existing vsc profiles
-  const vscProfiles = getVscProfiles();
 
   // set selected = false for all selected vsc profiles
   await Promise.all(

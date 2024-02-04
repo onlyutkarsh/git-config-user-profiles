@@ -103,7 +103,7 @@ export function validateProfileName(input: string, checkForDuplicates = true) {
   if (checkForDuplicates) {
     const existingProfile = getVscProfile(input);
     if (existingProfile) {
-      return `Oops! Profile with the same name '${input}' already exists!`;
+      return `Profile with the same name '${input}' already exists!`;
     }
   }
   return undefined;
@@ -131,6 +131,7 @@ export function trimProperties(profile: Profile): Profile {
     userName: profile.userName.trim(),
     selected: profile.selected,
     detail: undefined,
+    id: profile.id,
   };
 }
 

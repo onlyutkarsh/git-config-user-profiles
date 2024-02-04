@@ -1,8 +1,20 @@
+import { v4 as uuidv4 } from "uuid";
 import { QuickPickItem } from "vscode";
+
 export class Profile implements QuickPickItem {
-    label: string;
-    userName: string;
-    email: string;
-    selected: boolean;
-    detail?: string | undefined;
+  label: string;
+  userName: string;
+  email: string;
+  selected: boolean;
+  detail?: string | undefined;
+  id?: string;
+
+  constructor(label: string, userName: string, email: string, selected: boolean, detail?: string) {
+    this.label = label;
+    this.userName = userName;
+    this.email = email;
+    this.selected = selected;
+    this.detail = detail;
+    this.id = uuidv4();
+  }
 }
