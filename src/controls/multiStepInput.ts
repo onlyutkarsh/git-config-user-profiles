@@ -43,6 +43,7 @@ export interface State {
   profileEmail: string;
   profileId: string;
   profileSelected: boolean;
+  profileSigningKey: string;
 }
 
 export class MultiStepInput {

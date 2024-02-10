@@ -1,10 +1,8 @@
 import { window } from "vscode";
-import { getVscProfiles, saveVscProfile } from "../config";
+import { getProfilesInSettings, saveVscProfile } from "../config";
 import { Profile } from "../models";
-import { CreateOrLoadProfileCommand } from "./CreateOrLoadProfileCommand";
+import * as util from "../util";
 import { ICommand, Result } from "./ICommand";
-import { SelectProfileCommand } from "./SelectProfileCommand";
-
 export class EditUserProfileCommand implements ICommand<boolean> {
   private static instance: EditUserProfileCommand | null = null;
 
@@ -16,20 +14,20 @@ export class EditUserProfileCommand implements ICommand<boolean> {
   }
 
   async execute(): Promise<Result<boolean>> {
-    const profilesInConfig = getVscProfiles();
+    const profilesInConfig = getProfilesInSettings();
 
     if (profilesInConfig.length === 0) {
       window.showWarningMessage("No profiles found");
       return { result: false };
     }
-    const result = await new SelectProfileCommand().execute();
+    const result = await util.showProfilePicker();
     let selectedProfile = result.result as Profile;
     if (selectedProfile) {
       selectedProfile.detail = undefined;
       selectedProfile.label = selectedProfile.label;
 
-      const result = await new CreateOrLoadProfileCommand(selectedProfile).execute();
-      const updatedProfile = result.result as Profile;
+      const result = await util.loadProfileInWizard(selectedProfile);
+      const updatedProfile = result as Profile;
       if (updatedProfile) {
         selectedProfile = updatedProfile;
       }

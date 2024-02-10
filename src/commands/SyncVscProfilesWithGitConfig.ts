@@ -1,11 +1,10 @@
 import { basename } from "path";
 import { commands, window } from "vscode";
-import { getVscProfiles, saveVscProfile } from "../config";
+import { getProfilesInSettings, saveVscProfile } from "../config";
 import * as constants from "../constants";
 import { Profile } from "../models";
 import * as util from "../util";
 import { ICommand, Result } from "./ICommand";
-import { SelectProfileCommand } from "./SelectProfileCommand";
 
 export class SyncVscProfilesWithGitConfig implements ICommand<boolean> {
   private onStartup = true;
@@ -24,14 +23,14 @@ export class SyncVscProfilesWithGitConfig implements ICommand<boolean> {
     // let gitProfile: { userName: string; email: string };
     const gitProfile = await util.getCurrentGitConfig(validatedWorkspace.folder);
     // get all existing vsc profiles
-    const vscProfiles = getVscProfiles();
+    const vscProfiles = getProfilesInSettings();
 
     // return an empty object if no git profile found
     if (util.isNameAndEmailEmpty(gitProfile)) {
       //UTK ask user to create a local git config if there are no profiles
       if (vscProfiles.length == 0) {
         const response = await window.showInformationMessage(
-          `No user details found in git config of the repo '${basename(validatedWorkspace.folder)}'. Do you want to create a new user detail profile now?`,
+          `No user details found in git config of '${basename(validatedWorkspace.folder)}'. Do you want to create a new user detail profile now?`,
           "Yes",
           "No"
         );
@@ -42,12 +41,12 @@ export class SyncVscProfilesWithGitConfig implements ICommand<boolean> {
         return { result: true };
       } else {
         const response = await window.showInformationMessage(
-          `No user details found in git config of the repo '${basename(validatedWorkspace.folder)}'. Do you want to apply a user profile now?`,
+          `No user details found in git config of '${basename(validatedWorkspace.folder)}'. Do you want to apply a user profile now?`,
           "Yes",
           "No"
         );
         if (response == "Yes") {
-          await new SelectProfileCommand().execute();
+          await commands.executeCommand(constants.CommandIds.CREATE_USER_PROFILE);
           return { result: true };
         }
       }
@@ -65,7 +64,7 @@ export class SyncVscProfilesWithGitConfig implements ICommand<boolean> {
     );
 
     // update corresponding vsc profile, if it exists, otherwise add it to vsc cofig
-    const correspondingVscProfile = vscProfiles.filter((vscProfile) => util.hasSameNameAndEmail(vscProfile, gitProfile));
+    const correspondingVscProfile = vscProfiles.filter((vscProfile) => util.isConfigInSync(vscProfile, gitProfile));
 
     if (correspondingVscProfile.length >= 1) {
       // only select the first appearance

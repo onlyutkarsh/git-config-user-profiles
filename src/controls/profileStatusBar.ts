@@ -2,7 +2,12 @@ import { basename } from "path";
 import { StatusBarAlignment, StatusBarItem, ThemeColor, window } from "vscode";
 import * as Constants from "../constants";
 import { Profile } from "../models";
-import { Logger, getCurrentFolder } from "../util";
+import { Logger } from "../util";
+
+export enum StatusBarStatus {
+  Normal = "Normal",
+  Warning = "Warning",
+}
 
 export class ProfileStatusBar {
   private static _instance: ProfileStatusBar;
@@ -20,27 +25,40 @@ export class ProfileStatusBar {
     Logger.instance.logInfo("Initializing status bar complete.");
   }
 
-  public async updateStatus(status: Profile | undefined | string, usedInRepo = false) {
-    const folderPath = await getCurrentFolder();
-    let tooltip = `${Constants.Application.APPLICATION_NAME} - Click status bar icon for more options`;
+  public async updateStatus(content: Profile | undefined, repoFolder: string | undefined, status: StatusBarStatus = StatusBarStatus.Normal, tooltip?: string) {
+    tooltip = tooltip || `${Constants.Application.APPLICATION_NAME} - Click status bar icon for more options`;
 
-    if (folderPath && (status as Profile).label) {
-      const profile = status as Profile;
-      ProfileStatusBar._statusBar.text = `$(source-control) ${profile.label}`;
-      if (profile.label !== Constants.Application.APPLICATION_NAME) {
-        if (usedInRepo) {
-          ProfileStatusBar._statusBar.text = `$(source-control) ${basename(folderPath.message!)} $(arrow-small-right) ${profile.label.replace("$(check)", "").trim()}`;
-          ProfileStatusBar._statusBar.backgroundColor = new ThemeColor("statusBarItem.activeBackground");
+    const profile = content as Profile;
+    const normalBackground = new ThemeColor("statusBarItem.activeBackground");
+    const warningBackground = new ThemeColor("statusBarItem.warningBackground");
+    let text = `$(source-control) ${Constants.Application.APPLICATION_NAME}`;
+
+    if (profile) {
+      if (repoFolder) {
+        if (status === StatusBarStatus.Normal) {
+          text = `$(source-control) ${basename(repoFolder)} $(arrow-small-right) ${profile.label.replace("$(check)", "").trim()}`;
           tooltip = `Profile: ${profile.userName} (${profile.email})\r\nClick status bar icon for more options`;
         } else {
-          ProfileStatusBar._statusBar.text = `$(source-control) ${basename(folderPath.message!)} $(arrow-small-right) ${profile.label.replace("$(alert)", "").trim()}`;
-          ProfileStatusBar._statusBar.backgroundColor = new ThemeColor("statusBarItem.warningBackground");
+          text = `$(source-control) ${basename(repoFolder)} $(arrow-small-right) ${profile.label.replace("$(alert)", "").trim()}`;
+        }
+      } else {
+        if (status === StatusBarStatus.Normal) {
+          text = `$(source-control) ${Constants.Application.APPLICATION_NAME} $(arrow-small-right) ${profile.label.replace("$(check)", "").trim()}`;
           tooltip = `Profile: ${profile.userName} (${profile.email})\r\nClick status bar icon for more options`;
+        } else {
+          text = `$(source-control) ${Constants.Application.APPLICATION_NAME} $(arrow-small-right) ${profile.label.replace("$(alert)", "").trim()}`;
         }
       }
+    } else if (content === undefined) {
+      text = `$(source-control) ${Constants.Application.APPLICATION_NAME}`;
+      tooltip = tooltip;
+    } else {
+      text = `$(source-control) ${Constants.Application.APPLICATION_NAME}`;
+      tooltip = tooltip;
     }
+    ProfileStatusBar._statusBar.text = text;
+    ProfileStatusBar._statusBar.backgroundColor = status === StatusBarStatus.Normal ? normalBackground : warningBackground;
     ProfileStatusBar._statusBar.tooltip = tooltip;
-
     ProfileStatusBar._statusBar.show();
   }
 

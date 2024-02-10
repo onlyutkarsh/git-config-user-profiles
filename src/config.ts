@@ -2,27 +2,19 @@ import { ConfigurationTarget, workspace } from "vscode";
 import { Profile } from "./models";
 import * as util from "./util";
 
-export function getVscProfiles(): Profile[] {
+export function getProfilesInSettings(): Profile[] {
   const profiles = workspace.getConfiguration("gitConfigUser").get<Profile[]>("profiles");
 
   if (profiles) {
-    return profiles.map((x) => {
-      return {
-        label: util.trimLabelIcons(x.label),
-        userName: x.userName,
-        email: x.email,
-        selected: x.selected,
-        detail: undefined,
-        id: x.id,
-      };
-    });
+    // map all profiles in to profiles entity and return
+    return profiles;
   }
   return [];
 }
 
 export async function saveVscProfile(profile: Profile, oldProfileId?: string): Promise<void> {
   //get existing profiles
-  const profiles = getVscProfiles();
+  const profiles = getProfilesInSettings();
   profile = util.trimProperties(profile);
   let existingProfileIndex = -1;
   if (oldProfileId) {
@@ -62,7 +54,7 @@ export async function saveVscProfile(profile: Profile, oldProfileId?: string): P
 }
 
 export function getVscProfile(profileName: string): Profile | undefined {
-  const filtered = getVscProfiles().filter((x) => x.label.toLowerCase() === profileName.toLowerCase());
+  const filtered = getProfilesInSettings().filter((x) => x.label.toLowerCase() === profileName.toLowerCase());
   if (filtered && filtered.length > 0) {
     return Object.assign({}, filtered[0]);
   }
