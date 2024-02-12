@@ -39,8 +39,11 @@ export interface State {
   totalSteps: number;
   name: string;
   profileName: string;
-  userName: string;
-  email: string;
+  profileUserName: string;
+  profileEmail: string;
+  profileId: string;
+  profileSelected: boolean;
+  profileSigningKey: string;
 }
 
 export class MultiStepInput {
@@ -139,7 +142,7 @@ export class MultiStepInput {
             if (item === QuickInputButtons.Back) {
               reject(InputFlowAction.back);
             } else {
-              resolve(<any>item);
+              resolve(item as any);
             }
           }),
           input.onDidAccept(async () => {

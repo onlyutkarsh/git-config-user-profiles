@@ -2,32 +2,41 @@ import { ConfigurationTarget, workspace } from "vscode";
 import { Profile } from "./models";
 import * as util from "./util";
 
-export function getVscProfiles(): Profile[] {
+export function getProfilesInSettings(): Profile[] {
   const profiles = workspace.getConfiguration("gitConfigUser").get<Profile[]>("profiles");
 
   if (profiles) {
-    return profiles.map((x) => {
-      return {
-        label: util.trimLabelIcons(x.label),
-        userName: x.userName,
-        email: x.email,
-        selected: x.selected,
-        detail: undefined,
-      };
-    });
+    // map all profiles in to profiles entity and return
+    return profiles;
   }
   return [];
 }
 
-export async function saveVscProfile(profile: Profile, oldProfileLabel?: string): Promise<void> {
+export async function saveVscProfile(profile: Profile, oldProfileId?: string): Promise<void> {
   //get existing profiles
-  const profiles = getVscProfiles();
+  const profiles = getProfilesInSettings();
   profile = util.trimProperties(profile);
   let existingProfileIndex = -1;
-  if (oldProfileLabel) {
-    existingProfileIndex = profiles.findIndex((x) => x.label.toLowerCase() === oldProfileLabel.toLowerCase());
+  if (oldProfileId) {
+    // user is updating existing profile, no need to make changes to selected field
+    existingProfileIndex = profiles.findIndex((x) => {
+      if (x.id) {
+        return x.id?.toLowerCase() === oldProfileId.toLowerCase();
+      } else {
+        // for backward compatibility with old profiles without id
+        return x.label.toLowerCase() === oldProfileId.toLowerCase();
+      }
+    });
   } else {
-    existingProfileIndex = profiles.findIndex((x) => x.label.toLowerCase() === profile.label.toLowerCase());
+    // user is making a selection of profile (not updating the profile), so set selected to false
+    existingProfileIndex = profiles.findIndex((x) => {
+      if (x.id) {
+        return x.id?.toLowerCase() === profile.id?.toLowerCase();
+      } else {
+        // for backward compatibility with old profiles without id
+        return x.label.toLowerCase() === profile.label.toLowerCase();
+      }
+    });
     if (existingProfileIndex > -1) {
       // set existing to false if user is making a selection of profile (not updating the profile)
       profiles.forEach((x) => {
@@ -35,13 +44,6 @@ export async function saveVscProfile(profile: Profile, oldProfileLabel?: string)
         x.label = x.label.replace("$(check)", "").trim();
       });
     }
-  }
-  if (existingProfileIndex > -1) {
-    // set existing to false if user is making a selection of profile (not updating the profile)s
-    profiles.forEach((x) => {
-      x.selected = false;
-      x.label = x.label.replace("$(check)", "").trim();
-    });
   }
   if (existingProfileIndex > -1) {
     profiles[existingProfileIndex] = profile;
@@ -52,7 +54,7 @@ export async function saveVscProfile(profile: Profile, oldProfileLabel?: string)
 }
 
 export function getVscProfile(profileName: string): Profile | undefined {
-  const filtered = getVscProfiles().filter((x) => x.label.toLowerCase() === profileName.toLowerCase());
+  const filtered = getProfilesInSettings().filter((x) => x.label.toLowerCase() === profileName.toLowerCase());
   if (filtered && filtered.length > 0) {
     return Object.assign({}, filtered[0]);
   }
