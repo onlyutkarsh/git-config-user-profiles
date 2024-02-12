@@ -1,3 +1,10 @@
+## [1.3.3](https://github.com/onlyutkarsh/git-config-user-profiles/compare/v1.3.2...v1.3.3) (2024-02-12)
+
+
+### Bug Fixes
+
+* use npm as bun has issues ([a6e634f](https://github.com/onlyutkarsh/git-config-user-profiles/commit/a6e634f033642d3c70f76b1fee236546f0f575fa))
+
 ## [1.3.2](https://github.com/onlyutkarsh/git-config-user-profiles/compare/v1.3.1...v1.3.2) (2024-02-12)
 
 
