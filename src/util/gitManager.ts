@@ -3,10 +3,12 @@ import { simpleGit, SimpleGit } from "simple-git";
 import * as vscode from "vscode";
 import { Result } from "../commands/ICommand";
 import { getProfilesInSettings } from "../config";
+import * as constants from "../constants";
 import { Messages } from "../constants";
 import { Profile } from "../models";
 import * as util from "../util";
 import { Logger } from "../util";
+
 async function getCurrentFolder(): Promise<Result<string | undefined>> {
   const editor = vscode.window.activeTextEditor;
   let folder: vscode.WorkspaceFolder | undefined;
@@ -114,6 +116,25 @@ export enum WorkspaceStatus {
   NoSelectedProfilesInConfig,
   NotAValidWorkspace,
   NoIssues,
+}
+
+export async function validateWorkspace(result: { status: WorkspaceStatus; message?: string }): Promise<boolean> {
+  //TODO: Show error if the user deliberately deletes the username or email property from config
+  if (result.status === WorkspaceStatus.FieldsMissing) {
+    vscode.window.showErrorMessage(result.message || "One of label, userName or email properties is missing in the config. Please verify.");
+    await vscode.commands.executeCommand(constants.CommandIds.GET_USER_PROFILE, "missing field in profile");
+    return false;
+  }
+
+  if (result.status === WorkspaceStatus.NoProfilesInConfig) {
+    //if no profiles in config, prompt user to create (even if its non git workspace)
+    const selected = await vscode.window.showInformationMessage("No user profiles defined. Do you want to define one now?", "Yes", "No");
+    if (selected === "Yes") {
+      await vscode.commands.executeCommand(constants.CommandIds.CREATE_USER_PROFILE);
+    }
+    return false;
+  }
+  return true;
 }
 
 export async function getWorkspaceStatus(): Promise<{

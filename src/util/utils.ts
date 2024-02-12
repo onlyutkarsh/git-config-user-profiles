@@ -1,5 +1,6 @@
+import * as vscode from "vscode";
 import { window } from "vscode";
-import { getProfilesInSettings, getVscProfile, saveVscProfile } from "../config";
+import { getProfilesInSettings, getVscProfile } from "../config";
 import { Messages } from "../constants";
 import * as controls from "../controls";
 import { Profile } from "../models";
@@ -105,6 +106,21 @@ export async function showProfilePicker() {
   };
 }
 
+export async function deleteProfile(profile: Profile) {
+  const profiles = getProfilesInSettings();
+  let index = -1;
+  if (profile.id) {
+    index = profiles.findIndex((x) => x.id?.toLowerCase() === profile.id?.toLowerCase());
+  } else {
+    // for backward compatibility with old profiles without id
+    index = profiles.findIndex((x) => x.label.toLowerCase() === profile.label.toLowerCase());
+  }
+  if (index > -1) {
+    profiles.splice(index, 1);
+    await vscode.workspace.getConfiguration("gitConfigUser").update("profiles", profiles, vscode.ConfigurationTarget.Global);
+  }
+}
+
 export async function loadProfileInWizard(preloadedProfile: Profile): Promise<Profile> {
   const createNewProfile = false;
   const state: Partial<controls.State> = {
@@ -134,7 +150,6 @@ export async function createProfileWithWizard(): Promise<Profile> {
   const state: Partial<controls.State> = {};
   await controls.MultiStepInput.run(async (input) => await pickProfileName(input, state, createNewProfile));
   const profile: Profile = new Profile(state.profileName || "Unknown", state.profileUserName || "", state.profileEmail || "", false, state.profileSigningKey || "");
-  await saveVscProfile(profile);
   return profile;
 }
 async function shouldResume() {

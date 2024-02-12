@@ -103,8 +103,8 @@
   "contributes": {
     "commands": [
       {
-        "command": "git-config-user-profiles.selectUserProfile",
-        "title": "Git Config User Profiles: Select a git config user profile"
+        "command": "git-config-user-profiles.pickUserProfile",
+        "title": "Git Config User Profiles: Pick a git config user profile"
       },
       {
         "command": "git-config-user-profiles.createUserProfile",
@@ -112,11 +112,11 @@
       },
       {
         "command": "git-config-user-profiles.editUserProfile",
-        "title": "Git Config User Profiles: Edit a existing user profile"
+        "title": "Git Config User Profiles: Edit an existing user profile"
       },
       {
-        "command": "git-config-user-profiles.syncVscProfilesWithGitConfig",
-        "title": "Git Config User Profiles: Synchronize VS code user profile with local git config"
+        "command": "git-config-user-profiles.deleteUserProfile",
+        "title": "Git Config User Profiles: Delete an existing user profile"
       }
     ],
     "configuration": {
@@ -140,6 +140,10 @@
               "email": {
                 "type": "string",
                 "description": "User email"
+              },
+              "signingkey": {
+                "type": "string",
+                "description": "User signing key"
               }
             }
           },
