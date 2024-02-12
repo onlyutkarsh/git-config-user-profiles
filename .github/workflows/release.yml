@@ -30,10 +30,8 @@ jobs:
           fetch-depth: 0
           persist-credentials: false
 
-      - name: setup node
-        uses: actions/setup-node@v4
-        with:
-          node-version: "20.x"
+      - name: setup bun
+        uses: oven-sh/setup-bun@v1
 
       - name: semantic release
         id: "semantic-release"
@@ -49,31 +47,22 @@ jobs:
       - name: "print version"
         run: echo "New version ${{ steps.semantic-release.outputs.new_release_version }}"
 
-      - name: 💎 install cached dependencies
-        if: steps.semantic-release.outputs.new_release_version != ''
-        uses: actions/cache@v3
-        with:
-          path: ~/.npm
-          key: ${{ runner.os }}-node-${{ secrets.CACHE_VERSION }}-${{ hashFiles('**/package-lock.json') }}
-          restore-keys: |
-            ${{ runner.os }}-node-
-
       - name: 🚧 install dependencies
         if: steps.semantic-release.outputs.new_release_version != ''
-        run: npm install
+        run: bun install
 
       - name: 📦 compile and create vsix
         if: steps.semantic-release.outputs.new_release_version != ''
-        run: npm run package
+        run: bun run package
 
       - name: 📤 upload vsix to ovsx
         if: steps.semantic-release.outputs.new_release_version != ''
-        run: npm run publish:ovsx
+        run: bun run publish:ovsx
         env:
           OVSX_PAT: ${{ secrets.OVSX_PAT }}
 
       - name: 🚀 publish to marketplace
         if: success() && steps.semantic-release.outputs.new_release_version != ''
-        run: npm run deploy
+        run: bun run deploy
         env:
           VSCE_PAT: ${{ secrets.VS_MARKETPLACE_PAT }}
