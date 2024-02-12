@@ -1,118 +1,14 @@
-import { basename } from "path";
-import sgit from "simple-git";
-import { window, workspace, WorkspaceFolder } from "vscode";
-import { Result } from "../commands/ICommand";
+import { window } from "vscode";
 import { getProfilesInSettings, getVscProfile, saveVscProfile } from "../config";
 import { Messages } from "../constants";
 import * as controls from "../controls";
 import { Profile } from "../models";
 import * as util from "../util";
-import { Logger } from "../util";
-
-export async function isGitRepository(path: string): Promise<boolean> {
-  try {
-    return await sgit(path).checkIsRepo();
-  } catch (error) {
-    return false;
-  }
-}
-
-async function getCurrentFolder(): Promise<Result<string>> {
-  const editor = window.activeTextEditor;
-  let folder: WorkspaceFolder | undefined;
-  if (!workspace.workspaceFolders) {
-    return {
-      result: "",
-      message: Messages.NOT_A_VALID_REPO,
-    };
-  }
-  if (workspace.workspaceFolders.length === 0) {
-    return {
-      result: "",
-      message: "No workspace folder found.",
-    };
-  }
-  if (editor) {
-    // If we have a file:// resource we resolve the WorkspaceFolder this file is from and update
-    // the status accordingly.
-    const resource = editor.document.uri;
-    if (resource.scheme !== "file") {
-      return {
-        result: "",
-        message: `${resource.scheme} is not supported.`,
-      };
-    }
-    folder = workspace.getWorkspaceFolder(resource);
-    if (!folder) {
-      return {
-        result: "",
-        message: "This file is not part of a workspace folder.",
-      };
-    }
-  } else {
-    //if no file is open in the editor, we use the first workspace folder
-    folder = workspace.workspaceFolders[0];
-  }
-
-  if (!folder) {
-    return {
-      result: "",
-      message: Messages.NOT_A_VALID_REPO,
-    };
-  }
-  return {
-    result: folder.uri.fsPath,
-    message: "",
-  };
-}
-
-export async function isValidWorkspace(): Promise<{ isValid: boolean; message: string; folder?: string }> {
-  const result = await getCurrentFolder();
-  if (result.result && result.result === "") {
-    return {
-      message: result.message || Messages.NOT_A_VALID_REPO,
-      isValid: false,
-    };
-  }
-  const isGitRepo = await isGitRepository(result.result as string);
-  if (!isGitRepo) {
-    return {
-      message: Messages.NOT_A_VALID_REPO,
-      isValid: false,
-    };
-  }
-  return {
-    message: "",
-    isValid: true,
-    folder: result.result as string,
-  };
-}
 
 export function isEmpty(str: string | undefined | null) {
   return !str || 0 === str.length;
 }
 
-export async function getCurrentGitConfig(gitFolder: string): Promise<{ userName: string; email: string; signingKey: string }> {
-  Logger.instance.logInfo(`Getting details from config file of '${basename(gitFolder)}'`);
-  const git = sgit(gitFolder);
-  const rawUserName = await git.getConfig("user.name", "local");
-  const rawEmail = await git.getConfig("user.email", "local");
-  const rawSigningKey = await git.getConfig("user.signingkey", "local");
-
-  const currentConfig = {
-    userName: rawUserName.value || "",
-    email: rawEmail.value || "",
-    signingKey: rawSigningKey.value || "",
-  };
-  return currentConfig;
-}
-
-export async function updateGitConfig(gitFolder: string, profile: Profile) {
-  const git = sgit(gitFolder);
-  await git.addConfig("user.name", profile.userName, false, "local");
-  await git.addConfig("user.email", profile.email, false);
-  await git.addConfig("user.signingkey", profile.signingKey, false, "local");
-}
 export function trimLabelIcons(str: string) {
   if (str) {
     return str.replace("$(check)", "").trim();
@@ -144,7 +40,6 @@ export function validateUserName(input: string) {
   }
   return undefined;
 }
-
 export function validateEmail(input: string) {
   const validEmail = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
   if (!validEmail.test(input)) {
@@ -164,10 +59,13 @@ export function trimProperties(profile: Profile): Profile {
     signingKey: profile.signingKey.trim(),
   };
 }
-
-export function isConfigInSync(profile1: { email: string; userName: string; signingKey: string }, profile2: { email: string; userName: string; signingKey: string }): boolean {
+export function isConfigInSync(profile1?: { email: string; userName: string; signingKey: string }, profile2?: { email: string; userName: string; signingKey: string }): boolean {
+  if (!profile1 || !profile2) {
+    return false;
+  }
   return (
     !isNameAndEmailEmpty(profile1) &&
+    !isNameAndEmailEmpty(profile2) &&
     profile1.email.toLowerCase() === profile2.email.toLowerCase() &&
     profile1.userName.toLowerCase() === profile2.userName.toLowerCase() &&
     profile1.signingKey.toLowerCase() === profile2.signingKey.toLowerCase()
@@ -228,7 +126,7 @@ export async function loadProfileInWizard(preloadedProfile: Profile): Promise<Pr
     id: state.profileId || "",
     signingKey: state.profileSigningKey || "",
   };
-  await saveVscProfile(profile);
+  //await saveVscProfile(profile);
   return profile;
 }
 export async function createProfileWithWizard(): Promise<Profile> {
@@ -273,7 +171,6 @@ async function pickUserName(input: controls.MultiStepInput, state: Partial<contr
   });
   return (input: controls.MultiStepInput) => pickEmail(input, state, create);
 }
-
 async function pickEmail(input: controls.MultiStepInput, state: Partial<controls.State>, create = true) {
   state.profileEmail = await input.showInputBox({
     title: create ? "Create a profile" : "Edit profile",
@@ -288,7 +185,6 @@ async function pickEmail(input: controls.MultiStepInput, state: Partial<controls
   });
   return (input: controls.MultiStepInput) => pickSigningKey(input, state, create);
 }
-
 async function pickSigningKey(input: controls.MultiStepInput, state: Partial<controls.State>, create = true) {
   state.profileSigningKey = await input.showInputBox({
     title: create ? "Create a profile" : "Edit profile",

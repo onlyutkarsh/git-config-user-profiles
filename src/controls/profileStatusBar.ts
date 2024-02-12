@@ -49,12 +49,12 @@ export class ProfileStatusBar {
           text = `$(source-control) ${Constants.Application.APPLICATION_NAME} $(arrow-small-right) ${profile.label.replace("$(alert)", "").trim()}`;
         }
       }
-    } else if (content === undefined) {
-      text = `$(source-control) ${Constants.Application.APPLICATION_NAME}`;
-      tooltip = tooltip;
     } else {
-      text = `$(source-control) ${Constants.Application.APPLICATION_NAME}`;
-      tooltip = tooltip;
+      if (repoFolder) {
+        text = `$(source-control) ${basename(repoFolder)} $(arrow-small-right) $(question)`;
+      } else {
+        text = `$(source-control) ${Constants.Application.APPLICATION_NAME} $(arrow-small-right) $(question)`;
+      }
     }
     ProfileStatusBar._statusBar.text = text;
     ProfileStatusBar._statusBar.backgroundColor = status === StatusBarStatus.Normal ? normalBackground : warningBackground;

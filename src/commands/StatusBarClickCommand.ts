@@ -1,43 +1,29 @@
 import { basename } from "path";
 import * as vscode from "vscode";
 import { window } from "vscode";
-import { getProfilesInSettings, saveVscProfile } from "../config";
+import { saveVscProfile } from "../config";
 import * as constants from "../constants";
+import { Messages } from "../constants";
 import { Profile } from "../models";
 import * as util from "../util";
 import { Logger } from "../util";
+import * as gm from "../util/gitManager";
 import { EditUserProfileCommand } from "./EditUserProfileCommand";
 import { ICommand, Result } from "./ICommand";
 
 export class StatusBarClickCommand implements ICommand<void> {
   async execute(): Promise<Result<void>> {
     Logger.instance.logInfo(`Click event on status bar icon`);
-    const profilesInVscConfig = getProfilesInSettings();
-    const selectedProfileInVscConfig = profilesInVscConfig.filter((x) => x.selected) || [];
-    const emptyProfile = <Profile>{
-      label: constants.Application.APPLICATION_NAME,
-      selected: false,
-      email: "NA",
-      userName: "NA",
-    };
-    const selectedVscProfile: Profile | undefined = selectedProfileInVscConfig.length > 0 ? selectedProfileInVscConfig[0] : emptyProfile;
+    const result = await gm.getWorkspaceStatus();
 
     //TODO: Show error if the user deliberately deletes the username or email property from config
-    if (selectedVscProfile && (selectedVscProfile.label === undefined || selectedVscProfile.userName === undefined || selectedVscProfile.email === undefined)) {
-      window.showErrorMessage("One of label, userName or email properties is missing in the config. Please verify.");
+    if (result.status === gm.WorkspaceStatus.FieldsMissing) {
+      window.showErrorMessage(result.message || "One of label, userName or email properties is missing in the config. Please verify.");
       await vscode.commands.executeCommand(constants.CommandIds.GET_USER_PROFILE, "missing field in profile");
       return {};
     }
 
-    const validatedWorkspace = await util.isValidWorkspace();
-
-    let configInSync = false;
-    if (validatedWorkspace.isValid && validatedWorkspace.folder) {
-      const currentGitConfig = await util.getCurrentGitConfig(validatedWorkspace.folder);
-      configInSync = util.isConfigInSync(currentGitConfig, selectedVscProfile);
-    }
-
-    if (profilesInVscConfig.length === 0) {
+    if (result.status === gm.WorkspaceStatus.NoProfilesInConfig) {
       //if no profiles in config, prompt user to create (even if its non git workspace)
       const selected = await vscode.window.showInformationMessage("No user profiles defined. Do you want to define one now?", "Yes", "No");
       if (selected === "Yes") {
@@ -46,32 +32,38 @@ export class StatusBarClickCommand implements ICommand<void> {
       return {};
     }
 
-    let response;
-
-    if (validatedWorkspace.isValid === false) {
-      vscode.window.showErrorMessage(validatedWorkspace.message);
+    if (result.status === gm.WorkspaceStatus.NotAValidWorkspace) {
+      vscode.window.showErrorMessage(result.message || Messages.NOT_A_VALID_REPO);
       await vscode.commands.executeCommand(constants.CommandIds.GET_USER_PROFILE, "invalid workspace");
       return {};
     }
-    const workspaceFolder = validatedWorkspace.folder ? validatedWorkspace.folder : ".\\";
-    if (selectedProfileInVscConfig.length === 0) {
-      const profilesInVscConfig = getProfilesInSettings();
+    const workspaceFolder = result.currentFolder || ".\\";
+    let response;
+    if (result.status === gm.WorkspaceStatus.NoSelectedProfilesInConfig) {
       response = await vscode.window.showInformationMessage(
-        `You have ${profilesInVscConfig.length} profile(s) in settings. What do you want to do?`,
+        `You have ${result.profilesInVSConfigCount} profile(s) in settings, but none are selected. What do you want to do?`,
         "Pick a profile",
         "Edit existing",
         "Create new"
       );
     } else {
-      const notSyncOptions = ["Yes, apply", "No, pick another", "Edit existing", "Create new"];
-      const syncOptions = ["Apply again", "Pick a profile", "Edit existing", "Create new"];
+      if (result.selectedProfile === undefined) {
+        //this should never happen
+        Logger.instance.logError("Selected profile is undefined");
+        return {};
+      }
 
-      const options = configInSync ? syncOptions : notSyncOptions;
-      const message = configInSync
-        ? `'${basename(workspaceFolder)}' is already using user details from the profile '${util.trimLabelIcons(selectedVscProfile.label)}'. What do you want to do?`
-        : `'${basename(
-            workspaceFolder
-          )}' is not using user details from '${util.trimLabelIcons(selectedVscProfile.label)}' profile. Do you want to apply the user details from profile '${util.trimLabelIcons(selectedVscProfile.label)}'?`;
+      const notSyncOptions = ["Yes, apply", "No, pick another", "Edit existing", "Create new"];
+      const syncOptions = ["Pick a profile", "Edit existing", "Create new"];
+
+      const notSyncMessage = `'${basename(
+        workspaceFolder
+      )}' is not using user details from '${util.trimLabelIcons(result.selectedProfile!.label)}' profile. Do you want to apply the user details from profile '${util.trimLabelIcons(result.selectedProfile!.label)}'?`;
+
+      const syncMessage = `'${basename(workspaceFolder)}' is already using user details from the profile '${util.trimLabelIcons(result.selectedProfile!.label)}'. What do you want to do?`;
+
+      const options = result.configInSync ? syncOptions : notSyncOptions;
+      const message = result.configInSync ? syncMessage : notSyncMessage;
 
       response = await vscode.window.showInformationMessage(message, ...options);
     }
@@ -86,7 +78,7 @@ export class StatusBarClickCommand implements ICommand<void> {
       return {};
     }
     if (response === "Yes, apply" || response === "Apply again") {
-      util.updateGitConfig(workspaceFolder, selectedVscProfile);
+      gm.updateGitConfig(workspaceFolder, result.selectedProfile!);
       await vscode.commands.executeCommand(constants.CommandIds.GET_USER_PROFILE, "applied profile");
 
       return {};
@@ -106,17 +98,18 @@ export class StatusBarClickCommand implements ICommand<void> {
         pickedProfile.label = pickedProfile.label;
         pickedProfile.selected = true;
         await saveVscProfile(Object.assign({}, pickedProfile));
-        util.updateGitConfig(workspaceFolder, pickedProfile);
+        gm.updateGitConfig(workspaceFolder, pickedProfile);
 
         await vscode.commands.executeCommand(constants.CommandIds.GET_USER_PROFILE, "picked profile");
       } else {
         // profile is already set in the statusbar,
         // user clicks statusbar, picklist is shown to switch profiles, but user does not pick anything
         // leave selected as is
-        if (selectedProfileInVscConfig.length > 0) {
-          await vscode.commands.executeCommand(constants.CommandIds.GET_USER_PROFILE, "cancelled profile switch");
-          return {};
-        }
+        // if (selectedProfileInVscConfig.length > 0) {
+        //   await vscode.commands.executeCommand(constants.CommandIds.GET_USER_PROFILE, "cancelled profile switch");
+        //   return {};
+        // }
+        return {};
       }
     }
     return {};
