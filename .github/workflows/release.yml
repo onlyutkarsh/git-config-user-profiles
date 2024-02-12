@@ -31,15 +31,14 @@ jobs:
           persist-credentials: false
 
       - name: setup node
-        uses: actions/setup-node@v3.4.1
+        uses: actions/setup-node@v4
         with:
-          node-version: "18.x"
+          node-version: "20.x"
 
       - name: semantic release
         id: "semantic-release"
-        uses: cycjimmy/semantic-release-action@v2
+        uses: cycjimmy/semantic-release-action@v4
         with:
-          semantic_version: 19.0.5
           extra_plugins: |
             @semantic-release/changelog
             @semantic-release/github
