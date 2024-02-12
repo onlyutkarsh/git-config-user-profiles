@@ -1,4 +1,4 @@
-import { commands, ExtensionContext, FileSystemWatcher, window, workspace } from "vscode";
+import * as vscode from "vscode";
 import { CreateUserProfileCommand } from "./commands/CreateUserProfileCommand";
 import { DeleteUserProfileCommand } from "./commands/DeleteUserProfileCommand";
 import { EditUserProfileCommand } from "./commands/EditUserProfileCommand";
@@ -10,9 +10,9 @@ import * as constants from "./constants";
 import { ProfileStatusBar as statusBar } from "./controls";
 import { Logger } from "./util/logger";
 
-const _fileWatchersBySrc = new Map</* src: */ string, FileSystemWatcher>();
+const _fileWatchersBySrc = new Map</* src: */ string, vscode.FileSystemWatcher>();
 
-export async function activate(context: ExtensionContext) {
+export async function activate(context: vscode.ExtensionContext) {
   try {
     Logger.instance.logInfo("Activating extension");
 
@@ -28,43 +28,53 @@ export async function activate(context: ExtensionContext) {
   }
 }
 
-function registerCommands(context: ExtensionContext) {
+function registerCommands(context: vscode.ExtensionContext) {
   Logger.instance.logInfo("Initializing commands");
-  context.subscriptions.push(commands.registerCommand(constants.CommandIds.STATUS_BAR_CLICK, new StatusBarClickCommand().execute));
+  context.subscriptions.push(vscode.commands.registerCommand(constants.CommandIds.STATUS_BAR_CLICK, new StatusBarClickCommand().execute));
   context.subscriptions.push(statusBar.instance.StatusBar);
-  context.subscriptions.push(commands.registerCommand(constants.CommandIds.CREATE_USER_PROFILE, new CreateUserProfileCommand().execute));
-  context.subscriptions.push(commands.registerCommand(constants.CommandIds.SYNC_VSC_PROFILES_WITH_GIT_CONFIG, new SyncVscProfilesWithGitConfig().execute));
-  context.subscriptions.push(commands.registerCommand(constants.CommandIds.EDIT_USER_PROFILE, new EditUserProfileCommand().execute));
-  context.subscriptions.push(commands.registerCommand(constants.CommandIds.GET_USER_PROFILE, new GetUserProfileCommand().execute));
-  context.subscriptions.push(commands.registerCommand(constants.CommandIds.DELETE_USER_PROFILE, new DeleteUserProfileCommand().execute));
-  context.subscriptions.push(commands.registerCommand(constants.CommandIds.PICK_USER_PROFILE, new PickUserProfileCommand().execute));
+  context.subscriptions.push(vscode.commands.registerCommand(constants.CommandIds.CREATE_USER_PROFILE, new CreateUserProfileCommand().execute));
+  context.subscriptions.push(vscode.commands.registerCommand(constants.CommandIds.SYNC_VSC_PROFILES_WITH_GIT_CONFIG, new SyncVscProfilesWithGitConfig().execute));
+  context.subscriptions.push(vscode.commands.registerCommand(constants.CommandIds.EDIT_USER_PROFILE, new EditUserProfileCommand().execute));
+  context.subscriptions.push(vscode.commands.registerCommand(constants.CommandIds.GET_USER_PROFILE, new GetUserProfileCommand().execute));
+  context.subscriptions.push(vscode.commands.registerCommand(constants.CommandIds.DELETE_USER_PROFILE, new DeleteUserProfileCommand().execute));
+  context.subscriptions.push(vscode.commands.registerCommand(constants.CommandIds.PICK_USER_PROFILE, new PickUserProfileCommand().execute));
   Logger.instance.logInfo("Initializing status bar");
   statusBar.instance.attachCommand(constants.CommandIds.STATUS_BAR_CLICK);
 }
 
-function registerForVSCodeEditorEvents(context: ExtensionContext) {
+function registerForVSCodeEditorEvents(context: vscode.ExtensionContext) {
   Logger.instance.logInfo("Registering for vs settings change event");
-  context.subscriptions.push(workspace.onDidChangeConfiguration(async () => await commands.executeCommand(constants.CommandIds.GET_USER_PROFILE, "changed settings")));
-  context.subscriptions.push(window.onDidChangeActiveTextEditor(async () => await commands.executeCommand(constants.CommandIds.GET_USER_PROFILE, "changed active editor")));
-  context.subscriptions.push(workspace.onDidChangeWorkspaceFolders(async () => await commands.executeCommand(constants.CommandIds.GET_USER_PROFILE, "changed workspace folders")));
+  context.subscriptions.push(
+    vscode.workspace.onDidChangeConfiguration(async () => await vscode.commands.executeCommand(constants.CommandIds.GET_USER_PROFILE, "changed settings"))
+  );
+  context.subscriptions.push(
+    vscode.window.onDidChangeActiveTextEditor(async () => await vscode.commands.executeCommand(constants.CommandIds.GET_USER_PROFILE, "changed active editor"))
+  );
+  context.subscriptions.push(
+    vscode.workspace.onDidChangeWorkspaceFolders(async () => await vscode.commands.executeCommand(constants.CommandIds.GET_USER_PROFILE, "changed workspace folders"))
+  );
 
-  context.subscriptions.push(workspace.onDidOpenTextDocument(async () => await commands.executeCommand(constants.CommandIds.GET_USER_PROFILE, "opened text document")));
-  context.subscriptions.push(workspace.onDidCloseTextDocument(async () => await commands.executeCommand(constants.CommandIds.GET_USER_PROFILE, "closed text document")));
+  context.subscriptions.push(
+    vscode.workspace.onDidOpenTextDocument(async () => await vscode.commands.executeCommand(constants.CommandIds.GET_USER_PROFILE, "opened text document"))
+  );
+  context.subscriptions.push(
+    vscode.workspace.onDidCloseTextDocument(async () => await vscode.commands.executeCommand(constants.CommandIds.GET_USER_PROFILE, "closed text document"))
+  );
 }
 
 function createGitConfigFileWatcher() {
   // Delete stale file watchers.
   _fileWatchersBySrc.clear();
 
-  const fsWatcher = workspace.createFileSystemWatcher("**/.git/config");
+  const fsWatcher = vscode.workspace.createFileSystemWatcher("**/.git/config");
   fsWatcher.onDidChange(async () => {
-    await commands.executeCommand(constants.CommandIds.GET_USER_PROFILE, "changed git config");
+    await vscode.commands.executeCommand(constants.CommandIds.GET_USER_PROFILE, "changed git config");
   });
   fsWatcher.onDidCreate(async () => {
-    await commands.executeCommand(constants.CommandIds.GET_USER_PROFILE, "created git config");
+    await vscode.commands.executeCommand(constants.CommandIds.GET_USER_PROFILE, "created git config");
   });
   fsWatcher.onDidDelete(async () => {
-    await commands.executeCommand(constants.CommandIds.GET_USER_PROFILE, "deleted git config");
+    await vscode.commands.executeCommand(constants.CommandIds.GET_USER_PROFILE, "deleted git config");
   });
   _fileWatchersBySrc.set("**/.git/config", fsWatcher);
   Logger.instance.logInfo("File watcher created for git config");

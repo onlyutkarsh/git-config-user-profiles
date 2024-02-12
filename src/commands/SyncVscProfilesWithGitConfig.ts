@@ -4,6 +4,7 @@ import { getProfilesInSettings, saveVscProfile } from "../config";
 import * as constants from "../constants";
 import { Profile } from "../models";
 import * as util from "../util";
+import * as gm from "../util/gitManager";
 import { ICommand, Result } from "./ICommand";
 
 export class SyncVscProfilesWithGitConfig implements ICommand<boolean> {
@@ -13,7 +14,7 @@ export class SyncVscProfilesWithGitConfig implements ICommand<boolean> {
   }
   async execute(): Promise<Result<boolean>> {
     // check if is valid git workspace
-    const validatedWorkspace = await util.isValidWorkspace();
+    const validatedWorkspace = await gm.isValidWorkspace();
     if (!(validatedWorkspace.isValid && validatedWorkspace.folder)) {
       // window.showWarningMessage(Constants.Messages.NOT_A_VALID_REPO);
       return { result: true };
@@ -21,7 +22,7 @@ export class SyncVscProfilesWithGitConfig implements ICommand<boolean> {
 
     // get git config profile
     // let gitProfile: { userName: string; email: string };
-    const gitProfile = await util.getCurrentGitConfig(validatedWorkspace.folder);
+    const gitProfile = await gm.getCurrentGitConfig(validatedWorkspace.folder);
     // get all existing vsc profiles
     const vscProfiles = getProfilesInSettings();
 

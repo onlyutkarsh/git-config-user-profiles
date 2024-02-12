@@ -24,7 +24,7 @@
   ],
   "license": "MIT",
   "engines": {
-    "vscode": "^1.85.0"
+    "vscode": "^1.83.0"
   },
   "extensionKind": [
     "workspace"
@@ -42,30 +42,17 @@
   ],
   "main": "./out/extension.js",
   "scripts": {
-    "vscode:prepublish": "bun run -S esbuild-base -- --minify",
+    "vscode:prepublish": "npm run -S esbuild-base -- --minify",
     "esbuild-base": "rimraf out && esbuild ./src/extension.ts --tsconfig=src/tsconfig.json --bundle --outfile=out/extension.js --external:vscode --format=cjs --platform=node",
-    "esbuild": "bun run esbuild-base --sourcemap",
-    "esbuild-watch": "bun run esbuild-base --sourcemap --watch",
+    "esbuild": "npm run -S esbuild-base -- --sourcemap",
+    "esbuild-watch": "npm run -S esbuild-base -- --sourcemap --watch",
     "compile": "tsc -p ./src",
-    "dev": "bun run compile && bun run esbuild-watch",
-    "package": "vsce package",
-    "deploy": "vsce publish",
+    "dev": "npm run compile && npm run esbuild-watch",
+    "package": "vsce package --allow-star-activation",
+    "deploy": "vsce publish --allow-star-activation",
     "publish:ovsx": "ovsx publish",
     "clean": "git clean -fdX",
-    "pushchanges": "git push && git push --tags",
-    "test-base": "rimraf out/test && esbuild ./test/*/** --outdir=out/test/ --format=cjs --platform=node",
-    "test-watch": "bun run -S test-base -- --sourcemap --watch",
-    "test": "jest --verbose",
-    "test-ci": "jest --coverage --reporters=jest-junit"
-  },
-  "jest-junit": {
-    "outputDirectory": "<rootDir>/test/reports",
-    "outputName": "jest-junit.xml",
-    "ancestorSeparator": " > ",
-    "uniqueOutputName": "false",
-    "suiteNameTemplate": "{filepath}",
-    "classNameTemplate": "{classname}",
-    "titleTemplate": "{title}"
+    "pushchanges": "git push && git push --tags"
   },
   "devDependencies": {
     "@semantic-release/changelog": "^6.0.3",
@@ -73,30 +60,30 @@
     "@types/fs-extra": "^11.0.4",
     "@types/gitconfiglocal": "^2.0.3",
     "@types/glob": "^8.1.0",
-    "@types/jest": "^29.5.11",
-    "@types/node": "~20.11.7",
-    "@types/vscode": "^1.85.0",
-    "@typescript-eslint/eslint-plugin": "^6.19.1",
-    "@typescript-eslint/parser": "^6.19.1",
-    "@vscode/vsce": "^2.23.0",
-    "esbuild": "^0.15.18",
+    "@types/jest": "^29.5.12",
+    "@types/node": "~20.11.17",
+    "@types/vscode": "^1.83.0",
+    "@typescript-eslint/eslint-plugin": "^7.0.1",
+    "@typescript-eslint/parser": "^7.0.1",
+    "esbuild": "^0.20.0",
     "eslint": "^8.56.0",
     "fs-extra": "^11.2.0",
-    "glob": "^8.1.0",
+    "glob": "^10.3.10",
     "jest": "^29.7.0",
     "jest-junit": "^16.0.0",
     "jest-standard-reporter": "^2.0.0",
     "mocha-explorer-launcher-scripts": "^0.4.0",
     "ovsx": "^0.8.3",
-    "prettier": "^3.2.4",
+    "prettier": "^3.2.5",
     "rimraf": "^5.0.5",
     "simple-get": "^4.0.1",
     "source-map-support": "^0.5.21",
     "ts-jest": "^29.1.2",
-    "typescript": "~5.3.3"
+    "typescript": "~5.3.3",
+    "@types/uuid": "^9.0.8",
+    "@vscode/vsce": "^2.23.0"
   },
   "dependencies": {
-    "@types/uuid": "^9.0.8",
     "simple-git": "~3.22.0",
     "uuid": "^9.0.1"
   },
