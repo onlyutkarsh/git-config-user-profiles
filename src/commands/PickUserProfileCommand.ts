@@ -6,7 +6,6 @@ import { Profile } from "../models";
 import * as util from "../util";
 import * as gm from "../util/gitManager";
 import { ICommand, Result } from "./ICommand";
-
 export class PickUserProfileCommand implements ICommand<Profile> {
   private static instance: PickUserProfileCommand | null = null;
 

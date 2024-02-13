@@ -5,7 +5,6 @@ import { Profile } from "../models";
 import * as util from "../util";
 import * as gm from "../util/gitManager";
 import { ICommand, Result } from "./ICommand";
-
 export class EditUserProfileCommand implements ICommand<boolean> {
   private static instance: EditUserProfileCommand | null = null;
 
@@ -36,7 +35,6 @@ export class EditUserProfileCommand implements ICommand<boolean> {
           if (updatedProfile.id) {
             await saveVscProfile(updatedProfile, updatedProfile.id);
           } else {
-            // backward compatibility
             await saveVscProfile(updatedProfile, updatedProfile.label);
           }
           vscode.commands.executeCommand(constants.CommandIds.GET_USER_PROFILE, "edited profile");

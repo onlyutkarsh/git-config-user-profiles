@@ -57,20 +57,32 @@ export function trimProperties(profile: Profile): Profile {
     selected: profile.selected,
     detail: undefined,
     id: profile.id,
-    signingKey: profile.signingKey.trim(),
+    signingKey: profile.signingKey?.trim(),
   };
 }
 export function isConfigInSync(profile1?: { email: string; userName: string; signingKey: string }, profile2?: { email: string; userName: string; signingKey: string }): boolean {
   if (!profile1 || !profile2) {
     return false;
   }
-  return (
-    !isNameAndEmailEmpty(profile1) &&
-    !isNameAndEmailEmpty(profile2) &&
-    profile1.email.toLowerCase() === profile2.email.toLowerCase() &&
-    profile1.userName.toLowerCase() === profile2.userName.toLowerCase() &&
-    profile1.signingKey.toLowerCase() === profile2.signingKey.toLowerCase()
-  );
+  let userNameSame = false;
+  let emailSame = false;
+  let signingKeySame = false;
+  if (profile1.userName && profile2.userName) {
+    userNameSame = profile1.userName.toLowerCase() === profile2.userName.toLowerCase();
+  }
+  if (profile1.email && profile2.email) {
+    emailSame = profile1.email.toLowerCase() === profile2.email.toLowerCase();
+  }
+  if (profile1.signingKey && profile2.signingKey) {
+    signingKeySame = profile1.signingKey.toLowerCase() === profile2.signingKey.toLowerCase();
+  }
+  if (profile1.signingKey === undefined || profile2.signingKey === undefined || profile1.signingKey === "" || profile2.signingKey === "") {
+    // backward compatibility with old profiles without signingKey
+    // if any profile does not have signing key, user is comparing old vs new profile, dont compare signing key
+    signingKeySame = true;
+  }
+
+  return userNameSame && emailSame && signingKeySame;
 }
 
 export function isNameAndEmailEmpty(profile: { email: string; userName: string }): boolean {
@@ -128,7 +140,7 @@ export async function loadProfileInWizard(preloadedProfile: Profile): Promise<Pr
     profileEmail: preloadedProfile.email,
     profileUserName: preloadedProfile.userName,
     profileName: preloadedProfile.label || "",
-    profileId: preloadedProfile.id,
+    profileId: preloadedProfile.id || "",
     profileSelected: preloadedProfile.selected,
     profileSigningKey: preloadedProfile.signingKey,
   };

@@ -1,11 +1,11 @@
-import { ConfigurationTarget, workspace } from "vscode";
+import * as vscode from "vscode";
 import { Profile } from "./models";
 import * as util from "./util";
 
 export function getProfilesInSettings(): Profile[] {
-  const profiles = workspace.getConfiguration("gitConfigUser").get<Profile[]>("profiles");
+  const profiles = vscode.workspace.getConfiguration("gitConfigUser").get<Profile[]>("profiles");
 
-  if (profiles) {
+  if (profiles && profiles.length > 0) {
     // map all profiles in to profiles entity and return
     return profiles;
   }
@@ -21,7 +21,7 @@ export async function saveVscProfile(profile: Profile, oldProfileId?: string): P
     // user is updating existing profile, no need to make changes to selected field
     existingProfileIndex = profiles.findIndex((x) => {
       if (x.id) {
-        return x.id?.toLowerCase() === oldProfileId.toLowerCase();
+        return x.id === oldProfileId;
       } else {
         // for backward compatibility with old profiles without id
         return x.label.toLowerCase() === oldProfileId.toLowerCase();
@@ -31,7 +31,7 @@ export async function saveVscProfile(profile: Profile, oldProfileId?: string): P
     // user is making a selection of profile (not updating the profile), so set selected to false
     existingProfileIndex = profiles.findIndex((x) => {
       if (x.id) {
-        return x.id?.toLowerCase() === profile.id?.toLowerCase();
+        return x.id === profile.id;
       } else {
         // for backward compatibility with old profiles without id
         return x.label.toLowerCase() === profile.label.toLowerCase();
@@ -50,7 +50,7 @@ export async function saveVscProfile(profile: Profile, oldProfileId?: string): P
   } else {
     profiles.push(profile);
   }
-  await workspace.getConfiguration("gitConfigUser").update("profiles", profiles, ConfigurationTarget.Global);
+  await vscode.workspace.getConfiguration("gitConfigUser").update("profiles", profiles, true);
 }
 
 export function getVscProfile(profileName: string): Profile | undefined {

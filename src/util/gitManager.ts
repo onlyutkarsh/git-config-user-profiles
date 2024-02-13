@@ -1,5 +1,6 @@
 import { basename } from "path";
 import { simpleGit, SimpleGit } from "simple-git";
+import { v4 as uuidv4 } from "uuid";
 import * as vscode from "vscode";
 import { Result } from "../commands/ICommand";
 import { getProfilesInSettings } from "../config";
@@ -161,6 +162,22 @@ export async function getWorkspaceStatus(): Promise<{
     };
   }
   const profilesInVscConfig = getProfilesInSettings();
+  //migrate all old profiles to new format
+  let saveConfig = false;
+  profilesInVscConfig.forEach((x) => {
+    if (x.id === undefined || x.id === "" || x.signingKey == undefined || x.signingKey == null) {
+      saveConfig = true;
+    }
+    if (!x.id) {
+      x.id = uuidv4();
+    }
+    if (!x.signingKey) {
+      x.signingKey = "";
+    }
+  });
+  if (saveConfig) {
+    await vscode.workspace.getConfiguration("gitConfigUser").update("profiles", profilesInVscConfig, true);
+  }
   const selectedProfileInVscConfig = profilesInVscConfig.filter((x) => x.selected === true) || [];
   const selectedVscProfile: Profile | undefined = selectedProfileInVscConfig.length > 0 ? selectedProfileInVscConfig[0] : undefined;
   const currentGitConfig = await getCurrentGitConfig(folder);
