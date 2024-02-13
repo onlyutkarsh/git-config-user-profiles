@@ -2,7 +2,7 @@
 
 Ever wanted to use different username and email addresses for your commits at work and for your personal repositories? While it is easy to do using `git config` command, this extension allows you to maintain different username and email in named profiles and allows you to easily switch and apply to the repository you are working.
 
-> Changes
+> Latest Changes
 > 
 > - [new] Supports `signingkey`.
 > - [new] Supports deleting profiles - Type 'git config profiles' in command palette and select 'Delete a profile'.
