@@ -1,4 +1,4 @@
-//interface for command pattern
+//interface for command pattern useful for accurate typing
 export interface ICommand<T> {
   execute(...params: any[]): Promise<Result<T>>;
 }
