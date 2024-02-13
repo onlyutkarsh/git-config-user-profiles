@@ -1,3 +1,15 @@
+# [2.0.0](https://github.com/onlyutkarsh/git-config-user-profiles/compare/v1.3.7...v2.0.0) (2024-02-13)
+
+
+### Bug Fixes
+
+* update readme and crash with old profiles ([a7ee234](https://github.com/onlyutkarsh/git-config-user-profiles/commit/a7ee23411a62e38ba1e503af17e2bd1c2754096b))
+
+
+### BREAKING CHANGES
+
+* Support signingkey, migrate old profiles to new and allow delete profiles with command palette.
+
 ## [1.3.7](https://github.com/onlyutkarsh/git-config-user-profiles/compare/v1.3.6...v1.3.7) (2024-02-13)
 
 
