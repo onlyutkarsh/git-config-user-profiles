@@ -1,3 +1,10 @@
+## [1.3.4](https://github.com/onlyutkarsh/git-config-user-profiles/compare/v1.3.3...v1.3.4) (2024-02-13)
+
+
+### Bug Fixes
+
+* minor comment ([381df0e](https://github.com/onlyutkarsh/git-config-user-profiles/commit/381df0ed0938009a78ec21cac7bd9633b9140b94))
+
 ## [1.3.3](https://github.com/onlyutkarsh/git-config-user-profiles/compare/v1.3.2...v1.3.3) (2024-02-12)
 
 
