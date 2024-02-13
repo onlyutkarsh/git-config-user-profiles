@@ -1,3 +1,10 @@
+## [1.3.5](https://github.com/onlyutkarsh/git-config-user-profiles/compare/v1.3.4...v1.3.5) (2024-02-13)
+
+
+### Bug Fixes
+
+* crash with old profiles. ([cbbd561](https://github.com/onlyutkarsh/git-config-user-profiles/commit/cbbd561c76909b6ab91fd03e832ea8802fce6451))
+
 ## [1.3.4](https://github.com/onlyutkarsh/git-config-user-profiles/compare/v1.3.3...v1.3.4) (2024-02-13)
 
 
