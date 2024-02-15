@@ -5,6 +5,7 @@
       "dbaeumer.vscode-eslint",
       "kavod-io.vscode-jest-test-adapter",
       "hbenl.vscode-test-explorer",
-      "esbenp.prettier-vscode"
+      "esbenp.prettier-vscode",
+      "usernamehw.errorlens"
     ],
 }

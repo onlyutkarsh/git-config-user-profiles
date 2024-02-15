@@ -112,6 +112,7 @@ export async function isGitRepository(path: string): Promise<boolean> {
 }
 
 export enum WorkspaceStatus {
+  ConfigOutofSync,
   FieldsMissing,
   NoProfilesInConfig,
   NoSelectedProfilesInConfig,
@@ -188,7 +189,7 @@ export async function getWorkspaceStatus(): Promise<{
       message: "No profiles found in settings.",
       profilesInVSConfigCount: 0,
       selectedProfile: selectedVscProfile,
-      configInSync: configInSync,
+      configInSync: configInSync.result,
       currentFolder: folder,
     };
   }
@@ -198,7 +199,7 @@ export async function getWorkspaceStatus(): Promise<{
       message: "No profiles selected in settings.",
       profilesInVSConfigCount: profilesInVscConfig.length,
       selectedProfile: selectedVscProfile,
-      configInSync: configInSync,
+      configInSync: configInSync.result,
       currentFolder: folder,
     };
   }
@@ -208,7 +209,17 @@ export async function getWorkspaceStatus(): Promise<{
       message: "One of label, userName or email properties is missing in the config. Please verify.",
       profilesInVSConfigCount: profilesInVscConfig.length,
       selectedProfile: selectedVscProfile,
-      configInSync: configInSync,
+      configInSync: configInSync.result,
+      currentFolder: folder,
+    };
+  }
+  if (!configInSync.result) {
+    return {
+      status: WorkspaceStatus.ConfigOutofSync,
+      message: configInSync.message || "Git config is not in sync with the selected profile.",
+      profilesInVSConfigCount: profilesInVscConfig.length,
+      selectedProfile: selectedVscProfile,
+      configInSync: configInSync.result,
       currentFolder: folder,
     };
   }
@@ -217,7 +228,7 @@ export async function getWorkspaceStatus(): Promise<{
     message: "",
     profilesInVSConfigCount: profilesInVscConfig.length,
     selectedProfile: selectedVscProfile,
-    configInSync: configInSync,
+    configInSync: configInSync.result,
     currentFolder: folder,
   };
 }

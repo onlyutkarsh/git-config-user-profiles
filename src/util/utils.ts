@@ -1,7 +1,8 @@
 import * as vscode from "vscode";
 import { window } from "vscode";
+import { Result } from "../commands/ICommand";
 import { getProfilesInSettings, getVscProfile } from "../config";
-import { Messages } from "../constants";
+import * as constants from "../constants";
 import * as controls from "../controls";
 import { Profile } from "../models";
 import * as util from "../util";
@@ -24,7 +25,7 @@ export function isBlank(str: string) {
 
 export function validateProfileName(input: string, checkForDuplicates = true) {
   if (isEmpty(input) || isBlank(input)) {
-    return Messages.ENTER_A_VALID_STRING;
+    return constants.Messages.ENTER_A_VALID_STRING;
   }
   if (checkForDuplicates) {
     const existingProfile = getVscProfile(input);
@@ -37,14 +38,14 @@ export function validateProfileName(input: string, checkForDuplicates = true) {
 
 export function validateUserName(input: string) {
   if (isEmpty(input) || isBlank(input)) {
-    return Messages.ENTER_A_VALID_STRING;
+    return constants.Messages.ENTER_A_VALID_STRING;
   }
   return undefined;
 }
 export function validateEmail(input: string) {
   const validEmail = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
   if (!validEmail.test(input)) {
-    return Messages.NOT_A_VALID_EMAIL;
+    return constants.Messages.NOT_A_VALID_EMAIL;
   }
   return undefined;
 }
@@ -60,29 +61,46 @@ export function trimProperties(profile: Profile): Profile {
     signingKey: profile.signingKey?.trim(),
   };
 }
-export function isConfigInSync(profile1?: { email: string; userName: string; signingKey: string }, profile2?: { email: string; userName: string; signingKey: string }): boolean {
-  if (!profile1 || !profile2) {
-    return false;
+export function isConfigInSync(
+  profile1?: { email: string; userName: string; signingKey: string },
+  profile2?: { email: string; userName: string; signingKey: string }
+): Result<boolean> {
+  if (profile1 === null || profile1 === undefined || profile2 === null || profile2 === undefined) {
+    return {
+      result: false,
+      message: "One of the profiles is undefined. Cannot compare.",
+    };
   }
   let userNameSame = false;
   let emailSame = false;
   let signingKeySame = false;
-  if (profile1.userName && profile2.userName) {
-    userNameSame = profile1.userName.toLowerCase() === profile2.userName.toLowerCase();
-  }
-  if (profile1.email && profile2.email) {
-    emailSame = profile1.email.toLowerCase() === profile2.email.toLowerCase();
-  }
-  if (profile1.signingKey && profile2.signingKey) {
-    signingKeySame = profile1.signingKey.toLowerCase() === profile2.signingKey.toLowerCase();
-  }
-  if (profile1.signingKey === undefined || profile2.signingKey === undefined || profile1.signingKey === "" || profile2.signingKey === "") {
-    // backward compatibility with old profiles without signingKey
-    // if any profile does not have signing key, user is comparing old vs new profile, dont compare signing key
-    signingKeySame = true;
+
+  userNameSame = profile1.userName === profile2.userName;
+  if (!userNameSame) {
+    return {
+      result: false,
+      message: `User names are different.`,
+    };
   }
 
-  return userNameSame && emailSame && signingKeySame;
+  emailSame = profile1.email.toLowerCase() === profile2.email.toLowerCase();
+  if (!emailSame) {
+    return {
+      result: false,
+      message: `Emails are different.`,
+    };
+  }
+  signingKeySame = profile1.signingKey.toLowerCase() === profile2.signingKey.toLowerCase();
+  if (!signingKeySame) {
+    return {
+      result: false,
+      message: `Signing keys are different.`,
+    };
+  }
+  return {
+    result: userNameSame && emailSame && signingKeySame,
+    message: `Profiles are in sync.`,
+  };
 }
 
 export function isNameAndEmailEmpty(profile: { email: string; userName: string }): boolean {
