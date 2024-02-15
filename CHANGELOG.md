@@ -1,3 +1,10 @@
+## [2.0.1](https://github.com/onlyutkarsh/git-config-user-profiles/compare/v2.0.0...v2.0.1) (2024-02-15)
+
+
+### Bug Fixes
+
+* logic of comparing of git config ([5bf97cd](https://github.com/onlyutkarsh/git-config-user-profiles/commit/5bf97cd58d3fdd5aa88a7720c2a2624dd6b06b59))
+
 # [2.0.0](https://github.com/onlyutkarsh/git-config-user-profiles/compare/v1.3.7...v2.0.0) (2024-02-13)
 
 
