@@ -4,10 +4,10 @@ Ever wanted to use different username and email addresses for your commits at wo
 
 > Latest Changes
 > 
-> - [new] Supports `signingkey`.
-> - [new] Supports deleting profiles - Type 'git config profiles' in command palette and select 'Delete a profile'.
-> - [new] Migrate old profiles to new format.
-> - [fix] Crash with old profiles.
+> - ✅ Add support for `signingkey`.
+> - ✅ Add supports deleting profiles - Type 'git config profiles' in command palette and select 'Delete a profile'.
+> - ✅ Add Migrate old profiles to new format.
+> - 🐞 Fix Crash with old profiles.
 
 ![demo](images/marketplace/demo.gif)
 

@@ -96,6 +96,21 @@ export async function getCurrentGitConfig(gitFolder: string): Promise<{ userName
   return currentConfig;
 }
 
+export async function getGlobalGitConfig(): Promise<{ userName: string; email: string; signingKey: string }> {
+  Logger.instance.logInfo(`Getting details from global git config`);
+  const git: SimpleGit = simpleGit();
+  const rawUserName = await git.getConfig("user.name", "global");
+  const rawEmail = await git.getConfig("user.email", "global");
+  const rawSigningKey = await git.getConfig("user.signingkey", "global");
+
+  const currentConfig = {
+    userName: rawUserName.value || "",
+    email: rawEmail.value || "",
+    signingKey: rawSigningKey.value || "",
+  };
+  return currentConfig;
+}
+
 export async function updateGitConfig(gitFolder: string, profile: Profile) {
   const git = simpleGit(gitFolder);
   await git.addConfig("user.name", profile.userName, false, "local");
@@ -179,11 +194,15 @@ export async function getWorkspaceStatus(): Promise<{
   if (saveConfig) {
     await vscode.workspace.getConfiguration("gitConfigUser").update("profiles", profilesInVscConfig, true);
   }
+
   const selectedProfileInVscConfig = profilesInVscConfig.filter((x) => x.selected === true) || [];
   const selectedVscProfile: Profile | undefined = selectedProfileInVscConfig.length > 0 ? selectedProfileInVscConfig[0] : undefined;
   const currentGitConfig = await getCurrentGitConfig(folder);
+  const globalGitConfig = await getGlobalGitConfig();
+
   const configInSync = util.isConfigInSync(currentGitConfig, selectedVscProfile);
   if (profilesInVscConfig.length === 0) {
+    // user does not have any profile defined in settings
     return {
       status: WorkspaceStatus.NoProfilesInConfig,
       message: "No profiles found in settings.",
@@ -194,6 +213,7 @@ export async function getWorkspaceStatus(): Promise<{
     };
   }
   if (selectedProfileInVscConfig.length === 0) {
+    // user does not have have any profile selected in settings
     return {
       status: WorkspaceStatus.NoSelectedProfilesInConfig,
       message: "No profiles selected in settings.",
@@ -204,6 +224,7 @@ export async function getWorkspaceStatus(): Promise<{
     };
   }
   if (selectedVscProfile && (selectedVscProfile.label === undefined || selectedVscProfile.userName === undefined || selectedVscProfile.email === undefined)) {
+    // user has a profile selected but one of the properties is missing
     return {
       status: WorkspaceStatus.FieldsMissing,
       message: "One of label, userName or email properties is missing in the config. Please verify.",
@@ -213,6 +234,36 @@ export async function getWorkspaceStatus(): Promise<{
       currentFolder: folder,
     };
   }
+  // if the current config patches one of the profiles in the defined profiles, we should select it automatically. In case of multiple matches, we should select the first one.
+  const matchesToLocal = profilesInVscConfig.find(
+    (x) => x.userName === currentGitConfig.userName && x.email === currentGitConfig.email && x.signingKey === currentGitConfig.signingKey
+  );
+  const matchesToGlobal = profilesInVscConfig.find(
+    (x) => x.userName === globalGitConfig.userName && x.email === globalGitConfig.email && x.signingKey === globalGitConfig.signingKey
+  );
+
+  if (matchesToLocal) {
+    profilesInVscConfig.forEach((x) => {
+      x.selected = false;
+    });
+    const toSelected = profilesInVscConfig.find((x) => x.id === matchesToLocal.id);
+    if (toSelected) {
+      toSelected.selected = true;
+      await vscode.workspace.getConfiguration("gitConfigUser").update("profiles", profilesInVscConfig, true);
+    }
+  } else if (matchesToGlobal) {
+    profilesInVscConfig.forEach((x) => {
+      x.selected = false;
+    });
+    const toSelected = profilesInVscConfig.find((x) => x.id === matchesToGlobal.id);
+    if (toSelected) {
+      toSelected.selected = true;
+      await vscode.workspace.getConfiguration("gitConfigUser").update("profiles", profilesInVscConfig, true);
+    }
+  } else {
+    // if the current config does not match any of the profiles in the defined profiles, leve the selected as is
+  }
+
   if (!configInSync.result) {
     return {
       status: WorkspaceStatus.ConfigOutofSync,
