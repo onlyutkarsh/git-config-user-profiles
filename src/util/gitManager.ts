@@ -177,92 +177,77 @@ export async function getWorkspaceStatus(): Promise<{
       message: Messages.NOT_A_VALID_REPO,
     };
   }
+  // if control reaches here, we have a valid git repo
+
   const profilesInVscConfig = getProfilesInSettings();
   //migrate all old profiles to new format
-  let saveConfig = false;
-  profilesInVscConfig.forEach((x) => {
-    if (x.id === undefined || x.id === "" || x.signingKey == undefined || x.signingKey == null) {
-      saveConfig = true;
-    }
-    if (!x.id) {
-      x.id = uuidv4();
-    }
-    if (!x.signingKey) {
-      x.signingKey = "";
-    }
-  });
-  if (saveConfig) {
-    await vscode.workspace.getConfiguration("gitConfigUser").update("profiles", profilesInVscConfig, true);
-  }
+  await migrateOldProfilesToNew(profilesInVscConfig);
 
   const selectedProfileInVscConfig = profilesInVscConfig.filter((x) => x.selected === true) || [];
   const selectedVscProfile: Profile | undefined = selectedProfileInVscConfig.length > 0 ? selectedProfileInVscConfig[0] : undefined;
   const currentGitConfig = await getCurrentGitConfig(folder);
   const globalGitConfig = await getGlobalGitConfig();
 
-  const configInSync = util.isConfigInSync(currentGitConfig, selectedVscProfile);
   if (profilesInVscConfig.length === 0) {
     // user does not have any profile defined in settings
+    Logger.instance.logInfo(`No profiles found in settings.`);
     return {
       status: WorkspaceStatus.NoProfilesInConfig,
       message: "No profiles found in settings.",
       profilesInVSConfigCount: 0,
       selectedProfile: selectedVscProfile,
-      configInSync: configInSync.result,
+      configInSync: false,
       currentFolder: folder,
     };
   }
   if (selectedProfileInVscConfig.length === 0) {
     // user does not have have any profile selected in settings
+    Logger.instance.logInfo(`No profiles selected in settings.`);
     return {
       status: WorkspaceStatus.NoSelectedProfilesInConfig,
       message: "No profiles selected in settings.",
       profilesInVSConfigCount: profilesInVscConfig.length,
       selectedProfile: selectedVscProfile,
-      configInSync: configInSync.result,
+      configInSync: false,
       currentFolder: folder,
     };
   }
   if (selectedVscProfile && (selectedVscProfile.label === undefined || selectedVscProfile.userName === undefined || selectedVscProfile.email === undefined)) {
     // user has a profile selected but one of the properties is missing
+    Logger.instance.logInfo(`One of label, userName or email properties is missing in the config.`);
     return {
       status: WorkspaceStatus.FieldsMissing,
       message: "One of label, userName or email properties is missing in the config. Please verify.",
       profilesInVSConfigCount: profilesInVscConfig.length,
       selectedProfile: selectedVscProfile,
-      configInSync: configInSync.result,
+      configInSync: false,
       currentFolder: folder,
     };
   }
   // if the current config patches one of the profiles in the defined profiles, we should select it automatically. In case of multiple matches, we should select the first one.
-  const matchesToLocal = profilesInVscConfig.find(
+  const matchedProfileToLocalConfig = profilesInVscConfig.find(
     (x) => x.userName === currentGitConfig.userName && x.email === currentGitConfig.email && x.signingKey === currentGitConfig.signingKey
   );
-  const matchesToGlobal = profilesInVscConfig.find(
-    (x) => x.userName === globalGitConfig.userName && x.email === globalGitConfig.email && x.signingKey === globalGitConfig.signingKey
-  );
-
-  if (matchesToLocal) {
-    profilesInVscConfig.forEach((x) => {
-      x.selected = false;
-    });
-    const toSelected = profilesInVscConfig.find((x) => x.id === matchesToLocal.id);
-    if (toSelected) {
-      toSelected.selected = true;
-      await vscode.workspace.getConfiguration("gitConfigUser").update("profiles", profilesInVscConfig, true);
+  if (matchedProfileToLocalConfig) {
+    if (selectedVscProfile && selectedVscProfile.id !== matchedProfileToLocalConfig.id) {
+      // if the current config matches one of the profiles in the defined profiles, we should select it automatically. In case of multiple matches, we should select the first one.
+      Logger.instance.logInfo(`Current git config matches one of the profiles in the defined profiles. Selecting it automatically.`);
+      await vscode.workspace.getConfiguration("gitConfigUser").update(
+        "profiles",
+        profilesInVscConfig.map((x) => ({ ...x, selected: x.id === matchedProfileToLocalConfig.id })),
+        true
+      );
+      return {
+        status: WorkspaceStatus.NoIssues,
+        message: "",
+        profilesInVSConfigCount: profilesInVscConfig.length,
+        selectedProfile: matchedProfileToLocalConfig,
+        configInSync: true,
+        currentFolder: folder,
+      };
     }
-  } else if (matchesToGlobal) {
-    profilesInVscConfig.forEach((x) => {
-      x.selected = false;
-    });
-    const toSelected = profilesInVscConfig.find((x) => x.id === matchesToGlobal.id);
-    if (toSelected) {
-      toSelected.selected = true;
-      await vscode.workspace.getConfiguration("gitConfigUser").update("profiles", profilesInVscConfig, true);
-    }
-  } else {
-    // if the current config does not match any of the profiles in the defined profiles, leve the selected as is
   }
+  const configInSync = util.isConfigInSync(currentGitConfig, selectedVscProfile);
 
   if (!configInSync.result) {
     return {
@@ -282,4 +267,21 @@ export async function getWorkspaceStatus(): Promise<{
     configInSync: configInSync.result,
     currentFolder: folder,
   };
+}
+async function migrateOldProfilesToNew(profilesInVscConfig: Profile[]) {
+  let saveConfig = false;
+  profilesInVscConfig.forEach((x) => {
+    if (x.id === undefined || x.id === "" || x.signingKey == undefined || x.signingKey == null) {
+      saveConfig = true;
+    }
+    if (!x.id) {
+      x.id = uuidv4();
+    }
+    if (!x.signingKey) {
+      x.signingKey = "";
+    }
+  });
+  if (saveConfig) {
+    await vscode.workspace.getConfiguration("gitConfigUser").update("profiles", profilesInVscConfig, true);
+  }
 }
