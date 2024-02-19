@@ -25,7 +25,7 @@ jobs:
     if: github.event_name != 'pull_request'
     steps:
       - name: checkout repo with all histrory and tags
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           fetch-depth: 0
           persist-credentials: false
