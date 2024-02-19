@@ -136,6 +136,11 @@
           },
           "default": [],
           "description": "Git Config User Profiles configuration"
+        },
+        "gitConfigUser.selectMatchedProfileAutomatically": {
+          "type": "boolean",
+          "default": true,
+          "markdownDescription": "Select the matched profile automatically when opening a workspace"
         }
       }
     }
