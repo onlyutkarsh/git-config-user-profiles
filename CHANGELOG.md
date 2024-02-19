@@ -1,3 +1,10 @@
+# [2.1.0](https://github.com/onlyutkarsh/git-config-user-profiles/compare/v2.0.1...v2.1.0) (2024-02-19)
+
+
+### Features
+
+* auto select matching profile ([b27a0aa](https://github.com/onlyutkarsh/git-config-user-profiles/commit/b27a0aa8ba56a093eb8e89b595f0b2578ae7b8a8))
+
 ## [2.0.1](https://github.com/onlyutkarsh/git-config-user-profiles/compare/v2.0.0...v2.0.1) (2024-02-15)
 
 
