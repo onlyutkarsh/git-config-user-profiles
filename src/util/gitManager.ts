@@ -186,7 +186,6 @@ export async function getWorkspaceStatus(): Promise<{
   const selectedProfileInVscConfig = profilesInVscConfig.filter((x) => x.selected === true) || [];
   const selectedVscProfile: Profile | undefined = selectedProfileInVscConfig.length > 0 ? selectedProfileInVscConfig[0] : undefined;
   const currentGitConfig = await getCurrentGitConfig(folder);
-  const globalGitConfig = await getGlobalGitConfig();
 
   if (profilesInVscConfig.length === 0) {
     // user does not have any profile defined in settings
@@ -224,14 +223,14 @@ export async function getWorkspaceStatus(): Promise<{
       currentFolder: folder,
     };
   }
-  // if the current config patches one of the profiles in the defined profiles, we should select it automatically. In case of multiple matches, we should select the first one.
+  // if the current config patches one of the profiles in the defined profiles, we should select it automatically. In case of multiple matches, we should select the first one. This will avoid user to select the profile manually.
   const matchedProfileToLocalConfig = profilesInVscConfig.find(
     (x) => x.userName === currentGitConfig.userName && x.email === currentGitConfig.email && x.signingKey === currentGitConfig.signingKey
   );
   if (matchedProfileToLocalConfig) {
     if (selectedVscProfile && selectedVscProfile.id !== matchedProfileToLocalConfig.id) {
-      // if the current config matches one of the profiles in the defined profiles, we should select it automatically. In case of multiple matches, we should select the first one.
-      Logger.instance.logInfo(`Current git config matches one of the profiles in the defined profiles. Selecting it automatically.`);
+      // if matching profile exists, but the selected profile is different, we should select matched profile automatically
+      Logger.instance.logInfo(`Current git config matches '${matchedProfileToLocalConfig.label}'. Selecting it automatically.`);
       await vscode.workspace.getConfiguration("gitConfigUser").update(
         "profiles",
         profilesInVscConfig.map((x) => ({ ...x, selected: x.id === matchedProfileToLocalConfig.id })),
