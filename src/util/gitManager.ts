@@ -227,7 +227,9 @@ export async function getWorkspaceStatus(): Promise<{
   const matchedProfileToLocalConfig = profilesInVscConfig.find(
     (x) => x.userName === currentGitConfig.userName && x.email === currentGitConfig.email && x.signingKey === currentGitConfig.signingKey
   );
-  if (matchedProfileToLocalConfig) {
+  const selectMatchedProfileAutomatically = await vscode.workspace.getConfiguration("gitConfigUser").get("selectMatchedProfileAutomatically");
+  Logger.instance.logInfo(`Select matched profile automatically: ${selectMatchedProfileAutomatically}`);
+  if (matchedProfileToLocalConfig && selectMatchedProfileAutomatically === true) {
     if (selectedVscProfile && selectedVscProfile.id !== matchedProfileToLocalConfig.id) {
       // if matching profile exists, but the selected profile is different, we should select matched profile automatically
       Logger.instance.logInfo(`Current git config matches '${matchedProfileToLocalConfig.label}'. Selecting it automatically.`);
