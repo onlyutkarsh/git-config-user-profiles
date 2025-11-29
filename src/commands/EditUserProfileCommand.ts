@@ -17,6 +17,8 @@ export class EditUserProfileCommand implements ICommand<boolean> {
 
   async execute(): Promise<Result<boolean>> {
     try {
+      util.Logger.instance.logDebug("EditProfile", "Edit profile command started", {});
+
       const result = await gm.getWorkspaceStatus();
 
       if (!(await gm.validateWorkspace(result))) {
@@ -26,26 +28,41 @@ export class EditUserProfileCommand implements ICommand<boolean> {
       const pickedProfile = await util.showProfilePicker();
       const selectedProfile = pickedProfile.result as Profile;
       if (selectedProfile) {
+        util.Logger.instance.logDebug("EditProfile", "Profile selected for editing", {
+          profileLabel: selectedProfile.label,
+          profileId: selectedProfile.id
+        });
+
         selectedProfile.detail = undefined;
         selectedProfile.label = selectedProfile.label;
 
         const result = await util.loadProfileInWizard(selectedProfile);
         const updatedProfile = result as Profile;
         if (updatedProfile) {
+          util.Logger.instance.logDebug("EditProfile", "Profile updated", {
+            profileLabel: updatedProfile.label,
+            profileId: updatedProfile.id,
+            userName: updatedProfile.userName,
+            email: updatedProfile.email
+          });
+
           if (updatedProfile.id) {
             await saveVscProfile(updatedProfile, updatedProfile.id);
           } else {
             await saveVscProfile(updatedProfile, updatedProfile.label);
           }
+          util.Logger.instance.logInfo(`Profile '${updatedProfile.label}' updated successfully`);
           vscode.commands.executeCommand(constants.CommandIds.GET_USER_PROFILE, "edited profile");
         } else {
-          // user cancelled update
+          util.Logger.instance.logDebug("EditProfile", "User cancelled profile update", {});
         }
+      } else {
+        util.Logger.instance.logDebug("EditProfile", "User cancelled profile selection", {});
       }
       return { result: true };
     } catch (error) {
-      util.Logger.instance.logError(`Error ocurred while editing profile. ${error}`);
-      vscode.window.showErrorMessage(`Error ocurred while editing profile.`);
+      util.Logger.instance.logError(`Error occurred while editing profile. ${error}`);
+      vscode.window.showErrorMessage(`Error occurred while editing profile.`);
       return { result: false };
     }
   }

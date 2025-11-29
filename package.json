@@ -141,6 +141,23 @@
           "type": "boolean",
           "default": true,
           "markdownDescription": "Select the matched profile automatically when opening a workspace"
+        },
+        "gitConfigUser.logLevel": {
+          "type": "string",
+          "enum": [
+            "error",
+            "warning",
+            "info",
+            "debug"
+          ],
+          "enumDescriptions": [
+            "Only show error messages",
+            "Show errors and warnings",
+            "Show errors, warnings, and informational messages",
+            "Show all messages including detailed debug information"
+          ],
+          "default": "info",
+          "markdownDescription": "Controls the verbosity of logging in the output channel. Set to `debug` when reporting issues for more detailed diagnostics."
         }
       }
     }

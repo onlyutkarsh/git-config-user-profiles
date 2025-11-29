@@ -26,6 +26,13 @@ export class ProfileStatusBar {
   }
 
   public async updateStatus(content: Profile | undefined, repoFolder: string | undefined, status: StatusBarStatus = StatusBarStatus.Normal, tooltip?: string) {
+    // Hide status bar when dealing with non-file schemes or when not applicable
+    // Empty tooltip with no profile and no repo folder indicates a silent ignore case (e.g., non-file scheme)
+    if (!content && !repoFolder && (!tooltip || tooltip.length === 0)) {
+      ProfileStatusBar._statusBar.hide();
+      return;
+    }
+
     tooltip = tooltip || `${Constants.Application.APPLICATION_NAME} - Click status bar icon for more options`;
 
     const profile = content as Profile;

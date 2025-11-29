@@ -11,7 +11,10 @@ export class GetUserProfileCommand implements ICommand<void> {
 
     const result = await gm.getWorkspaceStatus();
 
-    await statusBar.instance.updateStatus(result.selectedProfile, result.currentFolder, result.configInSync ? StatusBarStatus.Normal : StatusBarStatus.Warning, result.message);
+    // Don't show warnings if the message is empty (indicates non-file scheme or other silent ignore case)
+    const shouldShowWarning = result.message && result.message.length > 0 && !result.configInSync;
+
+    await statusBar.instance.updateStatus(result.selectedProfile, result.currentFolder, shouldShowWarning ? StatusBarStatus.Warning : StatusBarStatus.Normal, result.message);
     return {};
   }
 }
