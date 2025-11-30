@@ -39,6 +39,16 @@ export const workspace = {
       update: (property: string, value: any, _target?: any) => {
         return updateMockConfigValue(key, property, value);
       },
+      inspect: (property: string) => {
+        const currentValue = getMockConfigValue(key, property);
+        return {
+          key: `${section}.${property}`,
+          defaultValue: undefined,
+          globalValue: undefined,
+          workspaceValue: undefined,
+          workspaceFolderValue: currentValue || undefined,
+        };
+      },
     };
   }),
   workspaceFolders: [],
