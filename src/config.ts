@@ -15,18 +15,73 @@ export function getProfilesInSettings(): Profile[] {
 }
 
 /**
+ * Directly reads the selectedProfileId from a .vscode/settings.json file at the given path.
+ * This is needed when the folder is not a workspace folder but we still want to read its settings.
+ */
+function readSelectedProfileIdFromFile(folderPath: string): string | undefined {
+  const settingsPath = path.join(folderPath, ".vscode", "settings.json");
+
+  try {
+    if (!fs.existsSync(settingsPath)) {
+      util.Logger.instance.logDebug("Config", "No .vscode/settings.json file found", {
+        settingsPath
+      });
+      return undefined;
+    }
+
+    const content = fs.readFileSync(settingsPath, "utf8");
+    const settings = JSON.parse(content);
+    const selectedId = settings["gitConfigUser.selectedProfileId"];
+
+    util.Logger.instance.logDebug("Config", "Read selectedProfileId from .vscode/settings.json", {
+      settingsPath,
+      selectedId: selectedId || "<none>"
+    });
+
+    return selectedId;
+  } catch (error) {
+    util.Logger.instance.logDebug("Config", "Failed to read .vscode/settings.json", {
+      settingsPath,
+      error: error instanceof Error ? error.message : String(error)
+    });
+    return undefined;
+  }
+}
+
+/**
  * Get the selected profile ID for the current workspace folder.
  * Returns workspace-scoped setting if available, otherwise falls back to global selected flag.
  */
 export function getSelectedProfileId(workspaceFolder?: vscode.Uri): string | undefined {
-  // First, try to get workspace-scoped selectedProfileId
+  // IMPORTANT: Always try to read from the git root's .vscode/settings.json file first
+  // This is because VSCode's getConfiguration() API may read from parent workspace folder's settings
+  // when the git root is a nested folder, giving us the wrong profile
+  if (workspaceFolder?.fsPath) {
+    const fileSelectedId = readSelectedProfileIdFromFile(workspaceFolder.fsPath);
+    if (fileSelectedId) {
+      util.Logger.instance.logDebug("Config", "Found selected profile by reading .vscode/settings.json directly", {
+        profileId: fileSelectedId,
+        folderPath: workspaceFolder.fsPath
+      });
+      return fileSelectedId;
+    }
+  }
+
+  // If no file-based setting found, try VSCode API as fallback
   const config = vscode.workspace.getConfiguration("gitConfigUser", workspaceFolder);
   const selectedId = config.get<string>("selectedProfileId");
 
+  util.Logger.instance.logDebug("Config", "Getting selected profile ID from VSCode API", {
+    workspaceFolder: workspaceFolder?.fsPath,
+    selectedId: selectedId || "<none>",
+    configInspect: config.inspect("selectedProfileId")
+  });
+
   if (selectedId) {
-    util.Logger.instance.logDebug("Config", "Found workspace-scoped selected profile", {
+    util.Logger.instance.logDebug("Config", "Found workspace-scoped selected profile from VSCode API", {
       profileId: selectedId,
-      hasWorkspaceFolder: !!workspaceFolder
+      hasWorkspaceFolder: !!workspaceFolder,
+      workspaceFolderPath: workspaceFolder?.fsPath
     });
     return selectedId;
   }
@@ -42,6 +97,11 @@ export function getSelectedProfileId(workspaceFolder?: vscode.Uri): string | und
     });
     return selectedProfile.id;
   }
+
+  util.Logger.instance.logDebug("Config", "No selected profile found", {
+    hasWorkspaceFolder: !!workspaceFolder,
+    totalProfiles: profiles.length
+  });
 
   return undefined;
 }
@@ -97,19 +157,77 @@ async function ensureVscodeSettingsExists(workspaceFolder?: vscode.Uri): Promise
 }
 
 /**
+ * Directly writes the selectedProfileId to a .vscode/settings.json file at the given path.
+ * This is needed when the folder is not a workspace folder but we still want to write its settings.
+ */
+async function writeSelectedProfileIdToFile(folderPath: string, profileId: string): Promise<void> {
+  const settingsPath = path.join(folderPath, ".vscode", "settings.json");
+
+  try {
+    // Ensure .vscode directory exists
+    const vscodeDir = path.join(folderPath, ".vscode");
+    if (!fs.existsSync(vscodeDir)) {
+      fs.mkdirSync(vscodeDir, { recursive: true });
+      util.Logger.instance.logDebug("Config", "Created .vscode directory", { vscodeDir });
+    }
+
+    // Read existing settings or create new object
+    let settings: any = {};
+    if (fs.existsSync(settingsPath)) {
+      const content = fs.readFileSync(settingsPath, "utf8");
+      settings = JSON.parse(content);
+    }
+
+    // Update the selectedProfileId
+    settings["gitConfigUser.selectedProfileId"] = profileId;
+
+    // Write back to file
+    fs.writeFileSync(settingsPath, JSON.stringify(settings, null, 2), "utf8");
+
+    util.Logger.instance.logDebug("Config", "Wrote selectedProfileId to .vscode/settings.json", {
+      settingsPath,
+      profileId
+    });
+  } catch (error) {
+    util.Logger.instance.logDebug("Config", "Failed to write .vscode/settings.json", {
+      settingsPath,
+      error: error instanceof Error ? error.message : String(error)
+    });
+    throw error;
+  }
+}
+
+/**
  * Set the selected profile ID for the current workspace folder.
  */
 export async function setSelectedProfileId(profileId: string, workspaceFolder?: vscode.Uri): Promise<void> {
-  // Ensure .vscode/settings.json exists so the setting is persisted in the workspace
-  await ensureVscodeSettingsExists(workspaceFolder);
+  if (!workspaceFolder) {
+    util.Logger.instance.logDebug("Config", "No workspace folder provided for setSelectedProfileId", {});
+    return;
+  }
 
-  const config = vscode.workspace.getConfiguration("gitConfigUser", workspaceFolder);
-  await config.update("selectedProfileId", profileId, vscode.ConfigurationTarget.WorkspaceFolder);
+  // Check if this folder is an actual VSCode workspace folder
+  const isWorkspaceFolder = vscode.workspace.workspaceFolders?.some(wf => wf.uri.fsPath === workspaceFolder.fsPath);
 
-  util.Logger.instance.logDebug("Config", "Updated workspace-scoped selected profile", {
-    profileId,
-    hasWorkspaceFolder: !!workspaceFolder
-  });
+  if (isWorkspaceFolder) {
+    // Use VSCode API for actual workspace folders
+    await ensureVscodeSettingsExists(workspaceFolder);
+    const config = vscode.workspace.getConfiguration("gitConfigUser", workspaceFolder);
+    await config.update("selectedProfileId", profileId, vscode.ConfigurationTarget.WorkspaceFolder);
+
+    util.Logger.instance.logDebug("Config", "Updated workspace-scoped selected profile via VSCode API", {
+      profileId,
+      folderPath: workspaceFolder.fsPath
+    });
+  } else {
+    // For non-workspace folders (nested git repos), write directly to file
+    await writeSelectedProfileIdToFile(workspaceFolder.fsPath, profileId);
+
+    util.Logger.instance.logDebug("Config", "Updated selected profile by writing to .vscode/settings.json directly", {
+      profileId,
+      folderPath: workspaceFolder.fsPath
+    });
+  }
 }
 
 export async function saveVscProfile(profile: Profile, oldProfileId?: string, workspaceFolder?: vscode.Uri): Promise<void> {

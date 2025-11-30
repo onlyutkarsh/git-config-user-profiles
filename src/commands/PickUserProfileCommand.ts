@@ -52,11 +52,16 @@ export class PickUserProfileCommand implements ICommand<Profile> {
         return gitRoot === wsFolder || gitRoot.startsWith(wsFolder + sep);
       });
 
+      // Use the git root folder as the scope for saving settings, not the workspace folder
+      // This ensures we save settings to the git repo's .vscode/settings.json
+      const gitRootUri = vscode.Uri.file(workspaceFolder);
+
       util.Logger.instance.logDebug("PickProfile", "Workspace folder resolution", {
         gitRoot: workspaceFolder,
         gitRootBasename: basename(workspaceFolder),
         vscWorkspaceFolderFound: !!vscWorkspaceFolder,
         vscWorkspaceFolderPath: vscWorkspaceFolder?.uri.fsPath,
+        gitRootUri: gitRootUri.fsPath,
         allWorkspaceFolders: vscode.workspace.workspaceFolders?.map(wf => wf.uri.fsPath)
       });
 
@@ -78,7 +83,8 @@ export class PickUserProfileCommand implements ICommand<Profile> {
         pickedProfile.detail = undefined;
         pickedProfile.label = pickedProfile.label;
         pickedProfile.selected = true;
-        await saveVscProfile(Object.assign({}, pickedProfile), undefined, vscWorkspaceFolder?.uri);
+        // Save to git root's .vscode/settings.json, not workspace folder
+        await saveVscProfile(Object.assign({}, pickedProfile), undefined, gitRootUri);
         gm.updateGitConfig(workspaceFolder, pickedProfile);
 
         // Invalidate cache after updating git config

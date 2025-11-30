@@ -81,9 +81,9 @@ export class Logger extends Disposable {
     }
 
     const logMessage = `[${category}] ${message}`;
-    this.outputChannel.info(logMessage);
+    this.outputChannel.debug(logMessage);
     if (context) {
-      this.outputChannel.info(`  Context: ${JSON.stringify(context, null, 2)}`);
+      this.outputChannel.debug(`  Context: ${JSON.stringify(context, null, 2)}`);
     }
   }
 

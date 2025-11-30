@@ -9,8 +9,10 @@ import { ICommand, Result } from "./ICommand";
 
 export class StatusBarClickCommand implements ICommand<void> {
   async execute(): Promise<Result<void>> {
-    Logger.instance.logInfo(`Click event on status bar icon`);
+    Logger.instance.logInfo(`[StatusBarClick] Click event on status bar icon`);
     const result = await gm.getWorkspaceStatus();
+
+    Logger.instance.logInfo(`[StatusBarClick] Workspace status: ${gm.WorkspaceStatus[result.status]}, configInSync: ${result.configInSync}, currentFolder: ${result.currentFolder}`);
 
     // Handle non-git workspace case - show helpful message
     if (result.status === gm.WorkspaceStatus.NotAValidWorkspace) {
@@ -54,13 +56,17 @@ export class StatusBarClickCommand implements ICommand<void> {
       const options = result.configInSync ? syncOptions : notSyncOptions;
       const message = result.configInSync ? syncMessage : notSyncMessage;
 
+      Logger.instance.logInfo(`[StatusBarClick] Showing options: ${options.join(', ')}`);
       response = await vscode.window.showInformationMessage(message, ...options);
     }
 
     if (response === undefined) {
+      Logger.instance.logInfo(`[StatusBarClick] User cancelled prompt`);
       await vscode.commands.executeCommand(constants.CommandIds.GET_USER_PROFILE, "user cancelled prompt");
       return {};
     }
+
+    Logger.instance.logInfo(`[StatusBarClick] User selected: ${response}`);
     if (response === "Edit existing") {
       await EditUserProfileCommand.Instance().execute();
       await vscode.commands.executeCommand(constants.CommandIds.GET_USER_PROFILE, "edit profile");

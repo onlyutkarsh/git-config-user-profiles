@@ -1,4 +1,4 @@
-import { basename } from "path";
+import { basename, dirname } from "path";
 import { simpleGit, SimpleGit } from "simple-git";
 import { v4 as uuidv4 } from "uuid";
 import * as vscode from "vscode";
@@ -48,53 +48,114 @@ export function invalidateWorkspaceStatusCache(folder?: string): void {
 async function getCurrentFolder(): Promise<Result<string | undefined>> {
   const editor = vscode.window.activeTextEditor;
   let folder: vscode.WorkspaceFolder | undefined;
+
   if (!vscode.workspace.workspaceFolders) {
+    Logger.instance.logDebug("CurrentFolder", "No workspace folders available", {});
     return {
       result: undefined,
       message: Messages.NOT_A_VALID_REPO,
     };
   }
+
   if (vscode.workspace.workspaceFolders.length === 0) {
+    Logger.instance.logDebug("CurrentFolder", "Workspace folders array is empty", {});
     return {
       result: undefined,
       message: "No workspace folder found.",
     };
   }
+
+  Logger.instance.logDebug("CurrentFolder", "Workspace folders available", {
+    count: vscode.workspace.workspaceFolders.length,
+    folders: vscode.workspace.workspaceFolders.map(f => f.uri.fsPath)
+  });
+
   if (editor) {
     // If we have a file:// resource we resolve the WorkspaceFolder this file is from and update
     // the status accordingly.
     const resource = editor.document.uri;
 
-    // Silently ignore non-file schemes (notebooks, settings, extensions, etc.)
+    Logger.instance.logDebug("CurrentFolder", "Active editor detected", {
+      fileName: editor.document.fileName,
+      scheme: resource.scheme
+    });
+
+    // Handle non-file schemes
     if (resource.scheme !== "file") {
+      Logger.instance.logDebug("CurrentFolder", "Non-file scheme detected", {
+        scheme: resource.scheme,
+        path: resource.fsPath
+      });
+
+      // For vscode-notebook-cell (Jupyter notebooks), we can still get the file path
+      // and show git profile information even though we can't edit the notebook metadata
+      if (resource.scheme === "vscode-notebook-cell") {
+        // Notebook cells have a fragment with the cell path, but fsPath gives us the notebook file
+        const notebookPath = resource.fsPath;
+        if (notebookPath) {
+          const notebookDir = dirname(notebookPath);
+          Logger.instance.logDebug("CurrentFolder", "Using notebook directory for git search", {
+            notebookPath,
+            notebookDir
+          });
+          return {
+            result: notebookDir,
+            message: "",
+          };
+        }
+      }
+
+      // For other non-file schemes (output, settings, etc.), silently hide
       return {
         result: undefined,
-        message: "",  // Empty message to indicate silent ignore
+        message: "",  // Empty message to indicate silent hide
       };
     }
 
     folder = vscode.workspace.getWorkspaceFolder(resource);
     if (!folder) {
+      Logger.instance.logDebug("CurrentFolder", "File is not part of any workspace folder", {
+        filePath: resource.fsPath
+      });
       return {
         result: undefined,
         message: "This file is not part of a workspace folder.",
       };
     }
-  } else {
-    //if no file is open in the editor, we use the first workspace folder
-    folder = vscode.workspace.workspaceFolders[0];
-  }
 
-  if (!folder) {
+    Logger.instance.logDebug("CurrentFolder", "Resolved workspace folder for file", {
+      workspaceFolder: folder.uri.fsPath,
+      filePath: resource.fsPath
+    });
+
+    // Return the file's directory path so git root search can traverse up from the actual file location
+    // This allows the extension to work when a parent folder is opened that contains multiple git repos
+    const filePath = resource.fsPath;
+    const fileDir = dirname(filePath);
+
+    Logger.instance.logDebug("CurrentFolder", "Using file directory for git search", {
+      filePath,
+      fileDir
+    });
+
+    return {
+      result: fileDir,
+      message: "",
+    };
+  } else {
+    // No file is open in the editor
+    // In this case, we cannot determine which git repo to use if there are multiple nested repos
+    Logger.instance.logDebug("CurrentFolder", "No active editor", {
+      workspaceFoldersCount: vscode.workspace.workspaceFolders.length
+    });
+
+    // Return undefined with a friendly message
+    // The status bar will show this message instead of hiding
     return {
       result: undefined,
-      message: Messages.NOT_A_VALID_REPO,
+      message: "Open a file from a git repository", // Friendly message for status bar tooltip
     };
   }
-  return {
-    result: folder.uri.fsPath,
-    message: "",
-  };
 }
 
 export async function isValidWorkspace(): Promise<{ isValid: boolean; message: string; folder?: string }> {
@@ -183,30 +244,28 @@ export async function updateGitConfig(gitFolder: string, profile: Profile) {
 
 export async function getGitRoot(path: string): Promise<string | null> {
   try {
+    Logger.instance.logDebug("GitRepository", "Searching for git repository", { path });
+
     const git = simpleGit(path);
+
+    // Check if the path is inside a git repository (not necessarily the root)
     const isRepo = await git.checkIsRepo();
 
     if (!isRepo) {
-      Logger.instance.logDebug("GitRepository", "Path is not within a git repository", {
-        path: basename(path)
-      });
+      Logger.instance.logDebug("GitRepository", "Path is not within a git repository", { path });
       return null;
     }
 
-    // Get the actual repository root
-    // Use trim() to remove any whitespace/newlines that might be included
+    // Get the actual repository root by traversing up the directory tree
+    // This works even if 'path' is not the repo root itself
     const root = (await git.revparse(['--show-toplevel'])).trim();
 
-    Logger.instance.logDebug("GitRepository", "Found git root", {
-      searchPath: basename(path),
-      gitRoot: basename(root),
-      isSamePath: path === root
-    });
+    Logger.instance.logInfo(`[GitRepository] Found git root: '${root}'`);
 
     return root;
   } catch (error) {
     Logger.instance.logDebug("GitRepository", "Could not find git root", {
-      path: basename(path),
+      path,
       error: error instanceof Error ? error.message : String(error)
     });
     return null;
@@ -315,8 +374,27 @@ export async function getWorkspaceStatus(): Promise<{
     folder.startsWith(wf.uri.fsPath)
   );
 
+  // Use the git root folder as the scope for reading settings, not the workspace folder
+  // This ensures we read settings from the git repo's .vscode/settings.json
+  const gitRootUri = vscode.Uri.file(folder);
+
+  Logger.instance.logDebug("WorkspaceStatus", "Looking up workspace folder for git root", {
+    gitRoot: folder,
+    workspaceFolders: vscode.workspace.workspaceFolders?.map(wf => wf.uri.fsPath),
+    matchedWorkspaceFolder: vscWorkspaceFolder?.uri.fsPath,
+    gitRootUri: gitRootUri.fsPath
+  });
+
   // Get selected profile using workspace-scoped setting (with fallback to legacy global selected flag)
-  const selectedProfileId = getSelectedProfileId(vscWorkspaceFolder?.uri);
+  // Pass the git root URI instead of workspace folder URI to read settings from the git repo's .vscode/settings.json
+  const selectedProfileId = getSelectedProfileId(gitRootUri);
+
+  Logger.instance.logDebug("WorkspaceStatus", "Profile resolution", {
+    selectedProfileId: selectedProfileId || "<none>",
+    totalProfiles: profilesInVscConfig.length,
+    profileIds: profilesInVscConfig.map(p => ({ id: p.id, label: p.label }))
+  });
+
   const selectedVscProfile: Profile | undefined = selectedProfileId
     ? profilesInVscConfig.find(p => p.id === selectedProfileId)
     : undefined;
@@ -390,9 +468,9 @@ export async function getWorkspaceStatus(): Promise<{
       // if matching profile exists, but the selected profile is different, we should select matched profile automatically
       Logger.instance.logInfo(`Auto-selecting matching profile '${matchedProfileToLocalConfig.label}' for '${basename(folder)}'`);
 
-      // Save the auto-selected profile to workspace scope
+      // Save the auto-selected profile to workspace scope (git root's .vscode/settings.json)
       if (matchedProfileToLocalConfig.id) {
-        await setSelectedProfileId(matchedProfileToLocalConfig.id, vscWorkspaceFolder?.uri);
+        await setSelectedProfileId(matchedProfileToLocalConfig.id, gitRootUri);
       }
 
       const statusResult = {
