@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
     inputs:
       version:
-        description: 'Version number (e.g., 2.2.0)'
+        description: "Version number (e.g., 2.2.0)"
         required: true
         type: string
 
@@ -24,7 +24,7 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: "20.x"
-          cache: 'npm'
+          cache: "npm"
 
       - name: Configure Git
         run: |
@@ -67,14 +67,31 @@ jobs:
         run: npm run package
 
       - name: Publish to Open VSX Registry
+        id: publish_ovsx
+        continue-on-error: true
         run: npm run publish:ovsx
         env:
           OVSX_PAT: ${{ secrets.OVSX_PAT }}
 
       - name: Publish to VS Marketplace
+        id: publish_vsmarketplace
+        continue-on-error: true
         run: npm run deploy
         env:
           VSCE_PAT: ${{ secrets.VS_MARKETPLACE_PAT }}
+
+      - name: Check publishing results
+        run: |
+          if [ "${{ steps.publish_ovsx.outcome }}" == "failure" ]; then
+            echo "⚠️ Open VSX publishing failed (version may already exist)"
+          fi
+          if [ "${{ steps.publish_vsmarketplace.outcome }}" == "failure" ]; then
+            echo "⚠️ VS Marketplace publishing failed (version may already exist)"
+          fi
+          if [ "${{ steps.publish_ovsx.outcome }}" == "failure" ] && [ "${{ steps.publish_vsmarketplace.outcome }}" == "failure" ]; then
+            echo "❌ Both publishing steps failed. Please check the logs."
+            exit 1
+          fi
 
       - name: Commit version bump
         run: |
@@ -109,6 +126,14 @@ jobs:
           echo "**Version:** v${{ inputs.version }}" >> $GITHUB_STEP_SUMMARY
           echo "**Tag:** v${{ inputs.version }}" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
-          echo "✅ Published to Open VSX Registry" >> $GITHUB_STEP_SUMMARY
-          echo "✅ Published to VS Marketplace" >> $GITHUB_STEP_SUMMARY
+          if [ "${{ steps.publish_ovsx.outcome }}" == "success" ]; then
+            echo "✅ Published to Open VSX Registry" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "⚠️ Open VSX Registry publishing failed or skipped" >> $GITHUB_STEP_SUMMARY
+          fi
+          if [ "${{ steps.publish_vscode.outcome }}" == "success" ]; then
+            echo "✅ Published to VS Marketplace" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "⚠️ VS Marketplace publishing failed or skipped" >> $GITHUB_STEP_SUMMARY
+          fi
           echo "✅ GitHub Release created" >> $GITHUB_STEP_SUMMARY
