@@ -108,63 +108,32 @@ export class ProfileStatusBar {
 
       // Handle different custom tooltip scenarios
       if (customTooltip === "Open a file from a git repository") {
-        beautifiedTooltip.appendMarkdown(`**${Constants.Application.APPLICATION_NAME}**\n\n`);
-        beautifiedTooltip.appendMarkdown(`📂 No file is currently open\n\n`);
-        beautifiedTooltip.appendMarkdown(`---\n\n`);
-        beautifiedTooltip.appendMarkdown(`To use this extension:\n\n`);
-        beautifiedTooltip.appendMarkdown(`1. Open a file from a git repository\n`);
-        beautifiedTooltip.appendMarkdown(`2. Select a profile for that repository\n\n`);
-        beautifiedTooltip.appendMarkdown(`_Click status bar icon for more options_`);
+        beautifiedTooltip.appendMarkdown(`📂 **No File Open**`);
         return beautifiedTooltip;
       }
 
       if (customTooltip === "This does not seem to be a valid git repository") {
-        beautifiedTooltip.appendMarkdown(`**${Constants.Application.APPLICATION_NAME}**\n\n`);
-        beautifiedTooltip.appendMarkdown(`⚠️ Not a Git Repository\n\n`);
-        beautifiedTooltip.appendMarkdown(`---\n\n`);
-        beautifiedTooltip.appendMarkdown(`The current folder does not appear to be a git repository.\n\n`);
-        beautifiedTooltip.appendMarkdown(`Make sure you have:\n`);
-        beautifiedTooltip.appendMarkdown(`- Initialized git (\`git init\`)\n`);
-        beautifiedTooltip.appendMarkdown(`- Or cloned a repository\n\n`);
-        beautifiedTooltip.appendMarkdown(`_Click status bar icon for more options_`);
+        beautifiedTooltip.appendMarkdown(`⚠️ **Not a Git Repository**`);
         return beautifiedTooltip;
       }
 
       if (customTooltip === "No profiles found in settings.") {
-        beautifiedTooltip.appendMarkdown(`**${Constants.Application.APPLICATION_NAME}**\n\n`);
-        beautifiedTooltip.appendMarkdown(`📋 No Profiles Created\n\n`);
-        beautifiedTooltip.appendMarkdown(`---\n\n`);
-        beautifiedTooltip.appendMarkdown(`You haven't created any profiles yet.\n\n`);
-        beautifiedTooltip.appendMarkdown(`_Click status bar icon to create your first profile_`);
+        beautifiedTooltip.appendMarkdown(`📋 **No Profiles Created**`);
         return beautifiedTooltip;
       }
 
       if (customTooltip === "No profile selected in settings for this workspace.") {
-        beautifiedTooltip.appendMarkdown(`**${Constants.Application.APPLICATION_NAME}**\n\n`);
-        beautifiedTooltip.appendMarkdown(`⚠️ No Profile Selected\n\n`);
-        beautifiedTooltip.appendMarkdown(`---\n\n`);
-        beautifiedTooltip.appendMarkdown(`No profile has been selected for this repository.\n\n`);
-        beautifiedTooltip.appendMarkdown(`_Click status bar icon to select a profile_`);
+        beautifiedTooltip.appendMarkdown(`⚠️ **No Profile Selected**`);
         return beautifiedTooltip;
       }
 
       if (customTooltip.includes("One of label, userName or email properties is missing")) {
-        beautifiedTooltip.appendMarkdown(`**${Constants.Application.APPLICATION_NAME}**\n\n`);
-        beautifiedTooltip.appendMarkdown(`❌ Profile Configuration Error\n\n`);
-        beautifiedTooltip.appendMarkdown(`---\n\n`);
-        beautifiedTooltip.appendMarkdown(`The selected profile is missing required information.\n\n`);
-        beautifiedTooltip.appendMarkdown(`Please ensure your profile has:\n`);
-        beautifiedTooltip.appendMarkdown(`- Label (profile name)\n`);
-        beautifiedTooltip.appendMarkdown(`- Username\n`);
-        beautifiedTooltip.appendMarkdown(`- Email address\n\n`);
-        beautifiedTooltip.appendMarkdown(`_Click status bar icon to edit the profile_`);
+        beautifiedTooltip.appendMarkdown(`❌ **Profile Configuration Error**`);
         return beautifiedTooltip;
       }
 
       // For any other custom tooltip, still use markdown formatting for consistency
-      beautifiedTooltip.appendMarkdown(`**${Constants.Application.APPLICATION_NAME}**\n\n`);
-      beautifiedTooltip.appendMarkdown(`${customTooltip}\n\n`);
-      beautifiedTooltip.appendMarkdown(`_Click status bar icon for more options_`);
+      beautifiedTooltip.appendMarkdown(`ℹ️ **${customTooltip}**`);
       return beautifiedTooltip;
     }
 
@@ -178,8 +147,7 @@ export class ProfileStatusBar {
       const genericTooltip = new MarkdownString();
       genericTooltip.isTrusted = true;
       genericTooltip.supportHtml = false;
-      genericTooltip.appendMarkdown(`**${Constants.Application.APPLICATION_NAME}**\n\n`);
-      genericTooltip.appendMarkdown(`_Click status bar icon for more options_`);
+      genericTooltip.appendMarkdown(`ℹ️ **${Constants.Application.APPLICATION_NAME}**`);
       return genericTooltip;
     }
 
@@ -193,52 +161,21 @@ export class ProfileStatusBar {
         email: profile.email,
         hasSigningKey: !!profile.signingKey
       });
-      tooltip.appendMarkdown(`**Name:** ${profile.userName}\n\n`);
-      tooltip.appendMarkdown(`**Email:** ${profile.email}\n\n`);
-      if (profile.signingKey) {
-        tooltip.appendMarkdown(`**Signing Key:** \`${profile.signingKey}\`\n\n`);
-      }
-      tooltip.appendMarkdown(`---\n\n`);
-      tooltip.appendMarkdown(`_Click status bar icon for more options_`);
+      tooltip.appendMarkdown(`✅ **${this.cleanProfileLabel(profile.label)}**`);
       return tooltip;
     }
 
     // Warning status - show comparison between profile and git config
     if (status === StatusBarStatus.Warning && currentGitConfig) {
-      tooltip.appendMarkdown(`**⚠️ Git Config Out of Sync**\n\n`);
-
-      let hasDifferences = false;
-
-      // Compare and show differences in compact format
-      if (profile.userName !== currentGitConfig.userName) {
-        tooltip.appendMarkdown(`- **Name:** \`${profile.userName || "<empty>"}\` → \`${currentGitConfig.userName || "<empty>"}\`\n`);
-        hasDifferences = true;
-      }
-
-      if (profile.email.toLowerCase() !== currentGitConfig.email.toLowerCase()) {
-        tooltip.appendMarkdown(`- **Email:** \`${profile.email || "<empty>"}\` → \`${currentGitConfig.email || "<empty>"}\`\n`);
-        hasDifferences = true;
-      }
-
-      if ((profile.signingKey || currentGitConfig.signingKey) &&
-          profile.signingKey.toLowerCase() !== currentGitConfig.signingKey.toLowerCase()) {
-        tooltip.appendMarkdown(`- **Signing Key:** \`${profile.signingKey || "<not set>"}\` → \`${currentGitConfig.signingKey || "<not set>"}\`\n`);
-        hasDifferences = true;
-      }
-
-      if (hasDifferences) {
-        tooltip.appendMarkdown(`\n---\n\n`);
-        tooltip.appendMarkdown(`_Click status bar icon to apply profile settings_`);
-        return tooltip;
-      }
+      tooltip.appendMarkdown(`⚠️ **Git Config Out of Sync**`);
+      return tooltip;
     }
 
     // Fallback for any other case - show a helpful tooltip with markdown formatting
     const fallbackTooltip = new MarkdownString();
     fallbackTooltip.isTrusted = true;
     fallbackTooltip.supportHtml = false;
-    fallbackTooltip.appendMarkdown(`**${Constants.Application.APPLICATION_NAME}**\n\n`);
-    fallbackTooltip.appendMarkdown(`_Click status bar icon for more options_`);
+    fallbackTooltip.appendMarkdown(`ℹ️ **${Constants.Application.APPLICATION_NAME}**`);
     return fallbackTooltip;
   }
 
