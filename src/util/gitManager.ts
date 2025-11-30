@@ -18,6 +18,7 @@ interface WorkspaceStatusCache {
   profilesInVSConfigCount?: number;
   configInSync?: boolean;
   currentFolder?: string;
+  currentGitConfig?: { userName: string; email: string; signingKey: string };
   timestamp: number;
 }
 
@@ -252,6 +253,7 @@ export async function getWorkspaceStatus(): Promise<{
   profilesInVSConfigCount?: number;
   configInSync?: boolean;
   currentFolder?: string;
+  currentGitConfig?: { userName: string; email: string; signingKey: string };
 }> {
   const result = await getCurrentFolder();
   if (!result.result) {
@@ -300,6 +302,7 @@ export async function getWorkspaceStatus(): Promise<{
       profilesInVSConfigCount: cached.profilesInVSConfigCount,
       configInSync: cached.configInSync,
       currentFolder: cached.currentFolder,
+      currentGitConfig: cached.currentGitConfig,
     };
   }
 
@@ -330,6 +333,7 @@ export async function getWorkspaceStatus(): Promise<{
       selectedProfile: selectedVscProfile,
       configInSync: false,
       currentFolder: folder,
+      currentGitConfig: currentGitConfig,
     };
     // Cache the result for this folder
     workspaceStatusCacheMap.set(folder, { ...statusResult, timestamp: Date.now() });
@@ -345,6 +349,7 @@ export async function getWorkspaceStatus(): Promise<{
       selectedProfile: selectedVscProfile,
       configInSync: false,
       currentFolder: folder,
+      currentGitConfig: currentGitConfig,
     };
     // Cache the result for this folder
     workspaceStatusCacheMap.set(folder, { ...statusResult, timestamp: Date.now() });
@@ -360,6 +365,7 @@ export async function getWorkspaceStatus(): Promise<{
       selectedProfile: selectedVscProfile,
       configInSync: false,
       currentFolder: folder,
+      currentGitConfig: currentGitConfig,
     };
     // Cache the result for this folder
     workspaceStatusCacheMap.set(folder, { ...statusResult, timestamp: Date.now() });
@@ -396,6 +402,7 @@ export async function getWorkspaceStatus(): Promise<{
         selectedProfile: matchedProfileToLocalConfig,
         configInSync: true,
         currentFolder: folder,
+        currentGitConfig: currentGitConfig,
       };
       // Invalidate cache when we update the configuration
       // Don't cache this result as it's a transient state
@@ -424,6 +431,7 @@ export async function getWorkspaceStatus(): Promise<{
       selectedProfile: selectedVscProfile,
       configInSync: configInSync.result,
       currentFolder: folder,
+      currentGitConfig: currentGitConfig,
     };
     // Cache the result for this folder
     workspaceStatusCacheMap.set(folder, { ...statusResult, timestamp: Date.now() });
@@ -436,6 +444,7 @@ export async function getWorkspaceStatus(): Promise<{
     selectedProfile: selectedVscProfile,
     configInSync: configInSync.result,
     currentFolder: folder,
+    currentGitConfig: currentGitConfig,
   };
   // Cache the result for this folder
   workspaceStatusCacheMap.set(folder, { ...statusResult, timestamp: Date.now() });

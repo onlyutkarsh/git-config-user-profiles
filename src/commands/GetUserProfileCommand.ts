@@ -14,7 +14,17 @@ export class GetUserProfileCommand implements ICommand<void> {
     // Don't show warnings if the message is empty (indicates non-file scheme or other silent ignore case)
     const shouldShowWarning = result.message && result.message.length > 0 && !result.configInSync;
 
-    await statusBar.instance.updateStatus(result.selectedProfile, result.currentFolder, shouldShowWarning ? StatusBarStatus.Warning : StatusBarStatus.Normal, result.message);
+    // Only pass custom tooltip if config is in sync or there's no git config
+    // For out-of-sync cases, let buildTooltip create the detailed comparison
+    const customTooltip = result.configInSync || !result.currentGitConfig ? result.message : undefined;
+
+    await statusBar.instance.updateStatus(
+      result.selectedProfile,
+      result.currentFolder,
+      shouldShowWarning ? StatusBarStatus.Warning : StatusBarStatus.Normal,
+      customTooltip,
+      result.currentGitConfig
+    );
     return {};
   }
 }
