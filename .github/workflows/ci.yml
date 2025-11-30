@@ -65,3 +65,54 @@ jobs:
           name: test-results-${{ github.sha }}
           path: test-results/
           retention-days: 30
+
+  update-changelog:
+    runs-on: ubuntu-latest
+    # Only run on main branch pushes, not on PRs
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20.x"
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm install --save-dev conventional-changelog-cli
+
+      - name: Generate Changelog
+        run: |
+          # Generate changelog from commits
+          npx conventional-changelog -p angular -i CHANGELOG.md -s -r 0
+
+          # Add unreleased section at the top if it doesn't exist
+          if ! grep -q "## \[Unreleased\]" CHANGELOG.md; then
+            echo -e "## [Unreleased]\n\n### Features\n\n### Bug Fixes\n\n### Changes\n\n$(cat CHANGELOG.md)" > CHANGELOG.md
+          fi
+
+      - name: Check for changes
+        id: check_changes
+        run: |
+          if git diff --quiet CHANGELOG.md; then
+            echo "changed=false" >> $GITHUB_OUTPUT
+          else
+            echo "changed=true" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Commit and push changes
+        if: steps.check_changes.outputs.changed == 'true'
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add CHANGELOG.md
+          git commit -m "docs: update CHANGELOG.md [skip ci]"
+          git push
