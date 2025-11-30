@@ -96,11 +96,12 @@ jobs:
       - name: Commit version bump
         run: |
           git add package.json package-lock.json
-          git commit -m "chore(release): v${{ inputs.version }}"
-
-      - name: Push version bump
-        run: |
-          git push origin main
+          if git diff --staged --quiet; then
+            echo "No changes to commit, skipping"
+          else
+            git commit -m "chore(release): v${{ inputs.version }}"
+            git push origin main
+          fi
 
       - name: Create and push tag
         run: |
@@ -131,7 +132,7 @@ jobs:
           else
             echo "⚠️ Open VSX Registry publishing failed or skipped" >> $GITHUB_STEP_SUMMARY
           fi
-          if [ "${{ steps.publish_vscode.outcome }}" == "success" ]; then
+          if [ "${{ steps.publish_vsmarketplace.outcome }}" == "success" ]; then
             echo "✅ Published to VS Marketplace" >> $GITHUB_STEP_SUMMARY
           else
             echo "⚠️ VS Marketplace publishing failed or skipped" >> $GITHUB_STEP_SUMMARY
