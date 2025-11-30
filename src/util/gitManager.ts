@@ -21,13 +21,27 @@ interface WorkspaceStatusCache {
   timestamp: number;
 }
 
-let workspaceStatusCache: WorkspaceStatusCache | null = null;
+// Cache is now per-folder to support multi-root workspaces
+const workspaceStatusCacheMap = new Map<string, WorkspaceStatusCache>();
 const CACHE_DURATION_MS = 1000; // Cache valid for 1 second
 
-export function invalidateWorkspaceStatusCache(): void {
-  const hadCache = workspaceStatusCache !== null;
-  workspaceStatusCache = null;
-  Logger.instance.logDebug("Cache", "Workspace status cache invalidated", { hadCache });
+export function invalidateWorkspaceStatusCache(folder?: string): void {
+  if (folder) {
+    // Invalidate cache for specific folder
+    const hadCache = workspaceStatusCacheMap.has(folder);
+    workspaceStatusCacheMap.delete(folder);
+    Logger.instance.logDebug("Cache", "Workspace status cache invalidated for folder", {
+      folder: basename(folder),
+      hadCache
+    });
+  } else {
+    // Invalidate all caches
+    const cacheSize = workspaceStatusCacheMap.size;
+    workspaceStatusCacheMap.clear();
+    Logger.instance.logDebug("Cache", "All workspace status caches invalidated", {
+      clearedEntries: cacheSize
+    });
+  }
 }
 
 async function getCurrentFolder(): Promise<Result<string | undefined>> {
@@ -90,8 +104,8 @@ export async function isValidWorkspace(): Promise<{ isValid: boolean; message: s
       isValid: false,
     };
   }
-  const isGitRepo = await isGitRepository(result.result as string);
-  if (!isGitRepo) {
+  const gitRoot = await getGitRoot(result.result as string);
+  if (!gitRoot) {
     return {
       message: Messages.NOT_A_VALID_REPO,
       isValid: false,
@@ -100,7 +114,7 @@ export async function isValidWorkspace(): Promise<{ isValid: boolean; message: s
   return {
     message: "",
     isValid: true,
-    folder: result.result as string,
+    folder: gitRoot,
   };
 }
 
@@ -166,21 +180,40 @@ export async function updateGitConfig(gitFolder: string, profile: Profile) {
   Logger.instance.logInfo(`Git config updated for '${basename(gitFolder)}' with profile '${profile.label}'`);
 }
 
-export async function isGitRepository(path: string): Promise<boolean> {
+export async function getGitRoot(path: string): Promise<string | null> {
   try {
-    const isRepo = await simpleGit(path).checkIsRepo();
-    Logger.instance.logDebug("GitRepository", "Git repository check", {
-      path: basename(path),
-      isRepository: isRepo
+    const git = simpleGit(path);
+    const isRepo = await git.checkIsRepo();
+
+    if (!isRepo) {
+      Logger.instance.logDebug("GitRepository", "Path is not within a git repository", {
+        path: basename(path)
+      });
+      return null;
+    }
+
+    // Get the actual repository root
+    const root = await git.revparse(['--show-toplevel']);
+
+    Logger.instance.logDebug("GitRepository", "Found git root", {
+      searchPath: basename(path),
+      gitRoot: basename(root),
+      isSamePath: path === root
     });
-    return isRepo;
+
+    return root;
   } catch (error) {
-    Logger.instance.logDebug("GitRepository", "Git repository check failed", {
+    Logger.instance.logDebug("GitRepository", "Could not find git root", {
       path: basename(path),
       error: error instanceof Error ? error.message : String(error)
     });
-    return false;
+    return null;
   }
+}
+
+export async function isGitRepository(path: string): Promise<boolean> {
+  const root = await getGitRoot(path);
+  return root !== null;
 }
 
 export enum WorkspaceStatus {
@@ -219,26 +252,6 @@ export async function getWorkspaceStatus(): Promise<{
   configInSync?: boolean;
   currentFolder?: string;
 }> {
-  // Check cache first
-  const now = Date.now();
-  if (workspaceStatusCache && now - workspaceStatusCache.timestamp < CACHE_DURATION_MS) {
-    const cacheAge = now - workspaceStatusCache.timestamp;
-    Logger.instance.logDebug("Cache", "Returning cached workspace status", {
-      cacheAgeMs: cacheAge,
-      status: WorkspaceStatus[workspaceStatusCache.status],
-      configInSync: workspaceStatusCache.configInSync,
-      selectedProfile: workspaceStatusCache.selectedProfile?.label
-    });
-    return {
-      status: workspaceStatusCache.status,
-      message: workspaceStatusCache.message,
-      selectedProfile: workspaceStatusCache.selectedProfile,
-      profilesInVSConfigCount: workspaceStatusCache.profilesInVSConfigCount,
-      configInSync: workspaceStatusCache.configInSync,
-      currentFolder: workspaceStatusCache.currentFolder,
-    };
-  }
-
   const result = await getCurrentFolder();
   if (!result.result) {
     Logger.instance.logDebug("WorkspaceStatus", "No valid workspace folder", {
@@ -248,25 +261,46 @@ export async function getWorkspaceStatus(): Promise<{
       status: WorkspaceStatus.NotAValidWorkspace,
       message: result.message || Messages.NOT_A_VALID_REPO,
     };
-    // Cache the result
-    workspaceStatusCache = { ...statusResult, timestamp: Date.now() };
+    // Don't cache this as there's no folder to key on
     return statusResult;
   }
-  const folder = result.result as string;
-  const isGitRepo = await isGitRepository(folder);
-  if (!isGitRepo) {
+  const workspaceFolder = result.result as string;
+  const gitRoot = await getGitRoot(workspaceFolder);
+  if (!gitRoot) {
     Logger.instance.logDebug("WorkspaceStatus", "Folder is not a git repository", {
-      folder: basename(folder)
+      folder: basename(workspaceFolder)
     });
     const statusResult = {
       status: WorkspaceStatus.NotAValidWorkspace,
       message: Messages.NOT_A_VALID_REPO,
     };
-    // Cache the result
-    workspaceStatusCache = { ...statusResult, timestamp: Date.now() };
+    // Don't cache this as there's no git root to key on
     return statusResult;
   }
   // if control reaches here, we have a valid git repo
+  const folder = gitRoot;
+
+  // Check cache for this specific folder
+  const now = Date.now();
+  const cached = workspaceStatusCacheMap.get(folder);
+  if (cached && now - cached.timestamp < CACHE_DURATION_MS) {
+    const cacheAge = now - cached.timestamp;
+    Logger.instance.logDebug("Cache", "Returning cached workspace status", {
+      folder: basename(folder),
+      cacheAgeMs: cacheAge,
+      status: WorkspaceStatus[cached.status],
+      configInSync: cached.configInSync,
+      selectedProfile: cached.selectedProfile?.label
+    });
+    return {
+      status: cached.status,
+      message: cached.message,
+      selectedProfile: cached.selectedProfile,
+      profilesInVSConfigCount: cached.profilesInVSConfigCount,
+      configInSync: cached.configInSync,
+      currentFolder: cached.currentFolder,
+    };
+  }
 
   const profilesInVscConfig = getProfilesInSettings();
   //migrate all old profiles to new format
@@ -287,8 +321,8 @@ export async function getWorkspaceStatus(): Promise<{
       configInSync: false,
       currentFolder: folder,
     };
-    // Cache the result
-    workspaceStatusCache = { ...statusResult, timestamp: Date.now() };
+    // Cache the result for this folder
+    workspaceStatusCacheMap.set(folder, { ...statusResult, timestamp: Date.now() });
     return statusResult;
   }
   if (selectedProfileInVscConfig.length === 0) {
@@ -302,8 +336,8 @@ export async function getWorkspaceStatus(): Promise<{
       configInSync: false,
       currentFolder: folder,
     };
-    // Cache the result
-    workspaceStatusCache = { ...statusResult, timestamp: Date.now() };
+    // Cache the result for this folder
+    workspaceStatusCacheMap.set(folder, { ...statusResult, timestamp: Date.now() });
     return statusResult;
   }
   if (selectedVscProfile && (selectedVscProfile.label === undefined || selectedVscProfile.userName === undefined || selectedVscProfile.email === undefined)) {
@@ -317,8 +351,8 @@ export async function getWorkspaceStatus(): Promise<{
       configInSync: false,
       currentFolder: folder,
     };
-    // Cache the result
-    workspaceStatusCache = { ...statusResult, timestamp: Date.now() };
+    // Cache the result for this folder
+    workspaceStatusCacheMap.set(folder, { ...statusResult, timestamp: Date.now() });
     return statusResult;
   }
   // if the current config patches one of the profiles in the defined profiles, we should select it automatically. In case of multiple matches, we should select the first one. This will avoid user to select the profile manually.
@@ -380,8 +414,8 @@ export async function getWorkspaceStatus(): Promise<{
       configInSync: configInSync.result,
       currentFolder: folder,
     };
-    // Cache the result
-    workspaceStatusCache = { ...statusResult, timestamp: Date.now() };
+    // Cache the result for this folder
+    workspaceStatusCacheMap.set(folder, { ...statusResult, timestamp: Date.now() });
     return statusResult;
   }
   const statusResult = {
@@ -392,8 +426,8 @@ export async function getWorkspaceStatus(): Promise<{
     configInSync: configInSync.result,
     currentFolder: folder,
   };
-  // Cache the result
-  workspaceStatusCache = { ...statusResult, timestamp: Date.now() };
+  // Cache the result for this folder
+  workspaceStatusCacheMap.set(folder, { ...statusResult, timestamp: Date.now() });
   return statusResult;
 }
 async function migrateOldProfilesToNew(profilesInVscConfig: Profile[]) {
