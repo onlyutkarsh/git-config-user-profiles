@@ -61,15 +61,28 @@ jobs:
       - name: Build extension
         run: npm run package
 
+      - name: Publish to Open VSX Registry
+        run: npm run publish:ovsx
+        env:
+          OVSX_PAT: ${{ secrets.OVSX_PAT }}
+
+      - name: Publish to VS Marketplace
+        run: npm run deploy
+        env:
+          VSCE_PAT: ${{ secrets.VS_MARKETPLACE_PAT }}
+
       - name: Commit version bump
         run: |
           git add package.json package-lock.json
           git commit -m "chore(release): v${{ inputs.version }}"
-          git tag -a "v${{ inputs.version }}" -m "Release v${{ inputs.version }}"
 
-      - name: Push changes and tags
+      - name: Push version bump
         run: |
           git push origin main
+
+      - name: Create and push tag
+        run: |
+          git tag -a "v${{ inputs.version }}" -m "Release v${{ inputs.version }}"
           git push origin "v${{ inputs.version }}"
 
       - name: Create GitHub Release
@@ -83,16 +96,6 @@ jobs:
           generate_release_notes: true
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Publish to Open VSX Registry
-        run: npm run publish:ovsx
-        env:
-          OVSX_PAT: ${{ secrets.OVSX_PAT }}
-
-      - name: Publish to VS Marketplace
-        run: npm run deploy
-        env:
-          VSCE_PAT: ${{ secrets.VS_MARKETPLACE_PAT }}
 
       - name: Summary
         run: |
