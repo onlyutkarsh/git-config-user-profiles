@@ -6,6 +6,33 @@
 
 ### Changes
 
+# [2.2.0](https://github.com/onlyutkarsh/git-config-user-profiles/compare/v2.1.0...v2.2.0) (2025-11-30)
+
+
+### Features
+
+* add Jest configuration and testing utilities for git operations ([2539bb4](https://github.com/onlyutkarsh/git-config-user-profiles/commit/2539bb41c3cb03790bb30758ec2e92a6b6f2feb5))
+* enhance workspace status caching for multi-root support and add Jest testing scripts ([2539bb4](https://github.com/onlyutkarsh/git-config-user-profiles/commit/2539bb41c3cb03790bb30758ec2e92a6b6f2feb5))
+* enhance user profile status bar with detailed tooltip and sync status ([2539bb4](https://github.com/onlyutkarsh/git-config-user-profiles/commit/2539bb41c3cb03790bb30758ec2e92a6b6f2feb5))
+* implement lazy initialization for theme colors in ProfileStatusBar and add mock classes for ThemeColor and MarkdownString ([2539bb4](https://github.com/onlyutkarsh/git-config-user-profiles/commit/2539bb41c3cb03790bb30758ec2e92a6b6f2feb5))
+* add Jest setup for git user identity configuration and create release workflow ([2539bb4](https://github.com/onlyutkarsh/git-config-user-profiles/commit/2539bb41c3cb03790bb30758ec2e92a6b6f2feb5))
+* add CI and release workflows for automated versioning and packaging ([2539bb4](https://github.com/onlyutkarsh/git-config-user-profiles/commit/2539bb41c3cb03790bb30758ec2e92a6b6f2feb5))
+* enhance dependency management and release workflow; improve status bar tooltips and logging ([2539bb4](https://github.com/onlyutkarsh/git-config-user-profiles/commit/2539bb41c3cb03790bb30758ec2e92a6b6f2feb5))
+* add inspect method to mock workspace configuration for enhanced testing ([2539bb4](https://github.com/onlyutkarsh/git-config-user-profiles/commit/2539bb41c3cb03790bb30758ec2e92a6b6f2feb5))
+* simplify profile selection tests and enhance file system mocking ([2539bb4](https://github.com/onlyutkarsh/git-config-user-profiles/commit/2539bb41c3cb03790bb30758ec2e92a6b6f2feb5))
+* All tooltips are now minimal, showing only emoji + title, which should make them appear and disappear much faster ([2539bb4](https://github.com/onlyutkarsh/git-config-user-profiles/commit/2539bb41c3cb03790bb30758ec2e92a6b6f2feb5))
+* update tooltip messages for clarity and conciseness; enhance status bar display for various scenarios ([2539bb4](https://github.com/onlyutkarsh/git-config-user-profiles/commit/2539bb41c3cb03790bb30758ec2e92a6b6f2feb5))
+* add automated changelog generation workflow and scripts ([2539bb4](https://github.com/onlyutkarsh/git-config-user-profiles/commit/2539bb41c3cb03790bb30758ec2e92a6b6f2feb5))
+* add conventional changelog dependencies and update package-lock.json ([2539bb4](https://github.com/onlyutkarsh/git-config-user-profiles/commit/2539bb41c3cb03790bb30758ec2e92a6b6f2feb5))
+
+
+### Bug Fixes
+
+* fix #99, #100 and #101 ([2539bb4](https://github.com/onlyutkarsh/git-config-user-profiles/commit/2539bb41c3cb03790bb30758ec2e92a6b6f2feb5))
+* fix for #46 and #90 ([2539bb4](https://github.com/onlyutkarsh/git-config-user-profiles/commit/2539bb41c3cb03790bb30758ec2e92a6b6f2feb5))
+
+
+
 # [2.1.0](https://github.com/onlyutkarsh/git-config-user-profiles/compare/v2.0.1...v2.1.0) (2024-02-19)
 
 
