@@ -111,4 +111,30 @@ export enum ConfigurationTarget {
   WorkspaceFolder = 3,
 }
 
+export class ThemeColor {
+  constructor(public id: string) {}
+}
+
+export class MarkdownString {
+  public value: string = '';
+  public isTrusted?: boolean;
+  public supportHtml?: boolean;
+
+  constructor(value?: string) {
+    if (value) {
+      this.value = value;
+    }
+  }
+
+  appendMarkdown(value: string): MarkdownString {
+    this.value += value;
+    return this;
+  }
+
+  appendText(value: string): MarkdownString {
+    this.value += value;
+    return this;
+  }
+}
+
 export const StatusBarItem = jest.fn();

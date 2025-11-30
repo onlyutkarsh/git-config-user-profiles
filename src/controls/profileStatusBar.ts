@@ -22,9 +22,23 @@ export class ProfileStatusBar {
   private static _instance: ProfileStatusBar;
   private static _statusBar: StatusBarItem;
 
-  // Cache theme colors to avoid creating new objects on every update
-  private static readonly NORMAL_BACKGROUND = new ThemeColor("statusBarItem.activeBackground");
-  private static readonly WARNING_BACKGROUND = new ThemeColor("statusBarItem.warningBackground");
+  // Lazy-initialized theme colors to avoid creating objects during module load
+  private static _normalBackground?: ThemeColor;
+  private static _warningBackground?: ThemeColor;
+
+  private static get NORMAL_BACKGROUND(): ThemeColor {
+    if (!this._normalBackground) {
+      this._normalBackground = new ThemeColor("statusBarItem.activeBackground");
+    }
+    return this._normalBackground;
+  }
+
+  private static get WARNING_BACKGROUND(): ThemeColor {
+    if (!this._warningBackground) {
+      this._warningBackground = new ThemeColor("statusBarItem.warningBackground");
+    }
+    return this._warningBackground;
+  }
 
   static get instance(): ProfileStatusBar {
     if (!ProfileStatusBar._instance) {
