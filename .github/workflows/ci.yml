@@ -1,0 +1,67 @@
+name: CI
+
+on:
+  push:
+    branches:
+      - main
+      - feature/**
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20.x"
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run tests
+        run: npm test
+
+      - name: Compile TypeScript
+        run: npm run compile
+
+      - name: Set dynamic version for CI build
+        id: version
+        run: |
+          # Get base version from package.json
+          BASE_VERSION=$(node -p "require('./package.json').version")
+          # Get short commit SHA
+          SHORT_SHA=$(git rev-parse --short HEAD)
+          # Get run number for uniqueness
+          RUN_NUMBER=${{ github.run_number }}
+          # Create prerelease version: e.g., 2.1.0-ci.123.abc1234
+          CI_VERSION="${BASE_VERSION}-ci.${RUN_NUMBER}.${SHORT_SHA}"
+          echo "ci_version=${CI_VERSION}" >> $GITHUB_OUTPUT
+          echo "Building version: ${CI_VERSION}"
+          # Update package.json with CI version
+          npm version ${CI_VERSION} --no-git-tag-version
+
+      - name: Build extension
+        run: npm run package
+
+      - name: Upload VSIX artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: git-config-user-profiles-${{ steps.version.outputs.ci_version }}
+          path: "*.vsix"
+          retention-days: 90
+
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-results-${{ github.sha }}
+          path: test-results/
+          retention-days: 30

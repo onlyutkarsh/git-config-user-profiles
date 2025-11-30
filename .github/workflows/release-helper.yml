@@ -1,0 +1,98 @@
+name: Release Helper
+
+on:
+  workflow_dispatch:
+    inputs:
+      bump-type:
+        description: 'Version bump type'
+        required: true
+        type: choice
+        options:
+          - patch
+          - minor
+          - major
+        default: 'patch'
+
+jobs:
+  prepare-release:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20.x"
+          cache: 'npm'
+
+      - name: Configure Git
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Bump version
+        id: version
+        run: |
+          # Bump version and get new version
+          NEW_VERSION=$(npm version ${{ inputs.bump-type}} --no-git-tag-version | sed 's/v//')
+          echo "new_version=${NEW_VERSION}" >> $GITHUB_OUTPUT
+          echo "New version: ${NEW_VERSION}"
+
+      - name: Generate changelog
+        id: changelog
+        run: |
+          # Get the previous tag
+          PREVIOUS_TAG=$(git describe --tags --abbrev=0 2>/dev/null || echo "")
+          
+          if [ -z "$PREVIOUS_TAG" ]; then
+            echo "No previous tag found, using all commits"
+            COMMITS=$(git log --pretty=format:"- %s (%h)" --no-merges)
+          else
+            echo "Previous tag: $PREVIOUS_TAG"
+            COMMITS=$(git log ${PREVIOUS_TAG}..HEAD --pretty=format:"- %s (%h)" --no-merges)
+          fi
+          
+          # Save changelog to file
+          cat > /tmp/changelog.md << CHANGELOG_EOF
+          ## What's Changed
+          
+          ${COMMITS}
+          
+          **Full Changelog**: https://github.com/${{ github.repository }}/compare/${PREVIOUS_TAG}...v${{ steps.version.outputs.new_version }}
+          CHANGELOG_EOF
+          
+          cat /tmp/changelog.md
+
+      - name: Create Pull Request
+        uses: peter-evans/create-pull-request@v6
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          commit-message: "chore(release): bump version to ${{ steps.version.outputs.new_version }}"
+          branch: release/v${{ steps.version.outputs.new_version }}
+          delete-branch: true
+          title: "Release v${{ steps.version.outputs.new_version }}"
+          body-path: /tmp/changelog.md
+          labels: |
+            release
+            automated
+          reviewers: onlyutkarsh
+
+      - name: Summary
+        run: |
+          echo "### Release Preparation Complete 🎉" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**New Version:** v${{ steps.version.outputs.new_version }}" >> $GITHUB_STEP_SUMMARY
+          echo "**Bump Type:** ${{ inputs.bump-type }}" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "A pull request has been created with the version bump." >> $GITHUB_STEP_SUMMARY
+          echo "Review and merge it, then run the Release workflow." >> $GITHUB_STEP_SUMMARY

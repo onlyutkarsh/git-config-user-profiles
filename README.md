@@ -64,6 +64,52 @@ Once the repository's username and email are in sync, you will see warning color
 ### Deleting a profile
 Open the Command Palette and type `git config user profiles` or `gcup` and select `Delete a profile`. You will be presented with a list of profiles to delete.
 
+<br/>
+
+## Supported Scenarios
+
+The extension intelligently handles various workspace configurations and provides appropriate feedback through the status bar and tooltips.
+
+### Workspace Configurations
+
+| Scenario | Status Bar Display | Tooltip |
+|----------|-------------------|---------|
+| **No editors open** | Shows repo name → "No Profile" with question mark icon and warning background | 📂 **No File Open** |
+| **Non-file schemes** (Output window, Settings, etc.) | Hidden | Status bar is hidden as these are not associated with git repositories |
+| **Jupyter Notebooks** (.ipynb) | Same as regular files - shows git profile information | Same as regular files - displays profile sync status |
+| **File in non-git folder** | Shows folder name → "No Profile" with question mark icon and warning background | ⚠️ **Not a Git Repository** |
+| **No profiles created** | Shows repo name → "No Profile" with question mark icon and warning background | 📋 **No Profiles Created** |
+| **Git repo, no profile selected** | Shows repo name → "No Profile" with question mark icon and warning background | ⚠️ **No Profile Selected** |
+| **Git repo, profile selected, in sync** | Shows repo name → profile name with normal background (no icons) | ✅ **Profile Name** |
+| **Git repo, profile selected, out of sync** | Shows repo name → profile name with alert icon and warning background | ⚠️ **Git Config Out of Sync** |
+| **Nested git repositories** | Works correctly by detecting git root from file location | Each nested git repo can have its own profile selection stored in its `.vscode/settings.json` file - reads directly from file to avoid parent folder conflicts |
+
+### Multi-root and Nested Repository Support
+
+The extension fully supports complex workspace configurations:
+
+- **Parent folder with multiple git repos**: Open a parent folder containing multiple nested git repositories, and the extension will detect the correct git repo based on which file you have open.
+- **Multi-root workspaces**: Each workspace folder can have its own profile selection.
+- **Mono repositories**: Works correctly in mono repos by traversing up to find the git root from the opened file's location.
+
+> **Technical Note**: Profile selections are stored in each git repository's `.vscode/settings.json` file using the `gitConfigUser.selectedProfileId` setting. This allows different git repositories to maintain their own profile selections even when opened from a common parent folder.
+
+### Tooltip States
+
+The extension provides concise tooltip information to help you understand the current state at a glance:
+
+- **✅ Profile Name**: Profile is selected and git config is in sync
+- **⚠️ Git Config Out of Sync**: Profile is selected but git config doesn't match the profile settings
+- **📂 No File Open**: No file is currently open in the editor
+- **⚠️ Not a Git Repository**: Current folder is not a git repository
+- **📋 No Profiles Created**: No profiles have been created yet
+- **⚠️ No Profile Selected**: No profile has been selected for this repository
+- **❌ Profile Configuration Error**: Selected profile is missing required information
+
+> All tooltips are kept minimal for quick readability. Click the status bar icon for detailed information and available actions.
+
+<br/>
+
 ### Issues and feature requests
 
 If you find any bug or have any suggestion/feature request, please submit the [issue](https://github.com/onlyutkarsh/git-config-user-profiles/issues) in the GitHub repo. 

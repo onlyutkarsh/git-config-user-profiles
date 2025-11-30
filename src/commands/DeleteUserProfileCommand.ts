@@ -16,6 +16,8 @@ export class DeleteUserProfileCommand implements ICommand<boolean> {
 
   async execute(): Promise<Result<boolean>> {
     try {
+      util.Logger.instance.logDebug("DeleteProfile", "Delete profile command started", {});
+
       const result = await gm.getWorkspaceStatus();
 
       if (!(await gm.validateWorkspace(result))) {
@@ -25,14 +27,22 @@ export class DeleteUserProfileCommand implements ICommand<boolean> {
       const pickerResult = await util.showProfilePicker();
       const selectedProfile = pickerResult.result as Profile;
       if (selectedProfile) {
+        util.Logger.instance.logDebug("DeleteProfile", "Profile selected for deletion", {
+          profileLabel: selectedProfile.label,
+          profileId: selectedProfile.id
+        });
+
         await util.deleteProfile(selectedProfile);
+        util.Logger.instance.logInfo(`Profile '${selectedProfile.label}' deleted successfully`);
         vscode.commands.executeCommand(constants.CommandIds.GET_USER_PROFILE, "deleted profile");
+        vscode.window.showInformationMessage(`Profile '${selectedProfile.label}' deleted.`);
+      } else {
+        util.Logger.instance.logDebug("DeleteProfile", "User cancelled profile deletion", {});
       }
-      vscode.window.showInformationMessage(`Profile '${selectedProfile.label}' deleted.`);
       return { result: true };
     } catch (error) {
-      util.Logger.instance.logError(`Error ocurred while deleting profile. ${error}`);
-      vscode.window.showErrorMessage(`Error ocurred while deleting profile.`);
+      util.Logger.instance.logError(`Error occurred while deleting profile. ${error}`);
+      vscode.window.showErrorMessage(`Error occurred while deleting profile.`);
       return { result: false };
     }
   }

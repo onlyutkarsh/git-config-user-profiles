@@ -1,79 +1,104 @@
-name: release
+name: Release to Marketplace
 
 on:
-  push:
-    branches:
-      - "main"
-    paths-ignore:
-      - ".github/workflows/**"
   workflow_dispatch:
     inputs:
-      action:
-        description: Trigger build
+      version:
+        description: 'Version number (e.g., 2.2.0)'
         required: true
-        default: "release"
-
-env:
-  BASE_VERSION: 2.0.0
-  EXTENSION_NAME: Git Config User Profiles
-  EXTENSION_DESC: "Define multiple git config user profiles and switch them easily using status bar"
-  EXTENSION_SLUG: git-config-user-profiles
+        type: string
 
 jobs:
   release:
     runs-on: ubuntu-latest
-    if: github.event_name != 'pull_request'
+
     steps:
-      - name: checkout repo with all histrory and tags
-        uses: actions/checkout@v3
+      - name: Checkout repository
+        uses: actions/checkout@v4
         with:
           fetch-depth: 0
-          persist-credentials: false
 
-      - name: setup node
+      - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: "20.x"
+          cache: 'npm'
 
-      - name: semantic release
-        id: "semantic-release"
-        uses: cycjimmy/semantic-release-action@v4
+      - name: Configure Git
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+      - name: Validate version format
+        run: |
+          if ! [[ "${{ inputs.version }}" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            echo "Error: Version must be in format X.Y.Z (e.g., 2.2.0)"
+            exit 1
+          fi
+
+      - name: Check if tag already exists
+        run: |
+          if git rev-parse "v${{ inputs.version }}" >/dev/null 2>&1; then
+            echo "Error: Tag v${{ inputs.version }} already exists"
+            exit 1
+          fi
+
+      - name: Update package.json version
+        run: |
+          npm version ${{ inputs.version }} --no-git-tag-version
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run tests
+        run: npm test
+
+      - name: Compile TypeScript
+        run: npm run compile
+
+      - name: Build extension
+        run: npm run package
+
+      - name: Commit version bump
+        run: |
+          git add package.json package-lock.json
+          git commit -m "chore(release): v${{ inputs.version }}"
+          git tag -a "v${{ inputs.version }}" -m "Release v${{ inputs.version }}"
+
+      - name: Push changes and tags
+        run: |
+          git push origin main
+          git push origin "v${{ inputs.version }}"
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v1
         with:
-          extra_plugins: |
-            @semantic-release/changelog
-            @semantic-release/github
-            @semantic-release/git
+          tag_name: v${{ inputs.version }}
+          name: Release v${{ inputs.version }}
+          draft: false
+          prerelease: false
+          files: "*.vsix"
+          generate_release_notes: true
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: "print version"
-        run: echo "New version ${{ steps.semantic-release.outputs.new_release_version }}"
-
-      - name: 💎 install cached dependencies
-        if: steps.semantic-release.outputs.new_release_version != ''
-        uses: actions/cache@v3
-        with:
-          path: ~/.npm
-          key: ${{ runner.os }}-node-${{ secrets.CACHE_VERSION }}-${{ hashFiles('**/package-lock.json') }}
-          restore-keys: |
-            ${{ runner.os }}-node-
-
-      - name: 🚧 install dependencies
-        if: steps.semantic-release.outputs.new_release_version != ''
-        run: npm install
-
-      - name: 📦 compile and create vsix
-        if: steps.semantic-release.outputs.new_release_version != ''
-        run: npm run package
-
-      - name: 📤 upload vsix to ovsx
-        if: steps.semantic-release.outputs.new_release_version != ''
+      - name: Publish to Open VSX Registry
         run: npm run publish:ovsx
         env:
           OVSX_PAT: ${{ secrets.OVSX_PAT }}
 
-      - name: 🚀 publish to marketplace
-        if: success() && steps.semantic-release.outputs.new_release_version != ''
+      - name: Publish to VS Marketplace
         run: npm run deploy
         env:
           VSCE_PAT: ${{ secrets.VS_MARKETPLACE_PAT }}
+
+      - name: Summary
+        run: |
+          echo "### Release Summary :rocket:" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Version:** v${{ inputs.version }}" >> $GITHUB_STEP_SUMMARY
+          echo "**Tag:** v${{ inputs.version }}" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "✅ Published to Open VSX Registry" >> $GITHUB_STEP_SUMMARY
+          echo "✅ Published to VS Marketplace" >> $GITHUB_STEP_SUMMARY
+          echo "✅ GitHub Release created" >> $GITHUB_STEP_SUMMARY

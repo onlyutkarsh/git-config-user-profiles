@@ -48,16 +48,22 @@
     "esbuild-watch": "npm run -S esbuild-base -- --sourcemap --watch",
     "compile": "tsc -p ./src",
     "dev": "npm run compile && npm run esbuild-watch",
+    "test": "jest",
+    "test:watch": "jest --watch",
+    "test:coverage": "jest --coverage",
     "package": "vsce package --allow-star-activation",
     "deploy": "vsce publish --allow-star-activation",
     "publish:ovsx": "ovsx publish",
     "clean": "git clean -fdX",
-    "pushchanges": "git push && git push --tags"
+    "pushchanges": "git push && git push --tags",
+    "changelog": "conventional-changelog -p angular -i CHANGELOG.md -s",
+    "changelog:all": "conventional-changelog -p angular -i CHANGELOG.md -s -r 0"
   },
   "devDependencies": {
     "@semantic-release/changelog": "^6.0.3",
     "@semantic-release/git": "^10.0.1",
     "@types/fs-extra": "^11.0.4",
+    "conventional-changelog-cli": "^4.1.0",
     "@types/gitconfiglocal": "^2.0.3",
     "@types/glob": "^8.1.0",
     "@types/jest": "^29.5.12",
@@ -141,6 +147,29 @@
           "type": "boolean",
           "default": true,
           "markdownDescription": "Select the matched profile automatically when opening a workspace"
+        },
+        "gitConfigUser.logLevel": {
+          "type": "string",
+          "enum": [
+            "error",
+            "warning",
+            "info",
+            "debug"
+          ],
+          "enumDescriptions": [
+            "Only show error messages",
+            "Show errors and warnings",
+            "Show errors, warnings, and informational messages",
+            "Show all messages including detailed debug information"
+          ],
+          "default": "info",
+          "markdownDescription": "Controls the verbosity of logging in the output channel. Set to `debug` when reporting issues for more detailed diagnostics."
+        },
+        "gitConfigUser.selectedProfileId": {
+          "type": "string",
+          "default": "",
+          "scope": "resource",
+          "markdownDescription": "The ID of the currently selected profile for this workspace. This is automatically set when you select a profile and allows different workspaces to have different active profiles."
         }
       }
     }

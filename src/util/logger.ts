@@ -4,14 +4,19 @@
  *  See https://github.com/prettier/prettier-vscode/blob/master/LICENSE for license information.
  *--------------------------------------------------------------------------------------------*/
 
-import { OutputChannel, window } from "vscode";
+import { LogOutputChannel, window, workspace } from "vscode";
 import { Application } from "../constants";
 import { Disposable } from "./disposable";
 
-type LogLevel = "INFO" | "WARN" | "ERROR";
+export enum LogLevel {
+  Error = 0,
+  Warning = 1,
+  Info = 2,
+  Debug = 3
+}
 
 export class Logger extends Disposable {
-  private outputChannel: OutputChannel | undefined;
+  private outputChannel: LogOutputChannel | undefined;
   private static _instance: Logger;
 
   static get instance(): Logger {
@@ -21,9 +26,29 @@ export class Logger extends Disposable {
     return Logger._instance;
   }
 
+  private getLogLevel(): LogLevel {
+    const configLevel = workspace.getConfiguration("gitConfigUser").get<string>("logLevel", "info");
+    switch (configLevel.toLowerCase()) {
+      case "error":
+        return LogLevel.Error;
+      case "warning":
+        return LogLevel.Warning;
+      case "info":
+        return LogLevel.Info;
+      case "debug":
+        return LogLevel.Debug;
+      default:
+        return LogLevel.Info;
+    }
+  }
+
+  private shouldLog(level: LogLevel): boolean {
+    return level <= this.getLogLevel();
+  }
+
   private constructor() {
     super();
-    this.outputChannel = window.createOutputChannel(Application.APPLICATION_NAME);
+    this.outputChannel = window.createOutputChannel(Application.APPLICATION_NAME, { log: true });
     this.registerDisposable(this.outputChannel);
   }
 
@@ -33,9 +58,32 @@ export class Logger extends Disposable {
    * @param message The message to append to the output channel
    */
   public logInfo(message: string, data?: object): void {
-    this.logMessage(message, "INFO");
+    if (!this.outputChannel || !this.shouldLog(LogLevel.Info)) {
+      return;
+    }
+
+    this.outputChannel.info(message);
     if (data) {
-      this.logObject(data);
+      this.outputChannel.info(JSON.stringify(data, null, 2));
+    }
+  }
+
+  /**
+   * Log debugging information with structured context
+   *
+   * @param category Category of the log (e.g., "WorkspaceChange", "ProfileSwitch", "GitConfig")
+   * @param message The message to log
+   * @param context Additional context data
+   */
+  public logDebug(category: string, message: string, context?: object): void {
+    if (!this.outputChannel || !this.shouldLog(LogLevel.Debug)) {
+      return;
+    }
+
+    const logMessage = `[${category}] ${message}`;
+    this.outputChannel.debug(logMessage);
+    if (context) {
+      this.outputChannel.debug(`  Context: ${JSON.stringify(context, null, 2)}`);
     }
   }
 
@@ -45,28 +93,32 @@ export class Logger extends Disposable {
    * @param message The message to append to the output channel
    */
   public logWarning(message: string, data?: object): void {
-    this.logMessage(message, "WARN");
+    if (!this.outputChannel || !this.shouldLog(LogLevel.Warning)) {
+      return;
+    }
+
+    this.outputChannel.warn(message);
     if (data) {
-      this.logObject(data);
+      this.outputChannel.warn(JSON.stringify(data, null, 2));
     }
   }
 
   public logError(message: string, error?: Error | string) {
-    this.logMessage(message, "ERROR");
-
-    if (!this.outputChannel) {
+    if (!this.outputChannel || !this.shouldLog(LogLevel.Error)) {
       return;
     }
 
+    this.outputChannel.error(message);
+
     if (error instanceof Error) {
       if (error.message) {
-        this.outputChannel.appendLine(error.message);
+        this.outputChannel.error(error.message);
       }
       if (error.stack) {
-        this.outputChannel.appendLine(error.stack);
+        this.outputChannel.error(error.stack);
       }
     } else if (error) {
-      this.outputChannel.appendLine(error);
+      this.outputChannel.error(error);
     }
   }
 
@@ -76,24 +128,5 @@ export class Logger extends Disposable {
     }
 
     this.outputChannel.show();
-  }
-
-  private logObject(data: object): void {
-    if (this.outputChannel) {
-      const message = JSON.stringify(data, null, 2).trim();
-      this.outputChannel.appendLine(message);
-    }
-  }
-
-  /**
-   * Append messages to the output channel and format it with a title
-   *
-   * @param message The message to append to the output channel
-   */
-  private logMessage(message: string, logLevel: LogLevel): void {
-    if (this.outputChannel) {
-      const title = new Date().toLocaleTimeString();
-      this.outputChannel.appendLine(`[${logLevel} - ${title}] ${message}`);
-    }
   }
 }
