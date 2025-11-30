@@ -74,14 +74,14 @@ The extension intelligently handles various workspace configurations and provide
 
 | Scenario | Status Bar Display | Tooltip |
 |----------|-------------------|---------|
-| **No editors open** | Shows repo name → "No Profile" with question mark icon and warning background | **📂 No file is currently open** - Provides numbered steps to guide users on how to use the extension |
+| **No editors open** | Shows repo name → "No Profile" with question mark icon and warning background | 📂 **No File Open** |
 | **Non-file schemes** (Output window, Settings, etc.) | Hidden | Status bar is hidden as these are not associated with git repositories |
-| **Jupyter Notebooks** (.ipynb) | Same as regular files - shows git profile information | Same as regular files - displays profile sync status with rich markdown formatting |
-| **File in non-git folder** | Shows folder name → "No Profile" with question mark icon and warning background | **⚠️ Not a Git Repository** - Explains the folder is not a git repo and provides instructions (git init or clone) |
-| **No profiles created** | Shows repo name → "No Profile" with question mark icon and warning background | **📋 No Profiles Created** - Prompts user to create their first profile |
-| **Git repo, no profile selected** | Shows repo name → "No Profile" with question mark icon and warning background | **⚠️ No Profile Selected** - Explains no profile has been selected and prompts user to select one |
-| **Git repo, profile selected, in sync** | Shows repo name → profile name with normal background (no icons) | **Profile Details** - Shows name, email, and signing key in clean markdown format with separator line |
-| **Git repo, profile selected, out of sync** | Shows repo name → profile name with alert icon and warning background | **⚠️ Git Config Out of Sync** - Shows bullet list comparing profile settings vs current git config with arrow notation (`Profile → Git Config`) |
+| **Jupyter Notebooks** (.ipynb) | Same as regular files - shows git profile information | Same as regular files - displays profile sync status |
+| **File in non-git folder** | Shows folder name → "No Profile" with question mark icon and warning background | ⚠️ **Not a Git Repository** |
+| **No profiles created** | Shows repo name → "No Profile" with question mark icon and warning background | 📋 **No Profiles Created** |
+| **Git repo, no profile selected** | Shows repo name → "No Profile" with question mark icon and warning background | ⚠️ **No Profile Selected** |
+| **Git repo, profile selected, in sync** | Shows repo name → profile name with normal background (no icons) | ✅ **Profile Name** |
+| **Git repo, profile selected, out of sync** | Shows repo name → profile name with alert icon and warning background | ⚠️ **Git Config Out of Sync** |
 | **Nested git repositories** | Works correctly by detecting git root from file location | Each nested git repo can have its own profile selection stored in its `.vscode/settings.json` file - reads directly from file to avoid parent folder conflicts |
 
 ### Multi-root and Nested Repository Support
@@ -96,14 +96,17 @@ The extension fully supports complex workspace configurations:
 
 ### Tooltip States
 
-The extension provides rich tooltip information to help you understand the current state:
+The extension provides concise tooltip information to help you understand the current state at a glance:
 
-- **Profile Details Tooltip**: When in sync, displays the active profile's name, email, and signing key
-- **Comparison Tooltip**: When out of sync, shows a side-by-side comparison of profile settings vs. current git config
-  - Format: `Profile Setting → Current Git Config`
-  - Highlights differences in name, email, and signing key
-  - Includes actionable message: "Click status bar icon to apply profile settings"
-- **Information Tooltips**: Provides contextual messages for non-repository files or when no profile is selected
+- **✅ Profile Name**: Profile is selected and git config is in sync
+- **⚠️ Git Config Out of Sync**: Profile is selected but git config doesn't match the profile settings
+- **📂 No File Open**: No file is currently open in the editor
+- **⚠️ Not a Git Repository**: Current folder is not a git repository
+- **📋 No Profiles Created**: No profiles have been created yet
+- **⚠️ No Profile Selected**: No profile has been selected for this repository
+- **❌ Profile Configuration Error**: Selected profile is missing required information
+
+> All tooltips are kept minimal for quick readability. Click the status bar icon for detailed information and available actions.
 
 <br/>
 
