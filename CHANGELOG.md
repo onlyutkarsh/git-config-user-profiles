@@ -6,6 +6,10 @@
 
 ### Changes
 
+# [2.2.0](https://github.com/onlyutkarsh/git-config-user-profiles/compare/v2.1.0...v2.2.0) (2025-11-30)
+
+
+
 # [2.1.0](https://github.com/onlyutkarsh/git-config-user-profiles/compare/v2.0.1...v2.1.0) (2024-02-19)
 
 
