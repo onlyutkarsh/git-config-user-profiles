@@ -24,11 +24,18 @@ export async function activate(context: vscode.ExtensionContext) {
 
     Logger.instance.logInfo("Initializing commands complete.");
 
-    // Get the initial user profile before setting up event listeners
-    await vscode.commands.executeCommand(constants.CommandIds.GET_USER_PROFILE, "extension activated");
-
-    // Now register event listeners after initial load is complete
+    // Now register event listeners before initial load
     registerForVSCodeEditorEvents(context);
+
+    // Get the initial user profile after everything is set up
+    // Use setImmediate to allow extension to fully activate first
+    setImmediate(async () => {
+      try {
+        await vscode.commands.executeCommand(constants.CommandIds.GET_USER_PROFILE, "extension activated");
+      } catch (error) {
+        Logger.instance.logError("Error occurred during initial profile load", error as Error);
+      }
+    });
   } catch (error) {
     Logger.instance.logError("Error occurred during extension activation", error as Error);
   }

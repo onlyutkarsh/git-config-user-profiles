@@ -1,4 +1,4 @@
-import { basename } from "path";
+import { basename, sep } from "path";
 import * as vscode from "vscode";
 import { saveVscProfile } from "../config";
 import * as constants from "../constants";
@@ -42,6 +42,24 @@ export class PickUserProfileCommand implements ICommand<Profile> {
       }
 
       const workspaceFolder = result.currentFolder || ".\\";
+
+      // Get the VSCode workspace folder URI for this git root
+      // The git root should either be the workspace folder itself or within it
+      const vscWorkspaceFolder = vscode.workspace.workspaceFolders?.find(wf => {
+        const gitRoot = workspaceFolder;
+        const wsFolder = wf.uri.fsPath;
+        // Git root equals workspace folder OR git root is within workspace folder
+        return gitRoot === wsFolder || gitRoot.startsWith(wsFolder + sep);
+      });
+
+      util.Logger.instance.logDebug("PickProfile", "Workspace folder resolution", {
+        gitRoot: workspaceFolder,
+        gitRootBasename: basename(workspaceFolder),
+        vscWorkspaceFolderFound: !!vscWorkspaceFolder,
+        vscWorkspaceFolderPath: vscWorkspaceFolder?.uri.fsPath,
+        allWorkspaceFolders: vscode.workspace.workspaceFolders?.map(wf => wf.uri.fsPath)
+      });
+
       const pickedProfileRaw = await util.showProfilePicker();
       const pickedProfile = pickedProfileRaw.result as Profile;
       if (pickedProfile) {
@@ -60,7 +78,7 @@ export class PickUserProfileCommand implements ICommand<Profile> {
         pickedProfile.detail = undefined;
         pickedProfile.label = pickedProfile.label;
         pickedProfile.selected = true;
-        await saveVscProfile(Object.assign({}, pickedProfile));
+        await saveVscProfile(Object.assign({}, pickedProfile), undefined, vscWorkspaceFolder?.uri);
         gm.updateGitConfig(workspaceFolder, pickedProfile);
 
         // Invalidate cache after updating git config

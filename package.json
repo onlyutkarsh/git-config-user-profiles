@@ -161,6 +161,12 @@
           ],
           "default": "info",
           "markdownDescription": "Controls the verbosity of logging in the output channel. Set to `debug` when reporting issues for more detailed diagnostics."
+        },
+        "gitConfigUser.selectedProfileId": {
+          "type": "string",
+          "default": "",
+          "scope": "resource",
+          "markdownDescription": "The ID of the currently selected profile for this workspace. This is automatically set when you select a profile and allows different workspaces to have different active profiles."
         }
       }
     }

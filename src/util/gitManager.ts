@@ -3,7 +3,7 @@ import { simpleGit, SimpleGit } from "simple-git";
 import { v4 as uuidv4 } from "uuid";
 import * as vscode from "vscode";
 import { Result } from "../commands/ICommand";
-import { getProfilesInSettings } from "../config";
+import { getProfilesInSettings, getSelectedProfileId, setSelectedProfileId } from "../config";
 import * as constants from "../constants";
 import { Messages } from "../constants";
 import { Profile } from "../models";
@@ -193,7 +193,8 @@ export async function getGitRoot(path: string): Promise<string | null> {
     }
 
     // Get the actual repository root
-    const root = await git.revparse(['--show-toplevel']);
+    // Use trim() to remove any whitespace/newlines that might be included
+    const root = (await git.revparse(['--show-toplevel'])).trim();
 
     Logger.instance.logDebug("GitRepository", "Found git root", {
       searchPath: basename(path),
@@ -306,8 +307,17 @@ export async function getWorkspaceStatus(): Promise<{
   //migrate all old profiles to new format
   await migrateOldProfilesToNew(profilesInVscConfig);
 
-  const selectedProfileInVscConfig = profilesInVscConfig.filter((x) => x.selected === true) || [];
-  const selectedVscProfile: Profile | undefined = selectedProfileInVscConfig.length > 0 ? selectedProfileInVscConfig[0] : undefined;
+  // Get workspace folder URI for this git root
+  const vscWorkspaceFolder = vscode.workspace.workspaceFolders?.find(wf =>
+    folder.startsWith(wf.uri.fsPath)
+  );
+
+  // Get selected profile using workspace-scoped setting (with fallback to legacy global selected flag)
+  const selectedProfileId = getSelectedProfileId(vscWorkspaceFolder?.uri);
+  const selectedVscProfile: Profile | undefined = selectedProfileId
+    ? profilesInVscConfig.find(p => p.id === selectedProfileId)
+    : undefined;
+
   const currentGitConfig = await getCurrentGitConfig(folder);
 
   if (profilesInVscConfig.length === 0) {
@@ -325,12 +335,12 @@ export async function getWorkspaceStatus(): Promise<{
     workspaceStatusCacheMap.set(folder, { ...statusResult, timestamp: Date.now() });
     return statusResult;
   }
-  if (selectedProfileInVscConfig.length === 0) {
+  if (!selectedVscProfile) {
     // user does not have have any profile selected in settings
-    Logger.instance.logInfo(`No profiles selected in settings.`);
+    Logger.instance.logInfo(`No profile selected in settings for this workspace.`);
     const statusResult = {
       status: WorkspaceStatus.NoSelectedProfilesInConfig,
-      message: "No profiles selected in settings.",
+      message: "No profile selected in settings for this workspace.",
       profilesInVSConfigCount: profilesInVscConfig.length,
       selectedProfile: selectedVscProfile,
       configInSync: false,
@@ -373,11 +383,12 @@ export async function getWorkspaceStatus(): Promise<{
     if (selectedVscProfile && selectedVscProfile.id !== matchedProfileToLocalConfig.id) {
       // if matching profile exists, but the selected profile is different, we should select matched profile automatically
       Logger.instance.logInfo(`Auto-selecting matching profile '${matchedProfileToLocalConfig.label}' for '${basename(folder)}'`);
-      await vscode.workspace.getConfiguration("gitConfigUser").update(
-        "profiles",
-        profilesInVscConfig.map((x) => ({ ...x, selected: x.id === matchedProfileToLocalConfig.id })),
-        true
-      );
+
+      // Save the auto-selected profile to workspace scope
+      if (matchedProfileToLocalConfig.id) {
+        await setSelectedProfileId(matchedProfileToLocalConfig.id, vscWorkspaceFolder?.uri);
+      }
+
       const statusResult = {
         status: WorkspaceStatus.NoIssues,
         message: "",

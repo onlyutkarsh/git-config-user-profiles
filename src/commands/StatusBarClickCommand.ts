@@ -12,6 +12,16 @@ export class StatusBarClickCommand implements ICommand<void> {
     Logger.instance.logInfo(`Click event on status bar icon`);
     const result = await gm.getWorkspaceStatus();
 
+    // Handle non-git workspace case - show helpful message
+    if (result.status === gm.WorkspaceStatus.NotAValidWorkspace) {
+      const message = result.message || "This is not a valid git repository.";
+      vscode.window.showWarningMessage(message);
+      Logger.instance.logDebug("StatusBarClick", "User clicked status bar in non-git workspace", {
+        message: result.message
+      });
+      return {};
+    }
+
     if (!gm.validateWorkspace(result)) {
       return {};
     }

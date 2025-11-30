@@ -1,5 +1,5 @@
 import { basename } from "path";
-import { commands, window } from "vscode";
+import * as vscode from "vscode";
 import { getProfilesInSettings, saveVscProfile } from "../config";
 import * as constants from "../constants";
 import { Profile } from "../models";
@@ -30,62 +30,72 @@ export class SyncVscProfilesWithGitConfig implements ICommand<boolean> {
     if (util.isNameAndEmailEmpty(gitProfile)) {
       //UTK ask user to create a local git config if there are no profiles
       if (vscProfiles.length == 0) {
-        const response = await window.showInformationMessage(
+        const response = await vscode.window.showInformationMessage(
           `No user details found in git config of '${basename(validatedWorkspace.folder)}'. Do you want to create a new user detail profile now?`,
           "Yes",
           "No"
         );
         if (response == "Yes") {
-          await await commands.executeCommand(constants.CommandIds.CREATE_USER_PROFILE);
+          await vscode.commands.executeCommand(constants.CommandIds.CREATE_USER_PROFILE);
           return { result: true };
         }
         return { result: true };
       } else {
-        const response = await window.showInformationMessage(
+        const response = await vscode.window.showInformationMessage(
           `No user details found in git config of '${basename(validatedWorkspace.folder)}'. Do you want to apply a user profile now?`,
           "Yes",
           "No"
         );
         if (response == "Yes") {
-          await commands.executeCommand(constants.CommandIds.CREATE_USER_PROFILE);
+          await vscode.commands.executeCommand(constants.CommandIds.CREATE_USER_PROFILE);
           return { result: true };
         }
       }
       return { result: true };
     }
 
-    // set selected = false for all selected vsc profiles
-    await Promise.all(
-      vscProfiles
-        .filter((vscProfile) => vscProfile.selected)
-        .map(async (vscProfile) => {
-          vscProfile.selected = false;
-          await saveVscProfile(vscProfile, vscProfile.id);
-        })
+    // Get workspace folder URI for this git root
+    const vscWorkspaceFolder = vscode.workspace.workspaceFolders?.find(wf =>
+      validatedWorkspace.folder!.startsWith(wf.uri.fsPath)
     );
 
-    // update corresponding vsc profile, if it exists, otherwise add it to vsc cofig
+    // update corresponding vsc profile, if it exists, otherwise add it to vsc config
     const correspondingVscProfile = vscProfiles.filter((vscProfile) => util.isConfigInSync(vscProfile, gitProfile));
 
     if (correspondingVscProfile.length >= 1) {
-      // only select the first appearance
-      correspondingVscProfile[0].selected = true;
-      if (correspondingVscProfile[0].id) {
-        await saveVscProfile(correspondingVscProfile[0], correspondingVscProfile[0].id);
+      // only select the first appearance for this workspace
+      const profileToSelect = correspondingVscProfile[0];
+
+      util.Logger.instance.logDebug("SyncProfiles", "Found matching profile for git config", {
+        profileLabel: profileToSelect.label,
+        profileId: profileToSelect.id,
+        workspaceFolder: basename(validatedWorkspace.folder)
+      });
+
+      // Save as selected profile for this workspace
+      profileToSelect.selected = true;
+      if (profileToSelect.id) {
+        await saveVscProfile(profileToSelect, profileToSelect.id, vscWorkspaceFolder?.uri);
       } else {
-        await saveVscProfile(correspondingVscProfile[0], correspondingVscProfile[0].label);
+        await saveVscProfile(profileToSelect, profileToSelect.label, vscWorkspaceFolder?.uri);
       }
     } else {
-      // add the git config profile to vsc config
-      // const newProfile: Profile = {
-      //   label: util.trimLabelIcons(gitProfile.userName),
-      //   userName: gitProfile.userName,
-      //   email: gitProfile.email,
-      //   selected: true,
-      //   detail: `${gitProfile.userName} (${gitProfile.email}) `,
-      // };
-      const newProfile = new Profile(util.trimLabelIcons(gitProfile.userName), gitProfile.userName, gitProfile.email, true, `${gitProfile.userName} (${gitProfile.email}) `);
-      await saveVscProfile(newProfile);
+      // add the git config profile to vsc config and select it for this workspace
+      util.Logger.instance.logDebug("SyncProfiles", "Creating new profile from git config", {
+        userName: gitProfile.userName,
+        email: gitProfile.email,
+        workspaceFolder: basename(validatedWorkspace.folder)
+      });
+
+      const newProfile = new Profile(
+        util.trimLabelIcons(gitProfile.userName),
+        gitProfile.userName,
+        gitProfile.email,
+        true,
+        gitProfile.signingKey,
+        `${gitProfile.userName} (${gitProfile.email}) `
+      );
+      await saveVscProfile(newProfile, undefined, vscWorkspaceFolder?.uri);
     }
     return { result: true };
   }

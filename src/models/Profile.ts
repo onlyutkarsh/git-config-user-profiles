@@ -5,7 +5,7 @@ export class Profile implements QuickPickItem {
   label: string;
   userName: string;
   email: string;
-  selected: boolean;
+  selected?: boolean; // Optional: being migrated to workspace-scoped selectedProfileId
   detail?: string | undefined;
   id?: string;
   signingKey: string;

@@ -2,17 +2,45 @@
  * Mock implementation of VSCode API for testing
  */
 
+// Storage for mock configurations (scoped by section and resource)
+let mockConfigurations = new Map<string, any>();
+
+// Create a function to get config value that reads from the shared Map
+const getMockConfigValue = (key: string, property: string, defaultValue?: any) => {
+  const fullKey = `${key}.${property}`;
+  if (mockConfigurations.has(fullKey)) {
+    return mockConfigurations.get(fullKey);
+  }
+  // Return sensible defaults for known config keys
+  if (property === 'logLevel') return 'error'; // Use error level to reduce noise in tests
+  if (property === 'profiles') return [];
+  if (property === 'selectMatchedProfileAutomatically') return false;
+  if (property === 'selectedProfileId') return '';
+  return defaultValue;
+};
+
+// Create a function to update config value that writes to the shared Map
+const updateMockConfigValue = (key: string, property: string, value: any) => {
+  const fullKey = `${key}.${property}`;
+  mockConfigurations.set(fullKey, value);
+  return Promise.resolve();
+};
+
 export const workspace = {
-  getConfiguration: jest.fn((section?: string) => ({
-    get: jest.fn((key: string, defaultValue?: any) => {
-      // Return sensible defaults for known config keys
-      if (key === 'logLevel') return 'error'; // Use error level to reduce noise in tests
-      if (key === 'profiles') return [];
-      if (key === 'selectMatchedProfileAutomatically') return false;
-      return defaultValue;
-    }),
-    update: jest.fn(() => Promise.resolve()),
-  })),
+  getConfiguration: jest.fn((section?: string, resource?: any) => {
+    // Use fsPath for stable keying instead of toString()
+    const resourceKey = resource?.fsPath || resource?.path || 'global';
+    const key = resource ? `${section}:${resourceKey}` : `${section}:global`;
+
+    return {
+      get: (property: string, defaultValue?: any) => {
+        return getMockConfigValue(key, property, defaultValue);
+      },
+      update: (property: string, value: any, _target?: any) => {
+        return updateMockConfigValue(key, property, value);
+      },
+    };
+  }),
   workspaceFolders: [],
   onDidChangeConfiguration: jest.fn(),
   onDidChangeWorkspaceFolders: jest.fn(),
@@ -23,6 +51,10 @@ export const workspace = {
     onDidDelete: jest.fn(),
     dispose: jest.fn(),
   })),
+  // Helper to clear mock configuration storage (for test cleanup)
+  _clearMockConfigurations: () => {
+    mockConfigurations = new Map<string, any>();
+  },
 };
 
 export const window = {
@@ -71,6 +103,12 @@ export class Uri {
 export enum StatusBarAlignment {
   Left = 1,
   Right = 2,
+}
+
+export enum ConfigurationTarget {
+  Global = 1,
+  Workspace = 2,
+  WorkspaceFolder = 3,
 }
 
 export const StatusBarItem = jest.fn();
