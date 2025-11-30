@@ -8,6 +8,8 @@ on:
         required: true
         type: string
 
+run-name: Release to Marketplace v${{ inputs.version }}
+
 jobs:
   release:
     runs-on: ubuntu-latest
