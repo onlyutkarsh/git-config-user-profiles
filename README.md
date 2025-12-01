@@ -2,12 +2,12 @@
 
 Ever wanted to use different username and email addresses for your commits at work and for your personal repositories? While it is easy to do using `git config` command, this extension allows you to maintain different username and email in named profiles and allows you to easily switch and apply to the repository you are working.
 
-> Latest Changes
-> 
-> - ✅ If the repository's git config matches a defined profile, extension now selects it automatically. Don't like this behaviour and prefer the old way? You can disable it in settings.
->   ![auto select](images/marketplace/auto-select-profile-setting.png)
-> - ✅ Store `signingkey` in the profile.
-> - ✅ Delete Profile - Type 'git config profiles' in command palette and select 'Delete a profile'.
+> Latest Changes in 2.2.0
+>
+> - ✅ **Multi-folder workspace support** - Open a parent folder with multiple git repositories, and the extension will automatically detect which repo you're working in based on the active file.
+> - ✅ **Workspace-level profile selection** - Each workspace can now remember its own selected profile (stored in `.vscode/settings.json`), while profiles remain global and available across all workspaces. If no `.vscode/settings.json` is found, it will create it.
+> - ✅ **Performance improvements** - Optimized extension loading and git operations for faster response times.
+
 
 ![demo](images/marketplace/demo.gif)
 
@@ -72,17 +72,17 @@ The extension intelligently handles various workspace configurations and provide
 
 ### Workspace Configurations
 
-| Scenario | Status Bar Display | Tooltip |
-|----------|-------------------|---------|
-| **No editors open** | Shows repo name → "No Profile" with question mark icon and warning background | 📂 **No File Open** |
-| **Non-file schemes** (Output window, Settings, etc.) | Hidden | Status bar is hidden as these are not associated with git repositories |
-| **Jupyter Notebooks** (.ipynb) | Same as regular files - shows git profile information | Same as regular files - displays profile sync status |
-| **File in non-git folder** | Shows folder name → "No Profile" with question mark icon and warning background | ⚠️ **Not a Git Repository** |
-| **No profiles created** | Shows repo name → "No Profile" with question mark icon and warning background | 📋 **No Profiles Created** |
-| **Git repo, no profile selected** | Shows repo name → "No Profile" with question mark icon and warning background | ⚠️ **No Profile Selected** |
-| **Git repo, profile selected, in sync** | Shows repo name → profile name with normal background (no icons) | ✅ **Profile Name** |
-| **Git repo, profile selected, out of sync** | Shows repo name → profile name with alert icon and warning background | ⚠️ **Git Config Out of Sync** |
-| **Nested git repositories** | Works correctly by detecting git root from file location | Each nested git repo can have its own profile selection stored in its `.vscode/settings.json` file - reads directly from file to avoid parent folder conflicts |
+| Scenario                                             | Status Bar Display                                                              | Tooltip                                                                                                                                                        |
+| ---------------------------------------------------- | ------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **No editors open**                                  | Shows repo name → "No Profile" with question mark icon and warning background   | 📂 **No File Open**                                                                                                                                             |
+| **Non-file schemes** (Output window, Settings, etc.) | Hidden                                                                          | Status bar is hidden as these are not associated with git repositories                                                                                         |
+| **Jupyter Notebooks** (.ipynb)                       | Same as regular files - shows git profile information                           | Same as regular files - displays profile sync status                                                                                                           |
+| **File in non-git folder**                           | Shows folder name → "No Profile" with question mark icon and warning background | ⚠️ **Not a Git Repository**                                                                                                                                     |
+| **No profiles created**                              | Shows repo name → "No Profile" with question mark icon and warning background   | 📋 **No Profiles Created**                                                                                                                                      |
+| **Git repo, no profile selected**                    | Shows repo name → "No Profile" with question mark icon and warning background   | ⚠️ **No Profile Selected**                                                                                                                                      |
+| **Git repo, profile selected, in sync**              | Shows repo name → profile name with normal background (no icons)                | ✅ **Profile Name**                                                                                                                                             |
+| **Git repo, profile selected, out of sync**          | Shows repo name → profile name with alert icon and warning background           | ⚠️ **Git Config Out of Sync**                                                                                                                                   |
+| **Nested git repositories**                          | Works correctly by detecting git root from file location                        | Each nested git repo can have its own profile selection stored in its `.vscode/settings.json` file - reads directly from file to avoid parent folder conflicts |
 
 ### Multi-root and Nested Repository Support
 
