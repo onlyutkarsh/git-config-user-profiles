@@ -81,6 +81,12 @@ export const window = {
     show: jest.fn(),
     hide: jest.fn(),
     dispose: jest.fn(),
+    // LogOutputChannel methods
+    trace: jest.fn(),
+    debug: jest.fn(),
+    info: jest.fn(),
+    warn: jest.fn(),
+    error: jest.fn(),
   })),
   activeTextEditor: undefined,
   onDidChangeActiveTextEditor: jest.fn(),
