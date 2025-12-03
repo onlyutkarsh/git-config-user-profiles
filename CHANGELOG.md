@@ -6,6 +6,15 @@
 
 ### Changes
 
+## [2.3.1](https://github.com/onlyutkarsh/git-config-user-profiles/compare/v2.3.0...v2.3.1) (2025-12-03)
+
+
+### Features
+
+* simplify command titles and improve error logging in profile selection ([6fec43f](https://github.com/onlyutkarsh/git-config-user-profiles/commit/6fec43feab553ef278dd183f88505f9534fb9faa))
+
+
+
 # [2.3.0](https://github.com/onlyutkarsh/git-config-user-profiles/compare/v2.1.0...v2.3.0) (2025-12-03)
 
 
