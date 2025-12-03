@@ -101,23 +101,23 @@
     "commands": [
       {
         "command": "git-config-user-profiles.pickUserProfile",
-        "title": "Git Config User Profiles: Pick a git config user profile"
+        "title": "Git Config User Profiles: Pick Profile"
       },
       {
         "command": "git-config-user-profiles.createUserProfile",
-        "title": "Git Config User Profiles: Create a git config user profile"
+        "title": "Git Config User Profiles: Create Profile"
       },
       {
         "command": "git-config-user-profiles.editUserProfile",
-        "title": "Git Config User Profiles: Edit an existing user profile"
+        "title": "Git Config User Profiles: Edit Profile"
       },
       {
         "command": "git-config-user-profiles.deleteUserProfile",
-        "title": "Git Config User Profiles: Delete an existing user profile"
+        "title": "Git Config User Profiles: Delete Profile"
       },
       {
         "command": "git-config-user-profiles.showStatus",
-        "title": "Git Config User Profiles: Show Extension Status"
+        "title": "Git Config User Profiles: Show Status"
       }
     ],
     "configuration": {

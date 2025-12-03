@@ -99,8 +99,9 @@ export class PickUserProfileCommand implements ICommand<Profile> {
       util.Logger.instance.logDebug(LogCategory.PICK_PROFILE, "User cancelled profile selection", {});
       return { result: undefined };
     } catch (error) {
-      util.Logger.instance.logError(`Error occurred while picking profile. ${error}`);
-      vscode.window.showErrorMessage(`Error occurred while picking profile.`);
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      util.Logger.instance.logError(`Error occurred while picking profile. ${errorMessage}`, error as Error);
+      vscode.window.showErrorMessage(`Error occurred while picking profile: ${errorMessage}`);
       return { result: undefined, error: error as Error };
     }
   }
