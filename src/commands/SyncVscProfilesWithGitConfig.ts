@@ -2,6 +2,7 @@ import { basename } from "path";
 import * as vscode from "vscode";
 import { getProfilesInSettings, saveVscProfile } from "../config";
 import * as constants from "../constants";
+import { LogCategory } from "../constants";
 import { Profile } from "../models";
 import * as util from "../util";
 import * as gm from "../util/gitManager";
@@ -55,9 +56,7 @@ export class SyncVscProfilesWithGitConfig implements ICommand<boolean> {
     }
 
     // Get workspace folder URI for this git root
-    const vscWorkspaceFolder = vscode.workspace.workspaceFolders?.find(wf =>
-      validatedWorkspace.folder!.startsWith(wf.uri.fsPath)
-    );
+    const vscWorkspaceFolder = vscode.workspace.workspaceFolders?.find((wf) => validatedWorkspace.folder!.startsWith(wf.uri.fsPath));
 
     // update corresponding vsc profile, if it exists, otherwise add it to vsc config
     const correspondingVscProfile = vscProfiles.filter((vscProfile) => util.isConfigInSync(vscProfile, gitProfile));
@@ -66,10 +65,10 @@ export class SyncVscProfilesWithGitConfig implements ICommand<boolean> {
       // only select the first appearance for this workspace
       const profileToSelect = correspondingVscProfile[0];
 
-      util.Logger.instance.logDebug("SyncProfiles", "Found matching profile for git config", {
+      util.Logger.instance.logDebug(LogCategory.PROFILE_MATCHING, "Found matching profile for git config", {
         profileLabel: profileToSelect.label,
         profileId: profileToSelect.id,
-        workspaceFolder: basename(validatedWorkspace.folder)
+        workspaceFolder: basename(validatedWorkspace.folder),
       });
 
       // Save as selected profile for this workspace
@@ -81,10 +80,10 @@ export class SyncVscProfilesWithGitConfig implements ICommand<boolean> {
       }
     } else {
       // add the git config profile to vsc config and select it for this workspace
-      util.Logger.instance.logDebug("SyncProfiles", "Creating new profile from git config", {
+      util.Logger.instance.logDebug(LogCategory.PROFILE_MATCHING, "Creating new profile from git config", {
         userName: gitProfile.userName,
         email: gitProfile.email,
-        workspaceFolder: basename(validatedWorkspace.folder)
+        workspaceFolder: basename(validatedWorkspace.folder),
       });
 
       const newProfile = new Profile(

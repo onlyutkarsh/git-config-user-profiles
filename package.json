@@ -114,6 +114,10 @@
       {
         "command": "git-config-user-profiles.deleteUserProfile",
         "title": "Git Config User Profiles: Delete an existing user profile"
+      },
+      {
+        "command": "git-config-user-profiles.showStatus",
+        "title": "Git Config User Profiles: Show Extension Status"
       }
     ],
     "configuration": {
@@ -152,28 +156,11 @@
           "default": true,
           "markdownDescription": "Select the matched profile automatically when opening a workspace"
         },
-        "gitConfigUser.logLevel": {
-          "type": "string",
-          "enum": [
-            "error",
-            "warning",
-            "info",
-            "debug"
-          ],
-          "enumDescriptions": [
-            "Only show error messages",
-            "Show errors and warnings",
-            "Show errors, warnings, and informational messages",
-            "Show all messages including detailed debug information"
-          ],
-          "default": "info",
-          "markdownDescription": "Controls the verbosity of logging in the output channel. Set to `debug` when reporting issues for more detailed diagnostics."
-        },
-        "gitConfigUser.selectedProfileId": {
-          "type": "string",
-          "default": "",
-          "scope": "resource",
-          "markdownDescription": "The ID of the currently selected profile for this workspace. This is automatically set when you select a profile and allows different workspaces to have different active profiles."
+        "gitConfigUser.workspaceProfileSelections": {
+          "type": "object",
+          "default": {},
+          "scope": "application",
+          "markdownDescription": "Stores the selected profile ID for each workspace folder. This is stored in user settings (not workspace settings) so selections remain private to each developer and are not shared with the team."
         }
       }
     }

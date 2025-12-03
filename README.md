@@ -4,8 +4,9 @@ Ever wanted to use different username and email addresses for your commits at wo
 
 > Latest Changes in 2.2.0
 >
+> - ✅ **Private profile selections** - Profile selections are now stored in user settings (local to your machine) instead of workspace settings, so they won't be shared with your team via version control.
+> - ✅ **Automatic migration** - Existing profile selections are automatically migrated from workspace settings to user settings with cleanup.
 > - ✅ **Multi-folder workspace support** - Open a parent folder with multiple git repositories, and the extension will automatically detect which repo you're working in based on the active file.
-> - ✅ **Workspace-level profile selection** - Each workspace can now remember its own selected profile (stored in `.vscode/settings.json`), while profiles remain global and available across all workspaces. If no `.vscode/settings.json` is found, it will create it.
 > - ✅ **Performance improvements** - Optimized extension loading and git operations for faster response times.
 
 
@@ -15,11 +16,11 @@ Ever wanted to use different username and email addresses for your commits at wo
 
 ### Creating the profiles
 ---
-Once you install extension, click on 'Git Config Profiles' on the VSCode Status Bar and define few profiles. 
+Once you install extension, click on 'Git Config Profiles' on the VSCode Status Bar and define few profiles.
 
 ![status bar](images/marketplace/statusbar.png)
 
-> Profiles defined are stored in global settings file in VSCode so that they are available for all other repositories.
+> Profiles are stored in your global user settings so they are available across all workspaces, but remain private to you.
 
 <br/>
 
@@ -72,17 +73,35 @@ The extension intelligently handles various workspace configurations and provide
 
 ### Workspace Configurations
 
-| Scenario                                             | Status Bar Display                                                              | Tooltip                                                                                                                                                        |
-| ---------------------------------------------------- | ------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **No editors open**                                  | Shows repo name → "No Profile" with question mark icon and warning background   | 📂 **No File Open**                                                                                                                                             |
-| **Non-file schemes** (Output window, Settings, etc.) | Hidden                                                                          | Status bar is hidden as these are not associated with git repositories                                                                                         |
-| **Jupyter Notebooks** (.ipynb)                       | Same as regular files - shows git profile information                           | Same as regular files - displays profile sync status                                                                                                           |
-| **File in non-git folder**                           | Shows folder name → "No Profile" with question mark icon and warning background | ⚠️ **Not a Git Repository**                                                                                                                                     |
-| **No profiles created**                              | Shows repo name → "No Profile" with question mark icon and warning background   | 📋 **No Profiles Created**                                                                                                                                      |
-| **Git repo, no profile selected**                    | Shows repo name → "No Profile" with question mark icon and warning background   | ⚠️ **No Profile Selected**                                                                                                                                      |
-| **Git repo, profile selected, in sync**              | Shows repo name → profile name with normal background (no icons)                | ✅ **Profile Name**                                                                                                                                             |
-| **Git repo, profile selected, out of sync**          | Shows repo name → profile name with alert icon and warning background           | ⚠️ **Git Config Out of Sync**                                                                                                                                   |
-| **Nested git repositories**                          | Works correctly by detecting git root from file location                        | Each nested git repo can have its own profile selection stored in its `.vscode/settings.json` file - reads directly from file to avoid parent folder conflicts |
+| Scenario                                             | Status Bar Display                                                            | Tooltip                                                                                             |
+| ---------------------------------------------------- | ----------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------- |
+| **No editors open**                                  | Shows repo name → "No Profile" with question mark icon and warning background | 📂 **No File Open** - No file is currently open in the editor                                        |
+| **Non-file schemes** (Output window, Settings, etc.) | Hidden                                                                        | Status bar is hidden as these are not associated with git repositories                              |
+| **Jupyter Notebooks** (.ipynb)                       | Same as regular files - shows git profile information                         | Same as regular files - displays profile sync status                                                |
+| **File in non-git folder**                           | Hidden                                                                        | ⚠️ Status bar is hidden when not in a git repository. Use "Show Extension Status" command to see why |
+| **No profiles created**                              | Shows repo name → "No Profile" with question mark icon and warning background | 📋 **No Profiles Created** - No profiles have been created yet                                       |
+| **Git repo, no profile selected**                    | Shows repo name → "No Profile" with question mark icon and warning background | ⚠️ **No Profile Selected** - No profile has been selected for this repository                        |
+| **Git repo, profile selected, in sync**              | Shows repo name → profile name with normal background (no icons)              | ✅ **Profile Name** - Profile is selected and git config is in sync                                  |
+| **Git repo, profile selected, out of sync**          | Shows repo name → profile name with alert icon and warning background         | ⚠️ **Git Config Out of Sync** - Profile is selected but git config doesn't match profile settings    |
+| **Profile configuration error**                      | Shows repo name → profile name with error icon and error background           | ❌ **Profile Configuration Error** - Selected profile is missing required information                |
+| **Nested git repositories**                          | Works correctly by detecting git root from file location                      | Each nested git repo can have its own profile selection                                             |
+| **Extension status hidden**                          | Use "Show Extension Status" command                                           | ⚠️ Status bar is hidden when not in a git repository. Use "Show Extension Status" command to see why |
+
+### Checking Extension Status
+
+If you're wondering why the status bar is not visible, or want to see detailed information about the extension's current state, use the **"Git Config User Profiles: Show Extension Status"** command from the Command Palette.
+
+This command will display:
+- Why the status bar is hidden (if applicable)
+- Current git repository information
+- Selected profile and sync status
+- Detailed comparison between profile and git config (if out of sync)
+- Number of available profiles
+
+To access it:
+1. Open the Command Palette (`Cmd+Shift+P` on macOS or `Ctrl+Shift+P` on Windows/Linux)
+2. Type "Git Config User Profiles: Show Extension Status"
+3. Press Enter
 
 ### Multi-root and Nested Repository Support
 
@@ -92,25 +111,75 @@ The extension fully supports complex workspace configurations:
 - **Multi-root workspaces**: Each workspace folder can have its own profile selection.
 - **Mono repositories**: Works correctly in mono repos by traversing up to find the git root from the opened file's location.
 
-> **Technical Note**: Profile selections are stored in each git repository's `.vscode/settings.json` file using the `gitConfigUser.selectedProfileId` setting. This allows different git repositories to maintain their own profile selections even when opened from a common parent folder.
-
-### Tooltip States
-
-The extension provides concise tooltip information to help you understand the current state at a glance:
-
-- **✅ Profile Name**: Profile is selected and git config is in sync
-- **⚠️ Git Config Out of Sync**: Profile is selected but git config doesn't match the profile settings
-- **📂 No File Open**: No file is currently open in the editor
-- **⚠️ Not a Git Repository**: Current folder is not a git repository
-- **📋 No Profiles Created**: No profiles have been created yet
-- **⚠️ No Profile Selected**: No profile has been selected for this repository
-- **❌ Profile Configuration Error**: Selected profile is missing required information
-
 > All tooltips are kept minimal for quick readability. Click the status bar icon for detailed information and available actions.
 
 <br/>
 
+## Technical Details: How Profile Storage Works
+
+> **Note:** This section is for advanced users who want to understand the internals. Most users don't need to read this!
+
+### Profile Definitions Storage
+
+- **Where:** User Settings (Global)
+- **Setting:** `gitConfigUser.profiles`
+- **Shared with team:** ❌ No
+
+Your profiles (name, email, signing key) are stored in your global user settings, available across all workspaces but private to you.
+
+### Profile Selection Storage
+
+- **Where:** User Settings (Global, keyed by workspace path)
+- **Setting:** `gitConfigUser.workspaceProfileSelections`
+- **Shared with team:** ❌ No
+
+Your selections are stored in a map like this:
+```json
+{
+  "gitConfigUser.workspaceProfileSelections": {
+    "/path/to/work-project": "work-profile-id",
+    "/path/to/personal-project": "personal-profile-id"
+  }
+}
+```
+
+This allows workspace-specific selections while keeping them private to each developer.
+
+### Profile Selection Priority
+
+When opening a workspace, the extension determines the profile in this order:
+
+1. **User settings map** (`workspaceProfileSelections`) - Current storage location (v2.2.0+)
+2. **Auto-matching** - If auto-select is enabled and no profile is selected, matches git config against profiles
+3. **Legacy `.vscode/settings.json` file** - Automatically migrated to user settings if found
+4. **Legacy workspace settings** - Automatically migrated from old workspace-scoped settings
+5. **Legacy global selected flag** - Backwards compatibility with v1.x (deprecated)
+
+### Migration from v2.1.0 and Earlier
+
+The extension automatically migrates old profile selections:
+- ✅ Reads old selections from `.vscode/settings.json` or workspace settings
+- ✅ Migrates to new user settings storage (`workspaceProfileSelections`)
+- ✅ Cleans up old settings from `.vscode/settings.json` and workspace settings
+- ✅ Works seamlessly - no user action needed!
+- ✅ One-time migration happens transparently when you open a workspace
+
+### FAQ
+
+**Q: Why not store selections in `.vscode/settings.json`?** 
+
+A: That file is often committed to git and shared with the team. Profile selections are personal (your email vs teammate's email).
+
+
+**Q: Can team members use different profiles for the same project?**
+
+A: Yes! Each person has their own private selections.
+
+**Q: Will selections sync across machines?**
+
+A: Profile definitions sync via VSCode Settings Sync. Selections are stored in user settings and will sync if you have Settings Sync enabled, allowing your profile selections to follow you across machines.
+
 ### Issues and feature requests
 
-If you find any bug or have any suggestion/feature request, please submit the [issue](https://github.com/onlyutkarsh/git-config-user-profiles/issues) in the GitHub repo. 
+If you find any bug or have any suggestion/feature request, please submit the [issue](https://github.com/onlyutkarsh/git-config-user-profiles/issues) in the GitHub repo.
 

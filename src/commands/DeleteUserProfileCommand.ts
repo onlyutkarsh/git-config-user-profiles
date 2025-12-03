@@ -1,5 +1,6 @@
 import * as vscode from "vscode";
 import * as constants from "../constants";
+import { LogCategory } from "../constants";
 import { Profile } from "../models";
 import * as util from "../util";
 import * as gm from "../util/gitManager";
@@ -16,7 +17,7 @@ export class DeleteUserProfileCommand implements ICommand<boolean> {
 
   async execute(): Promise<Result<boolean>> {
     try {
-      util.Logger.instance.logDebug("DeleteProfile", "Delete profile command started", {});
+      util.Logger.instance.logDebug(LogCategory.DELETE_PROFILE, "Delete profile command started", {});
 
       const result = await gm.getWorkspaceStatus();
 
@@ -27,7 +28,7 @@ export class DeleteUserProfileCommand implements ICommand<boolean> {
       const pickerResult = await util.showProfilePicker();
       const selectedProfile = pickerResult.result as Profile;
       if (selectedProfile) {
-        util.Logger.instance.logDebug("DeleteProfile", "Profile selected for deletion", {
+        util.Logger.instance.logDebug(LogCategory.DELETE_PROFILE, "Profile selected for deletion", {
           profileLabel: selectedProfile.label,
           profileId: selectedProfile.id
         });
@@ -37,7 +38,7 @@ export class DeleteUserProfileCommand implements ICommand<boolean> {
         vscode.commands.executeCommand(constants.CommandIds.GET_USER_PROFILE, "deleted profile");
         vscode.window.showInformationMessage(`Profile '${selectedProfile.label}' deleted.`);
       } else {
-        util.Logger.instance.logDebug("DeleteProfile", "User cancelled profile deletion", {});
+        util.Logger.instance.logDebug(LogCategory.DELETE_PROFILE, "User cancelled profile deletion", {});
       }
       return { result: true };
     } catch (error) {

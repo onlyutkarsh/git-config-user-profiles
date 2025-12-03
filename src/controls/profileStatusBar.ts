@@ -1,6 +1,7 @@
 import { basename } from "path";
 import { MarkdownString, StatusBarAlignment, StatusBarItem, ThemeColor, window } from "vscode";
 import * as Constants from "../constants";
+import { LogCategory } from "../constants";
 import { Profile } from "../models";
 import { Logger } from "../util";
 
@@ -89,7 +90,7 @@ export class ProfileStatusBar {
     currentGitConfig?: { userName: string; email: string; signingKey: string }
   ): string | MarkdownString {
     // Log what we're building
-    Logger.instance.logDebug("Tooltip", "Building tooltip", {
+    Logger.instance.logDebug(LogCategory.STATUS_BAR, "Building tooltip", {
       hasCustomTooltip: !!customTooltip,
       customTooltipValue: customTooltip,
       hasProfile: !!profile,
@@ -99,7 +100,7 @@ export class ProfileStatusBar {
     });
 
     if (customTooltip) {
-      Logger.instance.logDebug("Tooltip", "Using custom tooltip", { customTooltip });
+      Logger.instance.logDebug(LogCategory.STATUS_BAR, "Using custom tooltip", { customTooltip });
 
       // Beautify all custom messages with markdown formatting
       const beautifiedTooltip = new MarkdownString();
@@ -140,7 +141,7 @@ export class ProfileStatusBar {
     if (!profile) {
       // This should rarely be hit now - only if there's an unexpected state
       // Log it so we can track if this happens
-      Logger.instance.logDebug("Tooltip", "No profile and no custom tooltip - unexpected state", {
+      Logger.instance.logDebug(LogCategory.STATUS_BAR, "No profile and no custom tooltip - unexpected state", {
         status: StatusBarStatus[status],
         hasCurrentGitConfig: !!currentGitConfig
       });
@@ -156,7 +157,7 @@ export class ProfileStatusBar {
     tooltip.supportHtml = false;
 
     if (status === StatusBarStatus.Normal) {
-      Logger.instance.logDebug("Tooltip", "Building normal status tooltip with profile details", {
+      Logger.instance.logDebug(LogCategory.STATUS_BAR, "Building normal status tooltip with profile details", {
         userName: profile.userName,
         email: profile.email,
         hasSigningKey: !!profile.signingKey
@@ -201,6 +202,10 @@ export class ProfileStatusBar {
     ProfileStatusBar._statusBar.backgroundColor = backgroundColor;
     ProfileStatusBar._statusBar.tooltip = finalTooltip;
     ProfileStatusBar._statusBar.show();
+  }
+
+  public hide() {
+    ProfileStatusBar._statusBar.hide();
   }
 
   public attachCommand(commandId: string) {

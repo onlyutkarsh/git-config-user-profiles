@@ -4,16 +4,9 @@
  *  See https://github.com/prettier/prettier-vscode/blob/master/LICENSE for license information.
  *--------------------------------------------------------------------------------------------*/
 
-import { LogOutputChannel, window, workspace } from "vscode";
+import { LogOutputChannel, window } from "vscode";
 import { Application } from "../constants";
 import { Disposable } from "./disposable";
-
-export enum LogLevel {
-  Error = 0,
-  Warning = 1,
-  Info = 2,
-  Debug = 3
-}
 
 export class Logger extends Disposable {
   private outputChannel: LogOutputChannel | undefined;
@@ -24,26 +17,6 @@ export class Logger extends Disposable {
       Logger._instance = new Logger();
     }
     return Logger._instance;
-  }
-
-  private getLogLevel(): LogLevel {
-    const configLevel = workspace.getConfiguration("gitConfigUser").get<string>("logLevel", "info");
-    switch (configLevel.toLowerCase()) {
-      case "error":
-        return LogLevel.Error;
-      case "warning":
-        return LogLevel.Warning;
-      case "info":
-        return LogLevel.Info;
-      case "debug":
-        return LogLevel.Debug;
-      default:
-        return LogLevel.Info;
-    }
-  }
-
-  private shouldLog(level: LogLevel): boolean {
-    return level <= this.getLogLevel();
   }
 
   private constructor() {
@@ -58,7 +31,7 @@ export class Logger extends Disposable {
    * @param message The message to append to the output channel
    */
   public logInfo(message: string, data?: object): void {
-    if (!this.outputChannel || !this.shouldLog(LogLevel.Info)) {
+    if (!this.outputChannel) {
       return;
     }
 
@@ -76,7 +49,7 @@ export class Logger extends Disposable {
    * @param context Additional context data
    */
   public logDebug(category: string, message: string, context?: object): void {
-    if (!this.outputChannel || !this.shouldLog(LogLevel.Debug)) {
+    if (!this.outputChannel) {
       return;
     }
 
@@ -93,7 +66,7 @@ export class Logger extends Disposable {
    * @param message The message to append to the output channel
    */
   public logWarning(message: string, data?: object): void {
-    if (!this.outputChannel || !this.shouldLog(LogLevel.Warning)) {
+    if (!this.outputChannel) {
       return;
     }
 
@@ -104,7 +77,7 @@ export class Logger extends Disposable {
   }
 
   public logError(message: string, error?: Error | string) {
-    if (!this.outputChannel || !this.shouldLog(LogLevel.Error)) {
+    if (!this.outputChannel) {
       return;
     }
 

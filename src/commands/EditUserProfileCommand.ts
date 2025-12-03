@@ -1,6 +1,7 @@
 import * as vscode from "vscode";
 import { saveVscProfile } from "../config";
 import * as constants from "../constants";
+import { LogCategory } from "../constants";
 import { Profile } from "../models";
 import * as util from "../util";
 import * as gm from "../util/gitManager";
@@ -17,7 +18,7 @@ export class EditUserProfileCommand implements ICommand<boolean> {
 
   async execute(): Promise<Result<boolean>> {
     try {
-      util.Logger.instance.logDebug("EditProfile", "Edit profile command started", {});
+      util.Logger.instance.logDebug(LogCategory.EDIT_PROFILE, "Edit profile command started", {});
 
       const result = await gm.getWorkspaceStatus();
 
@@ -28,7 +29,7 @@ export class EditUserProfileCommand implements ICommand<boolean> {
       const pickedProfile = await util.showProfilePicker();
       const selectedProfile = pickedProfile.result as Profile;
       if (selectedProfile) {
-        util.Logger.instance.logDebug("EditProfile", "Profile selected for editing", {
+        util.Logger.instance.logDebug(LogCategory.EDIT_PROFILE, "Profile selected for editing", {
           profileLabel: selectedProfile.label,
           profileId: selectedProfile.id
         });
@@ -39,7 +40,7 @@ export class EditUserProfileCommand implements ICommand<boolean> {
         const result = await util.loadProfileInWizard(selectedProfile);
         const updatedProfile = result as Profile;
         if (updatedProfile) {
-          util.Logger.instance.logDebug("EditProfile", "Profile updated", {
+          util.Logger.instance.logDebug(LogCategory.EDIT_PROFILE, "Profile updated", {
             profileLabel: updatedProfile.label,
             profileId: updatedProfile.id,
             userName: updatedProfile.userName,
@@ -54,10 +55,10 @@ export class EditUserProfileCommand implements ICommand<boolean> {
           util.Logger.instance.logInfo(`Profile '${updatedProfile.label}' updated successfully`);
           vscode.commands.executeCommand(constants.CommandIds.GET_USER_PROFILE, "edited profile");
         } else {
-          util.Logger.instance.logDebug("EditProfile", "User cancelled profile update", {});
+          util.Logger.instance.logDebug(LogCategory.EDIT_PROFILE, "User cancelled profile update", {});
         }
       } else {
-        util.Logger.instance.logDebug("EditProfile", "User cancelled profile selection", {});
+        util.Logger.instance.logDebug(LogCategory.EDIT_PROFILE, "User cancelled profile selection", {});
       }
       return { result: true };
     } catch (error) {

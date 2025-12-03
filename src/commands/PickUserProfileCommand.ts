@@ -2,6 +2,7 @@ import { basename, sep } from "path";
 import * as vscode from "vscode";
 import { saveVscProfile } from "../config";
 import * as constants from "../constants";
+import { LogCategory } from "../constants";
 import { Profile } from "../models";
 import * as util from "../util";
 import * as gm from "../util/gitManager";
@@ -18,14 +19,14 @@ export class PickUserProfileCommand implements ICommand<Profile> {
 
   async execute(): Promise<Result<Profile>> {
     try {
-      util.Logger.instance.logDebug("PickProfile", "Pick profile command started", {});
+      util.Logger.instance.logDebug(LogCategory.PICK_PROFILE, "Pick profile command started", {});
 
       const result = await gm.getWorkspaceStatus();
 
       if (!(await gm.validateWorkspace(result))) {
-        util.Logger.instance.logDebug("PickProfile", "Workspace validation failed", {
+        util.Logger.instance.logDebug(LogCategory.PICK_PROFILE, "Workspace validation failed", {
           status: gm.WorkspaceStatus[result.status],
-          message: result.message
+          message: result.message,
         });
         return {};
       }
@@ -34,7 +35,7 @@ export class PickUserProfileCommand implements ICommand<Profile> {
       // pick profile command needs a valid workspace as it attempts to apply the selected profile to the workspace
       if (result.status === gm.WorkspaceStatus.NotAValidWorkspace) {
         util.Logger.instance.logWarning("Invalid workspace for profile selection", {
-          message: result.message
+          message: result.message,
         });
         vscode.window.showErrorMessage(result.message || constants.Messages.NOT_A_VALID_REPO);
         await vscode.commands.executeCommand(constants.CommandIds.GET_USER_PROFILE, "invalid workspace");
@@ -45,35 +46,35 @@ export class PickUserProfileCommand implements ICommand<Profile> {
 
       // Get the VSCode workspace folder URI for this git root
       // The git root should either be the workspace folder itself or within it
-      const vscWorkspaceFolder = vscode.workspace.workspaceFolders?.find(wf => {
+      const vscWorkspaceFolder = vscode.workspace.workspaceFolders?.find((wf) => {
         const gitRoot = workspaceFolder;
         const wsFolder = wf.uri.fsPath;
         // Git root equals workspace folder OR git root is within workspace folder
         return gitRoot === wsFolder || gitRoot.startsWith(wsFolder + sep);
       });
 
-      // Use the git root folder as the scope for saving settings, not the workspace folder
-      // This ensures we save settings to the git repo's .vscode/settings.json
+      // Use the git root folder as the key for storing the profile selection in user settings
+      // This ensures each git repo can have its own profile selection
       const gitRootUri = vscode.Uri.file(workspaceFolder);
 
-      util.Logger.instance.logDebug("PickProfile", "Workspace folder resolution", {
+      util.Logger.instance.logDebug(LogCategory.PICK_PROFILE, "Workspace folder resolution", {
         gitRoot: workspaceFolder,
         gitRootBasename: basename(workspaceFolder),
         vscWorkspaceFolderFound: !!vscWorkspaceFolder,
         vscWorkspaceFolderPath: vscWorkspaceFolder?.uri.fsPath,
         gitRootUri: gitRootUri.fsPath,
-        allWorkspaceFolders: vscode.workspace.workspaceFolders?.map(wf => wf.uri.fsPath)
+        allWorkspaceFolders: vscode.workspace.workspaceFolders?.map((wf) => wf.uri.fsPath),
       });
 
       const pickedProfileRaw = await util.showProfilePicker();
       const pickedProfile = pickedProfileRaw.result as Profile;
       if (pickedProfile) {
-        util.Logger.instance.logDebug("PickProfile", "User selected profile", {
+        util.Logger.instance.logDebug(LogCategory.PICK_PROFILE, "User selected profile", {
           profileLabel: pickedProfile.label,
           profileId: pickedProfile.id,
           userName: pickedProfile.userName,
           email: pickedProfile.email,
-          workspaceFolder: basename(workspaceFolder)
+          workspaceFolder: basename(workspaceFolder),
         });
 
         // user might have switched to different file after showing the picker. so need to check again
@@ -83,7 +84,7 @@ export class PickUserProfileCommand implements ICommand<Profile> {
         pickedProfile.detail = undefined;
         pickedProfile.label = pickedProfile.label;
         pickedProfile.selected = true;
-        // Save to git root's .vscode/settings.json, not workspace folder
+        // Save profile selection to user settings (not workspace settings)
         await saveVscProfile(Object.assign({}, pickedProfile), undefined, gitRootUri);
         gm.updateGitConfig(workspaceFolder, pickedProfile);
 
@@ -92,10 +93,10 @@ export class PickUserProfileCommand implements ICommand<Profile> {
         await vscode.commands.executeCommand(constants.CommandIds.GET_USER_PROFILE, "picked profile");
 
         util.Logger.instance.logInfo(`Profile '${pickedProfile.label}' applied successfully to '${basename(workspaceFolder)}'`);
-        await vscode.window.showInformationMessage(`Profile '${pickedProfile.label}' is now applied for '${basename(workspaceFolder)}'. 🎉`);
+        await vscode.window.showInformationMessage(`Profile '${pickedProfile.label}' is now applied for '${basename(workspaceFolder)}'. 🎉`, "OK");
         return { result: pickedProfile };
       }
-      util.Logger.instance.logDebug("PickProfile", "User cancelled profile selection", {});
+      util.Logger.instance.logDebug(LogCategory.PICK_PROFILE, "User cancelled profile selection", {});
       return { result: undefined };
     } catch (error) {
       util.Logger.instance.logError(`Error occurred while picking profile. ${error}`);

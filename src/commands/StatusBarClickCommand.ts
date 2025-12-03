@@ -1,6 +1,7 @@
 import { basename } from "path";
 import * as vscode from "vscode";
 import * as constants from "../constants";
+import { LogCategory } from "../constants";
 import * as util from "../util";
 import { Logger } from "../util";
 import * as gm from "../util/gitManager";
@@ -9,17 +10,21 @@ import { ICommand, Result } from "./ICommand";
 
 export class StatusBarClickCommand implements ICommand<void> {
   async execute(): Promise<Result<void>> {
-    Logger.instance.logInfo(`[StatusBarClick] Click event on status bar icon`);
+    Logger.instance.logDebug(LogCategory.STATUS_BAR, "Click event on status bar icon");
     const result = await gm.getWorkspaceStatus();
 
-    Logger.instance.logInfo(`[StatusBarClick] Workspace status: ${gm.WorkspaceStatus[result.status]}, configInSync: ${result.configInSync}, currentFolder: ${result.currentFolder}`);
+    Logger.instance.logDebug(LogCategory.STATUS_BAR, "Workspace status retrieved", {
+      status: gm.WorkspaceStatus[result.status],
+      configInSync: result.configInSync,
+      currentFolder: result.currentFolder,
+    });
 
     // Handle non-git workspace case - show helpful message
     if (result.status === gm.WorkspaceStatus.NotAValidWorkspace) {
       const message = result.message || "This is not a valid git repository.";
       vscode.window.showWarningMessage(message);
-      Logger.instance.logDebug("StatusBarClick", "User clicked status bar in non-git workspace", {
-        message: result.message
+      Logger.instance.logDebug(LogCategory.STATUS_BAR, "User clicked status bar in non-git workspace", {
+        message: result.message,
       });
       return {};
     }
@@ -56,17 +61,20 @@ export class StatusBarClickCommand implements ICommand<void> {
       const options = result.configInSync ? syncOptions : notSyncOptions;
       const message = result.configInSync ? syncMessage : notSyncMessage;
 
-      Logger.instance.logInfo(`[StatusBarClick] Showing options: ${options.join(', ')}`);
+      Logger.instance.logDebug(LogCategory.STATUS_BAR, "Showing options to user", {
+        options: options,
+        configInSync: result.configInSync,
+      });
       response = await vscode.window.showInformationMessage(message, ...options);
     }
 
     if (response === undefined) {
-      Logger.instance.logInfo(`[StatusBarClick] User cancelled prompt`);
+      Logger.instance.logDebug(LogCategory.STATUS_BAR, "User cancelled prompt");
       await vscode.commands.executeCommand(constants.CommandIds.GET_USER_PROFILE, "user cancelled prompt");
       return {};
     }
 
-    Logger.instance.logInfo(`[StatusBarClick] User selected: ${response}`);
+    Logger.instance.logDebug(LogCategory.STATUS_BAR, "User selected option", { selectedOption: response });
     if (response === "Edit existing") {
       await EditUserProfileCommand.Instance().execute();
       await vscode.commands.executeCommand(constants.CommandIds.GET_USER_PROFILE, "edit profile");
@@ -75,7 +83,7 @@ export class StatusBarClickCommand implements ICommand<void> {
     if (response === "Yes, apply" || response === "Apply again") {
       gm.updateGitConfig(workspaceFolder, result.selectedProfile!);
       await vscode.commands.executeCommand(constants.CommandIds.GET_USER_PROFILE, "applied profile");
-      await vscode.window.showInformationMessage(`Profile '${result.selectedProfile!.label}' is now applied for '${basename(workspaceFolder)}'. 🎉`);
+      await vscode.window.showInformationMessage(`Profile '${result.selectedProfile!.label}' is now applied for '${basename(workspaceFolder)}'. 🎉`, "OK");
       return {};
     }
     if (response === "Create new") {

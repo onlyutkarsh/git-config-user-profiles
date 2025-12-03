@@ -16,6 +16,7 @@ const getMockConfigValue = (key: string, property: string, defaultValue?: any) =
   if (property === 'profiles') return [];
   if (property === 'selectMatchedProfileAutomatically') return false;
   if (property === 'selectedProfileId') return '';
+  if (property === 'workspaceProfileSelections') return {};
   return defaultValue;
 };
 

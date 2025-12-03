@@ -6,6 +6,7 @@ export const CommandIds = {
   DELETE_USER_PROFILE: "git-config-user-profiles.deleteUserProfile",
   SYNC_VSC_PROFILES_WITH_GIT_CONFIG: "git-config-user-profiles.syncVscProfilesWithGitConfig",
   STATUS_BAR_CLICK: "git-config-user-profiles.statusBarClick",
+  SHOW_STATUS: "git-config-user-profiles.showStatus",
 };
 
 export const Application = {
@@ -19,3 +20,16 @@ export const Messages = {
   ENTER_A_VALID_STRING: "Please enter a valid string",
   NOT_A_VALID_EMAIL: "That does not seem to be a valid email. Please verify",
 };
+
+export const LogCategory = {
+  PICK_PROFILE: "PickProfile",
+  CREATE_PROFILE: "CreateProfile",
+  EDIT_PROFILE: "EditProfile",
+  DELETE_PROFILE: "DeleteProfile",
+  GIT_CONFIG_FILE: "GitConfigFile",
+  GIT_REPOSITORY: "GitRepository",
+  PROFILE_MATCHING: "ProfileMatching",
+  SETTINGS_CHANGE: "SettingsChange",
+  STATUS_BAR: "StatusBar",
+  WORKSPACE_STATUS: "WorkspaceStatus",
+} as const;

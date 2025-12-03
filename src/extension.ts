@@ -4,9 +4,11 @@ import { DeleteUserProfileCommand } from "./commands/DeleteUserProfileCommand";
 import { EditUserProfileCommand } from "./commands/EditUserProfileCommand";
 import { GetUserProfileCommand } from "./commands/GetUserProfileCommand";
 import { PickUserProfileCommand } from "./commands/PickUserProfileCommand";
+import { ShowStatusCommand } from "./commands/ShowStatusCommand";
 import { StatusBarClickCommand } from "./commands/StatusBarClickCommand";
 import { SyncVscProfilesWithGitConfig } from "./commands/SyncVscProfilesWithGitConfig";
 import * as constants from "./constants";
+import { LogCategory } from "./constants";
 import { ProfileStatusBar as statusBar } from "./controls";
 import { debounce } from "./util/debounce";
 import { invalidateWorkspaceStatusCache } from "./util/gitManager";
@@ -51,6 +53,7 @@ function registerCommands(context: vscode.ExtensionContext) {
   context.subscriptions.push(vscode.commands.registerCommand(constants.CommandIds.GET_USER_PROFILE, new GetUserProfileCommand().execute));
   context.subscriptions.push(vscode.commands.registerCommand(constants.CommandIds.DELETE_USER_PROFILE, new DeleteUserProfileCommand().execute));
   context.subscriptions.push(vscode.commands.registerCommand(constants.CommandIds.PICK_USER_PROFILE, new PickUserProfileCommand().execute));
+  context.subscriptions.push(vscode.commands.registerCommand(constants.CommandIds.SHOW_STATUS, new ShowStatusCommand().execute));
   statusBar.instance.attachCommand(constants.CommandIds.STATUS_BAR_CLICK);
 }
 
@@ -72,9 +75,9 @@ function registerForVSCodeEditorEvents(context: vscode.ExtensionContext) {
     vscode.workspace.onDidChangeConfiguration(async (e) => {
       // Only react to changes in our extension's configuration
       if (e.affectsConfiguration("gitConfigUser")) {
-        Logger.instance.logDebug("Configuration", "Extension configuration changed", {
+        Logger.instance.logDebug(LogCategory.SETTINGS_CHANGE, "Extension configuration changed", {
           affectsProfiles: e.affectsConfiguration("gitConfigUser.profiles"),
-          affectsAutoSelect: e.affectsConfiguration("gitConfigUser.selectMatchedProfileAutomatically")
+          affectsAutoSelect: e.affectsConfiguration("gitConfigUser.selectMatchedProfileAutomatically"),
         });
         debouncedConfigChange();
       }
@@ -89,11 +92,11 @@ function registerForVSCodeEditorEvents(context: vscode.ExtensionContext) {
             uri: editor.document.uri.toString(),
             scheme: editor.document.uri.scheme,
             fileName: editor.document.fileName,
-            languageId: editor.document.languageId
+            languageId: editor.document.languageId,
           }
         : { message: "No active editor" };
 
-      Logger.instance.logDebug("EditorChange", "Active text editor changed", editorInfo);
+      Logger.instance.logDebug(LogCategory.WORKSPACE_STATUS, "Active text editor changed", editorInfo);
       debouncedGetUserProfile("changed active editor");
     })
   );
@@ -102,12 +105,12 @@ function registerForVSCodeEditorEvents(context: vscode.ExtensionContext) {
   context.subscriptions.push(
     vscode.workspace.onDidChangeWorkspaceFolders(async (event) => {
       const changeInfo = {
-        added: event.added.map(f => ({ name: f.name, uri: f.uri.toString() })),
-        removed: event.removed.map(f => ({ name: f.name, uri: f.uri.toString() })),
-        totalFolders: vscode.workspace.workspaceFolders?.length || 0
+        added: event.added.map((f) => ({ name: f.name, uri: f.uri.toString() })),
+        removed: event.removed.map((f) => ({ name: f.name, uri: f.uri.toString() })),
+        totalFolders: vscode.workspace.workspaceFolders?.length || 0,
       };
 
-      Logger.instance.logDebug("WorkspaceFolders", "Workspace folders changed", changeInfo);
+      Logger.instance.logDebug(LogCategory.WORKSPACE_STATUS, "Workspace folders changed", changeInfo);
 
       // Invalidate cache when workspace folders change
       invalidateWorkspaceStatusCache();
@@ -125,19 +128,19 @@ function createGitConfigFileWatcher() {
 
   const fsWatcher = vscode.workspace.createFileSystemWatcher("**/.git/config");
   fsWatcher.onDidChange(async (uri) => {
-    Logger.instance.logDebug("GitConfigFile", "Git config file changed", { uri: uri.toString() });
+    Logger.instance.logDebug(LogCategory.GIT_CONFIG_FILE, "Git config file changed", { uri: uri.toString() });
     // Invalidate cache when git config file changes
     invalidateWorkspaceStatusCache();
     await vscode.commands.executeCommand(constants.CommandIds.GET_USER_PROFILE, "changed git config");
   });
   fsWatcher.onDidCreate(async (uri) => {
-    Logger.instance.logDebug("GitConfigFile", "Git config file created", { uri: uri.toString() });
+    Logger.instance.logDebug(LogCategory.GIT_CONFIG_FILE, "Git config file created", { uri: uri.toString() });
     // Invalidate cache when git config file is created
     invalidateWorkspaceStatusCache();
     await vscode.commands.executeCommand(constants.CommandIds.GET_USER_PROFILE, "created git config");
   });
   fsWatcher.onDidDelete(async (uri) => {
-    Logger.instance.logDebug("GitConfigFile", "Git config file deleted", { uri: uri.toString() });
+    Logger.instance.logDebug(LogCategory.GIT_CONFIG_FILE, "Git config file deleted", { uri: uri.toString() });
     // Invalidate cache when git config file is deleted
     invalidateWorkspaceStatusCache();
     await vscode.commands.executeCommand(constants.CommandIds.GET_USER_PROFILE, "deleted git config");
