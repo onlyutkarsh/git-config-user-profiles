@@ -2,13 +2,14 @@
 
 Ever wanted to use different username and email addresses for your commits at work and for your personal repositories? While it is easy to do using `git config` command, this extension allows you to maintain different username and email in named profiles and allows you to easily switch and apply to the repository you are working.
 
-> Latest Changes in 2.2.0
->
-> - ✅ **Private profile selections** - Profile selections are now stored in user settings (local to your machine) instead of workspace settings, so they won't be shared with your team via version control.
-> - ✅ **Automatic migration** - Existing profile selections are automatically migrated from workspace settings to user settings with cleanup.
-> - ✅ **Multi-folder workspace support** - Open a parent folder with multiple git repositories, and the extension will automatically detect which repo you're working in based on the active file.
-> - ✅ **Performance improvements** - Optimized extension loading and git operations for faster response times.
+## Key Features
 
+- ✅ **Easy Profile Management** - Create, edit, and switch between multiple git user profiles from the status bar
+- ✅ **Private Profile Selections** - Profile selections are stored in user settings (local to your machine), not shared with your team
+- ✅ **Auto Profile Matching** - Automatically selects the right profile based on your repository's existing git config
+- ✅ **Multi-Folder Workspace Support** - Detects which git repository you're working in based on the active file, perfect for monorepos
+- ✅ **Visual Sync Indicators** - Status bar shows when your git config is out of sync with the selected profile
+- ✅ **Command Palette Access** - All commands available via Command Palette when status bar is crowded
 
 ![demo](images/marketplace/demo.gif)
 
