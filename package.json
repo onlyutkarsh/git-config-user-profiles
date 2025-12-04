@@ -2,7 +2,7 @@
   "name": "git-config-user-profiles",
   "displayName": "Git Config User Profiles",
   "description": "Define multiple git config user profiles and switch them easily using status bar",
-  "version": "2.3.2",
+  "version": "2.3.3",
   "publisher": "onlyutkarsh",
   "author": "Utkarsh Shigihalli",
   "repository": {
