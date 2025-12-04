@@ -4,6 +4,7 @@ export const CommandIds = {
   PICK_USER_PROFILE: "git-config-user-profiles.pickUserProfile",
   EDIT_USER_PROFILE: "git-config-user-profiles.editUserProfile",
   DELETE_USER_PROFILE: "git-config-user-profiles.deleteUserProfile",
+  VALIDATE_USER_PROFILE: "git-config-user-profiles.validateUserProfile",
   SYNC_VSC_PROFILES_WITH_GIT_CONFIG: "git-config-user-profiles.syncVscProfilesWithGitConfig",
   STATUS_BAR_CLICK: "git-config-user-profiles.statusBarClick",
   SHOW_STATUS: "git-config-user-profiles.showStatus",

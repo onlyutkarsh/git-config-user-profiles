@@ -43,9 +43,16 @@ export function validateUserName(input: string) {
   return undefined;
 }
 export function validateEmail(input: string) {
-  const validEmail = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  // More comprehensive email validation regex that supports:
+  // - Plus addressing (user+tag@example.com)
+  // - Dots in username (first.last@example.com)
+  // - Multiple subdomains (user@mail.example.co.uk)
+  // - Numbers and hyphens
+  // Note: This is a practical regex, not full RFC 5322 compliant (which is extremely complex)
+  const validEmail = /^[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}$/;
+
   if (!validEmail.test(input)) {
-    return constants.Messages.NOT_A_VALID_EMAIL;
+    return "Invalid email format. Expected format: user@example.com (supports +, dots, and subdomains)";
   }
   return undefined;
 }
@@ -61,6 +68,36 @@ export function trimProperties(profile: Profile): Profile {
     signingKey: profile.signingKey?.trim(),
   };
 }
+
+/**
+ * Normalizes a signing key by trimming whitespace and treating undefined, null, and empty string as equivalent.
+ */
+export function normalizeSigningKey(key: string | undefined): string {
+  return (key || "").trim();
+}
+
+/**
+ * Compares two profiles for equality based on userName, email, and signingKey.
+ * Email comparison is case-insensitive. Signing keys are normalized before comparison.
+ * Handles undefined/null values gracefully.
+ */
+export function profilesMatch(
+  profile1: { email?: string; userName?: string; signingKey?: string },
+  profile2: { email?: string; userName?: string; signingKey?: string }
+): boolean {
+  // Normalize empty/undefined values to empty strings for comparison
+  const userName1 = (profile1.userName || "").trim();
+  const userName2 = (profile2.userName || "").trim();
+  const email1 = (profile1.email || "").trim().toLowerCase();
+  const email2 = (profile2.email || "").trim().toLowerCase();
+
+  return (
+    userName1 === userName2 &&
+    email1 === email2 &&
+    normalizeSigningKey(profile1.signingKey) === normalizeSigningKey(profile2.signingKey)
+  );
+}
+
 export function isConfigInSync(
   profile1?: { email: string; userName: string; signingKey: string },
   profile2?: { email: string; userName: string; signingKey: string }
@@ -71,34 +108,33 @@ export function isConfigInSync(
       message: "One of the profiles is undefined. Cannot compare.",
     };
   }
-  let userNameSame = false;
-  let emailSame = false;
-  let signingKeySame = false;
 
-  userNameSame = profile1.userName === profile2.userName;
-  if (!userNameSame) {
+  // Check userName first
+  if (profile1.userName !== profile2.userName) {
     return {
       result: false,
       message: `User names are different.`,
     };
   }
 
-  emailSame = profile1.email.toLowerCase() === profile2.email.toLowerCase();
-  if (!emailSame) {
+  // Check email (case-insensitive)
+  if (profile1.email.toLowerCase() !== profile2.email.toLowerCase()) {
     return {
       result: false,
       message: `Emails are different.`,
     };
   }
-  signingKeySame = profile1.signingKey.toLowerCase() === profile2.signingKey.toLowerCase();
-  if (!signingKeySame) {
+
+  // Check signing key (normalized)
+  if (normalizeSigningKey(profile1.signingKey) !== normalizeSigningKey(profile2.signingKey)) {
     return {
       result: false,
       message: `Signing keys are different.`,
     };
   }
+
   return {
-    result: userNameSame && emailSame && signingKeySame,
+    result: true,
     message: `Profiles are in sync.`,
   };
 }

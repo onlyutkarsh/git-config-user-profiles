@@ -116,6 +116,10 @@
         "title": "Git Config User Profiles: Delete Profile"
       },
       {
+        "command": "git-config-user-profiles.validateUserProfile",
+        "title": "Git Config User Profiles: Validate Profile"
+      },
+      {
         "command": "git-config-user-profiles.showStatus",
         "title": "Git Config User Profiles: Show Status"
       }
@@ -155,6 +159,19 @@
           "type": "boolean",
           "default": true,
           "markdownDescription": "Select the matched profile automatically when opening a workspace"
+        },
+        "gitConfigUser.statusBarFormat": {
+          "type": "string",
+          "enum": [
+            "full",
+            "compact"
+          ],
+          "default": "full",
+          "markdownDescription": "Status bar display format:\n- **full**: `git-icon repo-name > profile` (default)\n- **compact**: `git-icon profile`",
+          "enumDescriptions": [
+            "Show repository name and profile with icons",
+            "Show only profile with git icon"
+          ]
         },
         "gitConfigUser.workspaceProfileSelections": {
           "type": "object",

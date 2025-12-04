@@ -1,5 +1,5 @@
 import { basename } from "path";
-import { MarkdownString, StatusBarAlignment, StatusBarItem, ThemeColor, window } from "vscode";
+import { MarkdownString, StatusBarAlignment, StatusBarItem, ThemeColor, window, workspace } from "vscode";
 import * as Constants from "../constants";
 import { LogCategory } from "../constants";
 import { Profile } from "../models";
@@ -61,33 +61,43 @@ export class ProfileStatusBar {
   }
 
   /**
-   * Helper method to build the status bar text
+   * Helper method to build the status bar text based on user's format preference
    */
   private buildStatusText(profile: Profile | undefined, repoFolder: string | undefined, status: StatusBarStatus): string {
+    const format = workspace.getConfiguration("gitConfigUser").get<string>("statusBarFormat") || "full";
     const repoName = repoFolder ? basename(repoFolder) : Constants.Application.APPLICATION_NAME;
+    const cleanLabel = profile ? this.cleanProfileLabel(profile.label) : "No Profile";
+    const statusIcon = status === StatusBarStatus.Warning ? ICONS.ALERT : "";
 
-    if (!profile) {
-      return `${ICONS.SOURCE_CONTROL} ${repoName} ${ICONS.ARROW} No Profile ${ICONS.QUESTION}`;
+    // Handle different display formats
+    switch (format) {
+      case "compact":
+        // Format: git-icon profile [status-icon]
+        if (!profile) {
+          return `${ICONS.SOURCE_CONTROL} ${cleanLabel} ${ICONS.QUESTION}`;
+        }
+        return statusIcon ? `${ICONS.SOURCE_CONTROL} ${cleanLabel} ${statusIcon}` : `${ICONS.SOURCE_CONTROL} ${cleanLabel}`;
+
+      case "full":
+      default:
+        // Format: git-icon repo-name > profile [status-icon]
+        if (!profile) {
+          return `${ICONS.SOURCE_CONTROL} ${repoName} ${ICONS.ARROW} ${cleanLabel} ${ICONS.QUESTION}`;
+        }
+        return statusIcon ? `${ICONS.SOURCE_CONTROL} ${repoName} ${ICONS.ARROW} ${cleanLabel} ${statusIcon}` : `${ICONS.SOURCE_CONTROL} ${repoName} ${ICONS.ARROW} ${cleanLabel}`;
     }
-
-    const cleanLabel = this.cleanProfileLabel(profile.label);
-
-    // Show alert icon when profile is out of sync (warning status)
-    if (status === StatusBarStatus.Warning) {
-      return `${ICONS.SOURCE_CONTROL} ${repoName} ${ICONS.ARROW} ${cleanLabel} ${ICONS.ALERT}`;
-    }
-
-    return `${ICONS.SOURCE_CONTROL} ${repoName} ${ICONS.ARROW} ${cleanLabel}`;
   }
 
   /**
    * Helper method to build the tooltip text
+   * When using compact display modes, the tooltip shows more details
    */
   private buildTooltip(
     profile: Profile | undefined,
     status: StatusBarStatus,
     customTooltip?: string,
-    currentGitConfig?: { userName: string; email: string; signingKey: string }
+    currentGitConfig?: { userName: string; email: string; signingKey: string },
+    repoFolder?: string
   ): string | MarkdownString {
     // Log what we're building
     Logger.instance.logDebug(LogCategory.STATUS_BAR, "Building tooltip", {
@@ -96,7 +106,7 @@ export class ProfileStatusBar {
       hasProfile: !!profile,
       profileLabel: profile?.label,
       status: StatusBarStatus[status],
-      hasCurrentGitConfig: !!currentGitConfig
+      hasCurrentGitConfig: !!currentGitConfig,
     });
 
     if (customTooltip) {
@@ -143,7 +153,7 @@ export class ProfileStatusBar {
       // Log it so we can track if this happens
       Logger.instance.logDebug(LogCategory.STATUS_BAR, "No profile and no custom tooltip - unexpected state", {
         status: StatusBarStatus[status],
-        hasCurrentGitConfig: !!currentGitConfig
+        hasCurrentGitConfig: !!currentGitConfig,
       });
       const genericTooltip = new MarkdownString();
       genericTooltip.isTrusted = true;
@@ -160,15 +170,59 @@ export class ProfileStatusBar {
       Logger.instance.logDebug(LogCategory.STATUS_BAR, "Building normal status tooltip with profile details", {
         userName: profile.userName,
         email: profile.email,
-        hasSigningKey: !!profile.signingKey
+        hasSigningKey: !!profile.signingKey,
       });
-      tooltip.appendMarkdown(`✅ **${this.cleanProfileLabel(profile.label)}**`);
+
+      const format = workspace.getConfiguration("gitConfigUser").get<string>("statusBarFormat") || "full";
+
+      // Build descriptive tooltip for in-sync profiles
+      tooltip.appendMarkdown(`✅ **Profile Active: ${this.cleanProfileLabel(profile.label)}**\n\n`);
+      tooltip.appendMarkdown(`Your git config is in sync with this profile.\n\n`);
+
+      // Add repository name in compact mode
+      if (format === "compact" && repoFolder) {
+        const repoName = basename(repoFolder);
+        tooltip.appendMarkdown(`📁 Repository: \`${repoName}\`\n\n`);
+      }
+
+      tooltip.appendMarkdown(`💡 *Click to switch profiles*`);
       return tooltip;
     }
 
-    // Warning status - show comparison between profile and git config
-    if (status === StatusBarStatus.Warning && currentGitConfig) {
-      tooltip.appendMarkdown(`⚠️ **Git Config Out of Sync**`);
+    // Warning status - show detailed comparison between profile and git config
+    if (status === StatusBarStatus.Warning && currentGitConfig && profile) {
+      tooltip.appendMarkdown(`⚠️ **Git Config Out of Sync**\n\n`);
+      tooltip.appendMarkdown(`**Selected Profile:** ${this.cleanProfileLabel(profile.label)}\n\n`);
+
+      // Compare and show differences
+      const differences: string[] = [];
+
+      // Normalize values to handle undefined/null
+      const profileUserName = profile.userName || "(none)";
+      const gitUserName = currentGitConfig.userName || "(none)";
+      const profileEmail = (profile.email || "").toLowerCase();
+      const gitEmail = (currentGitConfig.email || "").toLowerCase();
+
+      if (profileUserName !== gitUserName) {
+        differences.push(`• **User Name:**\n  - Profile: \`${profileUserName}\`\n  - Git Config: \`${gitUserName}\``);
+      }
+
+      if (profileEmail !== gitEmail) {
+        differences.push(`• **Email:**\n  - Profile: \`${profile.email || "(none)"}\`\n  - Git Config: \`${currentGitConfig.email || "(none)"}\``);
+      }
+
+      const normalizeKey = (key: string | undefined): string => (key || "").trim();
+      if (normalizeKey(profile.signingKey) !== normalizeKey(currentGitConfig.signingKey)) {
+        const profileKey = profile.signingKey || "(none)";
+        const gitConfigKey = currentGitConfig.signingKey || "(none)";
+        differences.push(`• **Signing Key:**\n  - Profile: \`${profileKey}\`\n  - Git Config: \`${gitConfigKey}\``);
+      }
+
+      if (differences.length > 0) {
+        tooltip.appendMarkdown(`**Differences:**\n\n${differences.join("\n\n")}\n\n`);
+      }
+
+      tooltip.appendMarkdown(`\n💡 *Click to apply the profile or update git config*`);
       return tooltip;
     }
 
@@ -195,7 +249,7 @@ export class ProfileStatusBar {
     }
 
     const text = this.buildStatusText(content, repoFolder, status);
-    const finalTooltip = this.buildTooltip(content, status, tooltip, currentGitConfig);
+    const finalTooltip = this.buildTooltip(content, status, tooltip, currentGitConfig, repoFolder);
     const backgroundColor = status === StatusBarStatus.Normal ? ProfileStatusBar.NORMAL_BACKGROUND : ProfileStatusBar.WARNING_BACKGROUND;
 
     ProfileStatusBar._statusBar.text = text;

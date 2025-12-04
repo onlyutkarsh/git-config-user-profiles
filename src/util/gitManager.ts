@@ -254,7 +254,7 @@ export async function updateGitConfig(gitFolder: string, profile: Profile) {
 
   const git = simpleGit(gitFolder);
   await git.addConfig("user.name", profile.userName, false, "local");
-  await git.addConfig("user.email", profile.email, false);
+  await git.addConfig("user.email", profile.email, false, "local");
   await git.addConfig("user.signingkey", profile.signingKey, false, "local");
 
   Logger.instance.logInfo(`Git config updated for '${basename(gitFolder)}' with profile '${profile.label}'`);
@@ -438,34 +438,26 @@ export async function getWorkspaceStatus(): Promise<{
   // Check if current git config matches any profile, before checking for selected profile
   // This allows auto-selecting a profile even when none is currently selected
 
-  // Normalize signing keys - treat undefined, null, and empty string as equivalent
-  const normalizeKey = (key: string | undefined): string => (key || "").trim();
-
   Logger.instance.logDebug(LogCategory.PROFILE_MATCHING, "Attempting to match git config with profiles", {
     gitConfigUserName: currentGitConfig.userName,
     gitConfigEmail: currentGitConfig.email,
     gitConfigSigningKey: currentGitConfig.signingKey,
-    gitConfigSigningKeyNormalized: normalizeKey(currentGitConfig.signingKey),
+    gitConfigSigningKeyNormalized: util.normalizeSigningKey(currentGitConfig.signingKey),
     totalProfiles: profilesInVscConfig.length,
   });
 
   const matchedProfileToLocalConfig = profilesInVscConfig.find((x) => {
-    const userNameMatch = x.userName === currentGitConfig.userName;
-    const emailMatch = x.email === currentGitConfig.email;
-    const signingKeyMatch = normalizeKey(x.signingKey) === normalizeKey(currentGitConfig.signingKey);
+    const isMatch = util.profilesMatch(x, currentGitConfig);
 
     Logger.instance.logDebug(LogCategory.PROFILE_MATCHING, `Comparing with profile '${x.label}'`, {
       profileUserName: x.userName,
       profileEmail: x.email,
       profileSigningKey: x.signingKey,
-      profileSigningKeyNormalized: normalizeKey(x.signingKey),
-      userNameMatch,
-      emailMatch,
-      signingKeyMatch,
-      overallMatch: userNameMatch && emailMatch && signingKeyMatch,
+      profileSigningKeyNormalized: util.normalizeSigningKey(x.signingKey),
+      overallMatch: isMatch,
     });
 
-    return userNameMatch && emailMatch && signingKeyMatch;
+    return isMatch;
   });
 
   const selectMatchedProfileAutomatically = await vscode.workspace.getConfiguration("gitConfigUser").get("selectMatchedProfileAutomatically");

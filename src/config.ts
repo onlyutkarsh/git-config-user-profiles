@@ -87,6 +87,24 @@ function removeSelectedProfileIdFromFile(folderPath: string): void {
 }
 
 /**
+ * Helper function to handle async migration of profile selection from old storage to new storage.
+ * This runs in the background without blocking the caller.
+ */
+async function migrateProfileSelection(profileId: string, workspaceFolder: vscode.Uri, workspacePath: string): Promise<void> {
+  try {
+    await setSelectedProfileId(profileId, workspaceFolder);
+    // Remove the old setting from .vscode/settings.json after successful migration
+    removeSelectedProfileIdFromFile(workspacePath);
+    util.Logger.instance.logInfo("Successfully migrated profile selection to user settings", {
+      profileId,
+      folderPath: workspacePath,
+    });
+  } catch (err) {
+    util.Logger.instance.logWarning("Failed to migrate profile selection to user settings", { error: err });
+  }
+}
+
+/**
  * Get the selected profile ID for the current workspace folder.
  * Reads from user settings map first, then falls back to old storage locations for migration.
  */
@@ -97,6 +115,13 @@ export function getSelectedProfileId(workspaceFolder?: vscode.Uri): string | und
   }
 
   const workspacePath = workspaceFolder.fsPath;
+
+  // Validate workspace path
+  if (!workspacePath || typeof workspacePath !== "string" || workspacePath.trim() === "") {
+    util.Logger.instance.logWarning("Invalid workspace path provided", { path: workspacePath });
+    return undefined;
+  }
+
   const config = vscode.workspace.getConfiguration("gitConfigUser");
 
   // 1. Try reading from the new user settings map (preferred)
@@ -118,15 +143,8 @@ export function getSelectedProfileId(workspaceFolder?: vscode.Uri): string | und
       profileId: fileSelectedId,
       folderPath: workspacePath,
     });
-    // Migrate to new storage and clean up old setting
-    setSelectedProfileId(fileSelectedId, workspaceFolder)
-      .then(() => {
-        // Remove the old setting from .vscode/settings.json after successful migration
-        removeSelectedProfileIdFromFile(workspacePath);
-      })
-      .catch((err) => {
-        util.Logger.instance.logWarning("Failed to migrate profile selection to user settings", { error: err });
-      });
+    // Migrate to new storage and clean up old setting (async operation runs in background)
+    migrateProfileSelection(fileSelectedId, workspaceFolder, workspacePath);
     return fileSelectedId;
   }
 
@@ -186,8 +204,22 @@ export function getSelectedProfileId(workspaceFolder?: vscode.Uri): string | und
  * private to each developer and is not shared with the team.
  */
 export async function setSelectedProfileId(profileId: string, workspaceFolder?: vscode.Uri): Promise<void> {
-  if (!workspaceFolder) {
+  if (!workspaceFolder?.fsPath) {
     util.Logger.instance.logDebug(LogCategory.WORKSPACE_STATUS, "No workspace folder provided for setSelectedProfileId", {});
+    return;
+  }
+
+  const workspacePath = workspaceFolder.fsPath;
+
+  // Validate workspace path
+  if (!workspacePath || typeof workspacePath !== "string" || workspacePath.trim() === "") {
+    util.Logger.instance.logWarning("Invalid workspace path provided to setSelectedProfileId", { path: workspacePath });
+    return;
+  }
+
+  // Validate profile ID
+  if (!profileId || typeof profileId !== "string" || profileId.trim() === "") {
+    util.Logger.instance.logWarning("Invalid profile ID provided to setSelectedProfileId", { profileId });
     return;
   }
 
@@ -196,7 +228,6 @@ export async function setSelectedProfileId(profileId: string, workspaceFolder?: 
   const selections = config.get<Record<string, string>>("workspaceProfileSelections") || {};
 
   // Update the selection for this workspace folder
-  const workspacePath = workspaceFolder.fsPath;
   selections[workspacePath] = profileId;
 
   // Save back to user settings (Global scope)

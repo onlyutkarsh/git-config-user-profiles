@@ -7,6 +7,7 @@ import { PickUserProfileCommand } from "./commands/PickUserProfileCommand";
 import { ShowStatusCommand } from "./commands/ShowStatusCommand";
 import { StatusBarClickCommand } from "./commands/StatusBarClickCommand";
 import { SyncVscProfilesWithGitConfig } from "./commands/SyncVscProfilesWithGitConfig";
+import { ValidateProfileCommand } from "./commands/ValidateProfileCommand";
 import * as constants from "./constants";
 import { LogCategory } from "./constants";
 import { ProfileStatusBar as statusBar } from "./controls";
@@ -52,6 +53,7 @@ function registerCommands(context: vscode.ExtensionContext) {
   context.subscriptions.push(vscode.commands.registerCommand(constants.CommandIds.EDIT_USER_PROFILE, new EditUserProfileCommand().execute));
   context.subscriptions.push(vscode.commands.registerCommand(constants.CommandIds.GET_USER_PROFILE, new GetUserProfileCommand().execute));
   context.subscriptions.push(vscode.commands.registerCommand(constants.CommandIds.DELETE_USER_PROFILE, new DeleteUserProfileCommand().execute));
+  context.subscriptions.push(vscode.commands.registerCommand(constants.CommandIds.VALIDATE_USER_PROFILE, new ValidateProfileCommand().execute));
   context.subscriptions.push(vscode.commands.registerCommand(constants.CommandIds.PICK_USER_PROFILE, new PickUserProfileCommand().execute));
   context.subscriptions.push(vscode.commands.registerCommand(constants.CommandIds.SHOW_STATUS, new ShowStatusCommand().execute));
   statusBar.instance.attachCommand(constants.CommandIds.STATUS_BAR_CLICK);

@@ -42,7 +42,7 @@ export class PickUserProfileCommand implements ICommand<Profile> {
         return {};
       }
 
-      const workspaceFolder = result.currentFolder || ".\\";
+      const workspaceFolder = result.currentFolder || "./";
 
       // Get the VSCode workspace folder URI for this git root
       // The git root should either be the workspace folder itself or within it
