@@ -173,6 +173,19 @@
             "Show only profile with git icon"
           ]
         },
+        "gitConfigUser.statusBarAlignment": {
+          "type": "string",
+          "enum": [
+            "left",
+            "right"
+          ],
+          "default": "right",
+          "markdownDescription": "Status bar item alignment:\n- **left**: Position at the absolute left of the status bar\n- **right**: Position at the absolute right of the status bar (default)",
+          "enumDescriptions": [
+            "Place status bar item on the left side",
+            "Place status bar item on the right side"
+          ]
+        },
         "gitConfigUser.workspaceProfileSelections": {
           "type": "object",
           "default": {},

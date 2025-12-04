@@ -9,7 +9,7 @@ Ever wanted to use different username and email addresses for your commits at wo
 - ✅ **Auto Profile Matching** - Automatically selects the right profile based on your repository's existing git config
 - ✅ **Multi-Folder Workspace Support** - Detects which git repository you're working in based on the active file, perfect for monorepos
 - ✅ **Visual Sync Indicators** - Status bar shows when your git config is out of sync with the selected profile
-- ✅ **Customizable Status Bar** - Choose `full` or `compact` display formats to suit your workflow
+- ✅ **Customizable Status Bar** - Choose `full` or `compact` display formats and `left` or `right` alignment to suit your workflow
 - ✅ **Detailed Comparison Tooltips** - Hover over the status bar to see:
   - When in sync: Confirmation message with quick action hints
   - When out of sync: Side-by-side comparison showing exactly what differs (username, email, signing key)
@@ -97,7 +97,7 @@ Choose how the status bar displays profile information:
   - Shows repository name and profile with icons
   - Best for larger screens
 
-- **Compact**: 
+- **Compact**:
   - Shows only profile with git icon
   - Saves space on smaller screens
   - Repository name shown in tooltip when hovering
@@ -113,6 +113,27 @@ Or add to your `settings.json`:
   "gitConfigUser.statusBarFormat": "compact"
 }
 ```
+
+### Status Bar Alignment
+
+Choose where the status bar item appears:
+
+- **Right (default)**: Position at the absolute right of the status bar
+- **Left**: Position at the absolute left of the status bar
+
+To change the alignment:
+1. Open Settings (`Cmd+,` / `Ctrl+,`)
+2. Search for "Git Config User Profiles Status Bar Alignment"
+3. Select your preferred alignment
+
+Or add to your `settings.json`:
+```json
+{
+  "gitConfigUser.statusBarAlignment": "left"
+}
+```
+
+The change takes effect immediately without needing to reload the window.
 
 ### Auto Profile Selection
 

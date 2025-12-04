@@ -31,14 +31,12 @@ export async function activate(context: vscode.ExtensionContext) {
     registerForVSCodeEditorEvents(context);
 
     // Get the initial user profile after everything is set up
-    // Use setImmediate to allow extension to fully activate first
-    setImmediate(async () => {
-      try {
-        await vscode.commands.executeCommand(constants.CommandIds.GET_USER_PROFILE, "extension activated");
-      } catch (error) {
-        Logger.instance.logError("Error occurred during initial profile load", error as Error);
-      }
-    });
+    // Call immediately to ensure status bar appears on activation
+    try {
+      await vscode.commands.executeCommand(constants.CommandIds.GET_USER_PROFILE, "extension activated");
+    } catch (error) {
+      Logger.instance.logError("Error occurred during initial profile load", error as Error);
+    }
   } catch (error) {
     Logger.instance.logError("Error occurred during extension activation", error as Error);
   }
@@ -80,7 +78,15 @@ function registerForVSCodeEditorEvents(context: vscode.ExtensionContext) {
         Logger.instance.logDebug(LogCategory.SETTINGS_CHANGE, "Extension configuration changed", {
           affectsProfiles: e.affectsConfiguration("gitConfigUser.profiles"),
           affectsAutoSelect: e.affectsConfiguration("gitConfigUser.selectMatchedProfileAutomatically"),
+          affectsStatusBarAlignment: e.affectsConfiguration("gitConfigUser.statusBarAlignment"),
         });
+
+        // Handle status bar alignment changes immediately (no debounce needed)
+        if (e.affectsConfiguration("gitConfigUser.statusBarAlignment")) {
+          Logger.instance.logInfo("Status bar alignment configuration changed, recreating status bar");
+          statusBar.instance.recreateStatusBarItem();
+        }
+
         debouncedConfigChange();
       }
     })

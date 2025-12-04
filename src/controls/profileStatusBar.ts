@@ -49,8 +49,56 @@ export class ProfileStatusBar {
   }
 
   private constructor() {
-    ProfileStatusBar._statusBar = window.createStatusBarItem(StatusBarAlignment.Right, 1000000);
+    this.createStatusBarItem();
     Logger.instance.logInfo("Initializing status bar complete.");
+  }
+
+  /**
+   * Get the status bar alignment from user configuration
+   */
+  private getStatusBarAlignment(): StatusBarAlignment {
+    const config = workspace.getConfiguration("gitConfigUser").get<string>("statusBarAlignment") || "right";
+    return config === "left" ? StatusBarAlignment.Left : StatusBarAlignment.Right;
+  }
+
+  /**
+   * Create or recreate the status bar item with current configuration
+   */
+  private createStatusBarItem() {
+    const alignment = this.getStatusBarAlignment();
+    // For Left alignment: high priority (1000000) places it at the far left (first item)
+    // For Right alignment: low priority (0) places it at the far right (first item from right edge)
+    const priority = alignment === StatusBarAlignment.Left ? 1000000 : 0;
+
+    // If status bar already exists, dispose it first
+    if (ProfileStatusBar._statusBar) {
+      ProfileStatusBar._statusBar.dispose();
+    }
+
+    ProfileStatusBar._statusBar = window.createStatusBarItem(alignment, priority);
+    Logger.instance.logInfo("Status bar item created/recreated", { alignment: alignment === StatusBarAlignment.Left ? "left" : "right", priority });
+  }
+
+  /**
+   * Recreate the status bar item when alignment configuration changes
+   */
+  public recreateStatusBarItem() {
+    const wasVisible = ProfileStatusBar._statusBar ? ProfileStatusBar._statusBar.text.length > 0 : false;
+    const previousText = ProfileStatusBar._statusBar?.text;
+    const previousTooltip = ProfileStatusBar._statusBar?.tooltip;
+    const previousCommand = ProfileStatusBar._statusBar?.command;
+    const previousBackgroundColor = ProfileStatusBar._statusBar?.backgroundColor;
+
+    this.createStatusBarItem();
+
+    // Restore previous state
+    if (wasVisible && previousText) {
+      ProfileStatusBar._statusBar.text = previousText;
+      ProfileStatusBar._statusBar.tooltip = previousTooltip;
+      ProfileStatusBar._statusBar.command = previousCommand;
+      ProfileStatusBar._statusBar.backgroundColor = previousBackgroundColor;
+      ProfileStatusBar._statusBar.show();
+    }
   }
 
   /**
