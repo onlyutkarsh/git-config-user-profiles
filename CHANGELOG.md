@@ -6,6 +6,15 @@
 
 ### Changes
 
+## [2.3.3](https://github.com/onlyutkarsh/git-config-user-profiles/compare/v2.3.2...v2.3.3) (2025-12-04)
+
+
+### Features
+
+* add status bar alignment configuration and update README with new features ([558fb1f](https://github.com/onlyutkarsh/git-config-user-profiles/commit/558fb1f5f692dc1e1983c03c0c589f059dde29cf))
+
+
+
 ## [2.3.2](https://github.com/onlyutkarsh/git-config-user-profiles/compare/v2.3.1...v2.3.2) (2025-12-04)
 
 
