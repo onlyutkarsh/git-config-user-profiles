@@ -6,6 +6,15 @@
 
 ### Changes
 
+## [2.3.2](https://github.com/onlyutkarsh/git-config-user-profiles/compare/v2.3.1...v2.3.2) (2025-12-04)
+
+
+### Features
+
+* add profile validation command and enhance README with new features ([08c9322](https://github.com/onlyutkarsh/git-config-user-profiles/commit/08c9322598c9b9a04379cd1bcb6faa81c6e63289))
+
+
+
 ## [2.3.1](https://github.com/onlyutkarsh/git-config-user-profiles/compare/v2.3.0...v2.3.1) (2025-12-03)
 
 
