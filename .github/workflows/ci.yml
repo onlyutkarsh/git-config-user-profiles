@@ -52,7 +52,7 @@ jobs:
         run: npm run package
 
       - name: Upload VSIX artifact
-        uses: actions/upload-artifact@v5
+        uses: actions/upload-artifact@v6
         with:
           name: git-config-user-profiles-${{ steps.version.outputs.ci_version }}
           path: "*.vsix"
@@ -60,7 +60,7 @@ jobs:
 
       - name: Upload test results
         if: always()
-        uses: actions/upload-artifact@v5
+        uses: actions/upload-artifact@v6
         with:
           name: test-results-${{ github.sha }}
           path: test-results/
