@@ -1,10 +1,16 @@
-## [Unreleased]
+# [2.4.0](https://github.com/onlyutkarsh/git-config-user-profiles/compare/v2.3.3...v2.4.0) (2025-12-19)
 
-### Features
 
 ### Bug Fixes
 
-### Changes
+* **tests:** add missing logTrace mock in profile selection tests ([411f5ab](https://github.com/onlyutkarsh/git-config-user-profiles/commit/411f5ab0e9edc3ea0ac856dca96c08f2297ceb5f))
+
+
+### Features
+
+* add changelog extraction and release notes generation to workflow ([81e12ce](https://github.com/onlyutkarsh/git-config-user-profiles/commit/81e12ce2ff16579f2652b4c12e6c13eb8f95c90a))
+
+
 
 ## [2.3.3](https://github.com/onlyutkarsh/git-config-user-profiles/compare/v2.3.2...v2.3.3) (2025-12-04)
 
@@ -172,3 +178,6 @@
 
 
 ## 1.0.7 (2020-05-24)
+
+
+
