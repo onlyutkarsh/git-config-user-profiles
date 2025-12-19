@@ -29,11 +29,12 @@ export class StatusBarClickCommand implements ICommand<void> {
       return {};
     }
 
-    if (!gm.validateWorkspace(result)) {
+    if (!(await gm.validateWorkspace(result))) {
       return {};
     }
 
     const workspaceFolder = result.currentFolder || ".\\";
+    const repositoryName = basename(workspaceFolder);
     let response;
     if (result.status === gm.WorkspaceStatus.NoSelectedProfilesInConfig) {
       response = await vscode.window.showInformationMessage(
@@ -52,11 +53,9 @@ export class StatusBarClickCommand implements ICommand<void> {
       const notSyncOptions = ["Yes, apply", "No, pick another", "Edit existing", "Create new"];
       const syncOptions = ["Pick a profile", "Edit existing", "Create new"];
 
-      const notSyncMessage = `'${basename(
-        workspaceFolder
-      )}' is not using user details from '${util.trimLabelIcons(result.selectedProfile!.label)}' profile. Do you want to apply the user details from profile '${util.trimLabelIcons(result.selectedProfile!.label)}'?`;
+      const notSyncMessage = `'${repositoryName}' is not using user details from '${util.trimLabelIcons(result.selectedProfile!.label)}' profile. Do you want to apply the user details from profile '${util.trimLabelIcons(result.selectedProfile!.label)}'?`;
 
-      const syncMessage = `'${basename(workspaceFolder)}' is already using user details from the profile '${util.trimLabelIcons(result.selectedProfile!.label)}'. What do you want to do?`;
+      const syncMessage = `'${repositoryName}' is already using user details from the profile '${util.trimLabelIcons(result.selectedProfile!.label)}'. What do you want to do?`;
 
       const options = result.configInSync ? syncOptions : notSyncOptions;
       const message = result.configInSync ? syncMessage : notSyncMessage;
@@ -81,9 +80,16 @@ export class StatusBarClickCommand implements ICommand<void> {
       return {};
     }
     if (response === "Yes, apply" || response === "Apply again") {
-      gm.updateGitConfig(workspaceFolder, result.selectedProfile!);
+      try {
+        await gm.updateGitConfig(workspaceFolder, result.selectedProfile!);
+      } catch (error) {
+        const message = `Failed to apply profile '${result.selectedProfile!.label}'. See logs for details.`;
+        Logger.instance.logError("Failed to update git config from status bar action", error as Error);
+        vscode.window.showErrorMessage(message);
+        return { error: error as Error };
+      }
       await vscode.commands.executeCommand(constants.CommandIds.GET_USER_PROFILE, "applied profile");
-      await vscode.window.showInformationMessage(`Profile '${result.selectedProfile!.label}' is now applied for '${basename(workspaceFolder)}'. 🎉`, "OK");
+      await vscode.window.showInformationMessage(`Profile '${result.selectedProfile!.label}' is now applied for '${repositoryName}'. 🎉`, "OK");
       return {};
     }
     if (response === "Create new") {

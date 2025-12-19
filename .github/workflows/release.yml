@@ -14,6 +14,8 @@ jobs:
   release:
     runs-on: ubuntu-latest
     if: github.actor == 'onlyutkarsh'
+    permissions:
+      contents: write
 
     steps:
       - name: Checkout repository
@@ -25,7 +27,7 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: "20.x"
-          cache: "npm"
+          cache: npm
 
       - name: Configure Git
         run: |
@@ -58,14 +60,30 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Run tests
-        run: npm test
-
       - name: Compile TypeScript
         run: npm run compile
 
+      - name: Lint code
+        run: npm run lint
+
+      - name: Run tests
+        run: npm test
+
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@v5
+        with:
+          name: test-results-release-${{ inputs.version }}
+          path: test-results/
+          retention-days: 30
+
       - name: Build extension
         run: npm run package
+
+      - name: Update Changelog
+        run: |
+          npm install --save-dev conventional-changelog-cli
+          npx conventional-changelog -p angular -i CHANGELOG.md -s -r 0
 
       - name: Publish to Open VSX Registry
         id: publish_ovsx
@@ -94,9 +112,9 @@ jobs:
             exit 1
           fi
 
-      - name: Commit version bump
+      - name: Commit version bump and changelog
         run: |
-          git add package.json package-lock.json
+          git add package.json package-lock.json CHANGELOG.md
           if git diff --staged --quiet; then
             echo "No changes to commit, skipping"
           else
@@ -149,11 +167,8 @@ jobs:
           files: "*.vsix"
           body: |
             ## What's Changed
-
             ${{ steps.changelog.outputs.changelog_body }}
-
             ## All Changes
-
             ${{ steps.release_notes.outputs.result }}
           generate_release_notes: false
         env:

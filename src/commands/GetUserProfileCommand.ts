@@ -9,7 +9,7 @@ export class GetUserProfileCommand implements ICommand<void> {
   constructor() {}
 
   async execute(origin?: string): Promise<Result<void>> {
-    Logger.instance.logDebug(LogCategory.PROFILE_MATCHING, "Getting user profiles from settings", { origin });
+    Logger.instance.logTrace(LogCategory.PROFILE_MATCHING, "Getting user profiles from settings", { origin });
 
     const result = await gm.getWorkspaceStatus();
 
@@ -18,7 +18,7 @@ export class GetUserProfileCommand implements ICommand<void> {
     const isNotValidGitRepo = result.status === gm.WorkspaceStatus.NotAValidWorkspace && !result.currentFolder;
 
     if (isNotValidGitRepo) {
-      Logger.instance.logDebug(LogCategory.PROFILE_MATCHING, "Hiding status bar - not in a git repository", {
+      Logger.instance.logTrace(LogCategory.PROFILE_MATCHING, "Hiding status bar - not in a git repository", {
         status: gm.WorkspaceStatus[result.status],
         message: result.message,
       });
@@ -37,7 +37,7 @@ export class GetUserProfileCommand implements ICommand<void> {
     const shouldUseCustomTooltip = hasMessage && (result.configInSync || !result.selectedProfile);
     const customTooltip = shouldUseCustomTooltip ? result.message : undefined;
 
-    Logger.instance.logDebug(LogCategory.PROFILE_MATCHING, "Updating status bar", {
+    Logger.instance.logTrace(LogCategory.PROFILE_MATCHING, "Updating status bar", {
       hasProfile: !!result.selectedProfile,
       profileLabel: result.selectedProfile?.label,
       hasFolder: !!result.currentFolder,

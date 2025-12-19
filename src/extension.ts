@@ -104,7 +104,7 @@ function registerForVSCodeEditorEvents(context: vscode.ExtensionContext) {
           }
         : { message: "No active editor" };
 
-      Logger.instance.logDebug(LogCategory.WORKSPACE_STATUS, "Active text editor changed", editorInfo);
+      Logger.instance.logTrace(LogCategory.WORKSPACE_STATUS, "Active text editor changed", editorInfo);
       debouncedGetUserProfile("changed active editor");
     })
   );

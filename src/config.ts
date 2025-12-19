@@ -24,7 +24,7 @@ function readSelectedProfileIdFromFile(folderPath: string): string | undefined {
 
   try {
     if (!fs.existsSync(settingsPath)) {
-      util.Logger.instance.logDebug(LogCategory.WORKSPACE_STATUS, "No .vscode/settings.json file found", {
+      util.Logger.instance.logTrace(LogCategory.WORKSPACE_STATUS, "No .vscode/settings.json file found", {
         settingsPath,
       });
       return undefined;
@@ -34,14 +34,14 @@ function readSelectedProfileIdFromFile(folderPath: string): string | undefined {
     const settings = JSON.parse(content);
     const selectedId = settings["gitConfigUser.selectedProfileId"];
 
-    util.Logger.instance.logDebug(LogCategory.WORKSPACE_STATUS, "Read selectedProfileId from .vscode/settings.json", {
+    util.Logger.instance.logTrace(LogCategory.WORKSPACE_STATUS, "Read selectedProfileId from .vscode/settings.json", {
       settingsPath,
       selectedId: selectedId || "<none>",
     });
 
     return selectedId;
   } catch (error) {
-    util.Logger.instance.logDebug(LogCategory.WORKSPACE_STATUS, "Failed to read .vscode/settings.json", {
+    util.Logger.instance.logTrace(LogCategory.WORKSPACE_STATUS, "Failed to read .vscode/settings.json", {
       settingsPath,
       error: error instanceof Error ? error.message : String(error),
     });
@@ -110,7 +110,7 @@ async function migrateProfileSelection(profileId: string, workspaceFolder: vscod
  */
 export function getSelectedProfileId(workspaceFolder?: vscode.Uri): string | undefined {
   if (!workspaceFolder?.fsPath) {
-    util.Logger.instance.logDebug(LogCategory.WORKSPACE_STATUS, "No workspace folder provided", {});
+    util.Logger.instance.logTrace(LogCategory.WORKSPACE_STATUS, "No workspace folder provided", {});
     return undefined;
   }
 
@@ -129,7 +129,7 @@ export function getSelectedProfileId(workspaceFolder?: vscode.Uri): string | und
   const selectedId = selections[workspacePath];
 
   if (selectedId) {
-    util.Logger.instance.logDebug(LogCategory.WORKSPACE_STATUS, "Found selected profile in user settings map", {
+    util.Logger.instance.logTrace(LogCategory.WORKSPACE_STATUS, "Found selected profile in user settings map", {
       profileId: selectedId,
       folderPath: workspacePath,
     });
@@ -139,7 +139,7 @@ export function getSelectedProfileId(workspaceFolder?: vscode.Uri): string | und
   // 2. Migration: Try reading from old .vscode/settings.json file
   const fileSelectedId = readSelectedProfileIdFromFile(workspacePath);
   if (fileSelectedId) {
-    util.Logger.instance.logDebug(LogCategory.WORKSPACE_STATUS, "Found selected profile in .vscode/settings.json (migrating to user settings)", {
+    util.Logger.instance.logTrace(LogCategory.WORKSPACE_STATUS, "Found selected profile in .vscode/settings.json (migrating to user settings)", {
       profileId: fileSelectedId,
       folderPath: workspacePath,
     });
@@ -153,7 +153,7 @@ export function getSelectedProfileId(workspaceFolder?: vscode.Uri): string | und
   const oldSelectedId = workspaceConfig.get<string>("selectedProfileId");
 
   if (oldSelectedId) {
-    util.Logger.instance.logDebug(LogCategory.WORKSPACE_STATUS, "Found selected profile in workspace settings (migrating to user settings)", {
+    util.Logger.instance.logTrace(LogCategory.WORKSPACE_STATUS, "Found selected profile in workspace settings (migrating to user settings)", {
       profileId: oldSelectedId,
       folderPath: workspacePath,
     });
@@ -183,14 +183,14 @@ export function getSelectedProfileId(workspaceFolder?: vscode.Uri): string | und
   const selectedProfile = profiles.find((p) => p.selected === true);
 
   if (selectedProfile?.id) {
-    util.Logger.instance.logDebug(LogCategory.WORKSPACE_STATUS, "Using legacy global selected flag", {
+    util.Logger.instance.logTrace(LogCategory.WORKSPACE_STATUS, "Using legacy global selected flag", {
       profileId: selectedProfile.id,
       profileLabel: selectedProfile.label,
     });
     return selectedProfile.id;
   }
 
-  util.Logger.instance.logDebug(LogCategory.WORKSPACE_STATUS, "No selected profile found", {
+util.Logger.instance.logTrace(LogCategory.WORKSPACE_STATUS, "No selected profile found", {
     folderPath: workspacePath,
     totalProfiles: profiles.length,
   });
@@ -205,7 +205,7 @@ export function getSelectedProfileId(workspaceFolder?: vscode.Uri): string | und
  */
 export async function setSelectedProfileId(profileId: string, workspaceFolder?: vscode.Uri): Promise<void> {
   if (!workspaceFolder?.fsPath) {
-    util.Logger.instance.logDebug(LogCategory.WORKSPACE_STATUS, "No workspace folder provided for setSelectedProfileId", {});
+    util.Logger.instance.logTrace(LogCategory.WORKSPACE_STATUS, "No workspace folder provided for setSelectedProfileId", {});
     return;
   }
 
@@ -233,7 +233,7 @@ export async function setSelectedProfileId(profileId: string, workspaceFolder?: 
   // Save back to user settings (Global scope)
   await config.update("workspaceProfileSelections", selections, vscode.ConfigurationTarget.Global);
 
-  util.Logger.instance.logDebug(LogCategory.WORKSPACE_STATUS, "Updated workspace-scoped selected profile in user settings", {
+util.Logger.instance.logTrace(LogCategory.WORKSPACE_STATUS, "Updated workspace-scoped selected profile in user settings", {
     profileId,
     folderPath: workspacePath,
   });
@@ -292,7 +292,7 @@ export async function saveVscProfile(profile: Profile, oldProfileId?: string, wo
   // If this is a profile selection (not an update), save the selection to workspace scope
   if (!oldProfileId && profile.id) {
     await setSelectedProfileId(profile.id, workspaceFolder);
-    util.Logger.instance.logDebug(LogCategory.WORKSPACE_STATUS, "Profile selection saved to workspace scope and removed global selected flags", {
+    util.Logger.instance.logTrace(LogCategory.WORKSPACE_STATUS, "Profile selection saved to workspace scope and removed global selected flags", {
       profileId: profile.id,
       profileLabel: profile.label,
     });

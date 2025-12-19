@@ -47,6 +47,7 @@
     "esbuild": "npm run -S esbuild-base -- --sourcemap",
     "esbuild-watch": "npm run -S esbuild-base -- --sourcemap --watch",
     "compile": "tsc -p ./src",
+    "lint": "eslint src --ext ts",
     "dev": "npm run compile && npm run esbuild-watch",
     "test": "jest",
     "test:watch": "jest --watch",
@@ -185,6 +186,18 @@
             "Place status bar item on the left side",
             "Place status bar item on the right side"
           ]
+        },
+        "gitConfigUser.logLevel": {
+          "type": "string",
+          "enum": [
+            "trace",
+            "debug",
+            "info",
+            "warn",
+            "error"
+          ],
+          "default": "info",
+          "markdownDescription": "Minimum log level for the extension's output channel. Use `debug` or `trace` when troubleshooting to see more details."
         },
         "gitConfigUser.workspaceProfileSelections": {
           "type": "object",

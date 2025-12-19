@@ -76,7 +76,10 @@ export class ProfileStatusBar {
     }
 
     ProfileStatusBar._statusBar = window.createStatusBarItem(alignment, priority);
-    Logger.instance.logInfo("Status bar item created/recreated", { alignment: alignment === StatusBarAlignment.Left ? "left" : "right", priority });
+    Logger.instance.logDebug(LogCategory.STATUS_BAR, "Status bar item created/recreated", {
+      alignment: alignment === StatusBarAlignment.Left ? "left" : "right",
+      priority,
+    });
   }
 
   /**
@@ -148,7 +151,7 @@ export class ProfileStatusBar {
     repoFolder?: string
   ): string | MarkdownString {
     // Log what we're building
-    Logger.instance.logDebug(LogCategory.STATUS_BAR, "Building tooltip", {
+    Logger.instance.logTrace(LogCategory.STATUS_BAR, "Building tooltip", {
       hasCustomTooltip: !!customTooltip,
       customTooltipValue: customTooltip,
       hasProfile: !!profile,
@@ -158,7 +161,7 @@ export class ProfileStatusBar {
     });
 
     if (customTooltip) {
-      Logger.instance.logDebug(LogCategory.STATUS_BAR, "Using custom tooltip", { customTooltip });
+      Logger.instance.logTrace(LogCategory.STATUS_BAR, "Using custom tooltip", { customTooltip });
 
       // Beautify all custom messages with markdown formatting
       const beautifiedTooltip = new MarkdownString();
@@ -199,7 +202,7 @@ export class ProfileStatusBar {
     if (!profile) {
       // This should rarely be hit now - only if there's an unexpected state
       // Log it so we can track if this happens
-      Logger.instance.logDebug(LogCategory.STATUS_BAR, "No profile and no custom tooltip - unexpected state", {
+      Logger.instance.logTrace(LogCategory.STATUS_BAR, "No profile and no custom tooltip - unexpected state", {
         status: StatusBarStatus[status],
         hasCurrentGitConfig: !!currentGitConfig,
       });
@@ -215,7 +218,7 @@ export class ProfileStatusBar {
     tooltip.supportHtml = false;
 
     if (status === StatusBarStatus.Normal) {
-      Logger.instance.logDebug(LogCategory.STATUS_BAR, "Building normal status tooltip with profile details", {
+      Logger.instance.logTrace(LogCategory.STATUS_BAR, "Building normal status tooltip with profile details", {
         userName: profile.userName,
         email: profile.email,
         hasSigningKey: !!profile.signingKey,

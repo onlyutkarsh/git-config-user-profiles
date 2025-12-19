@@ -31,7 +31,7 @@ export function invalidateWorkspaceStatusCache(folder?: string): void {
     // Invalidate cache for specific folder
     const hadCache = workspaceStatusCacheMap.has(folder);
     workspaceStatusCacheMap.delete(folder);
-    Logger.instance.logDebug(LogCategory.WORKSPACE_STATUS, "Workspace status cache invalidated for folder", {
+    Logger.instance.logTrace(LogCategory.WORKSPACE_STATUS, "Workspace status cache invalidated for folder", {
       folder: basename(folder),
       hadCache,
     });
@@ -39,7 +39,7 @@ export function invalidateWorkspaceStatusCache(folder?: string): void {
     // Invalidate all caches
     const cacheSize = workspaceStatusCacheMap.size;
     workspaceStatusCacheMap.clear();
-    Logger.instance.logDebug(LogCategory.WORKSPACE_STATUS, "All workspace status caches invalidated", {
+    Logger.instance.logTrace(LogCategory.WORKSPACE_STATUS, "All workspace status caches invalidated", {
       clearedEntries: cacheSize,
     });
   }
@@ -50,7 +50,7 @@ async function getCurrentFolder(): Promise<Result<string | undefined>> {
   let folder: vscode.WorkspaceFolder | undefined;
 
   if (!vscode.workspace.workspaceFolders) {
-    Logger.instance.logDebug(LogCategory.WORKSPACE_STATUS, "No workspace folders available", {});
+    Logger.instance.logTrace(LogCategory.WORKSPACE_STATUS, "No workspace folders available", {});
     return {
       result: undefined,
       message: Messages.NOT_A_VALID_REPO,
@@ -58,14 +58,14 @@ async function getCurrentFolder(): Promise<Result<string | undefined>> {
   }
 
   if (vscode.workspace.workspaceFolders.length === 0) {
-    Logger.instance.logDebug(LogCategory.WORKSPACE_STATUS, "Workspace folders array is empty", {});
+    Logger.instance.logTrace(LogCategory.WORKSPACE_STATUS, "Workspace folders array is empty", {});
     return {
       result: undefined,
       message: "No workspace folder found.",
     };
   }
 
-  Logger.instance.logDebug(LogCategory.WORKSPACE_STATUS, "Workspace folders available", {
+  Logger.instance.logTrace(LogCategory.WORKSPACE_STATUS, "Workspace folders available", {
     count: vscode.workspace.workspaceFolders.length,
     folders: vscode.workspace.workspaceFolders.map((f) => f.uri.fsPath),
   });
@@ -75,14 +75,14 @@ async function getCurrentFolder(): Promise<Result<string | undefined>> {
     // the status accordingly.
     const resource = editor.document.uri;
 
-    Logger.instance.logDebug(LogCategory.WORKSPACE_STATUS, "Active editor detected", {
+    Logger.instance.logTrace(LogCategory.WORKSPACE_STATUS, "Active editor detected", {
       fileName: editor.document.fileName,
       scheme: resource.scheme,
     });
 
     // Handle non-file schemes
     if (resource.scheme !== "file") {
-      Logger.instance.logDebug(LogCategory.WORKSPACE_STATUS, "Non-file scheme detected", {
+      Logger.instance.logTrace(LogCategory.WORKSPACE_STATUS, "Non-file scheme detected", {
         scheme: resource.scheme,
         path: resource.fsPath,
       });
@@ -94,7 +94,7 @@ async function getCurrentFolder(): Promise<Result<string | undefined>> {
         const notebookPath = resource.fsPath;
         if (notebookPath) {
           const notebookDir = dirname(notebookPath);
-          Logger.instance.logDebug(LogCategory.WORKSPACE_STATUS, "Using notebook directory for git search", {
+          Logger.instance.logTrace(LogCategory.WORKSPACE_STATUS, "Using notebook directory for git search", {
             notebookPath,
             notebookDir,
           });
@@ -114,7 +114,7 @@ async function getCurrentFolder(): Promise<Result<string | undefined>> {
 
     folder = vscode.workspace.getWorkspaceFolder(resource);
     if (!folder) {
-      Logger.instance.logDebug(LogCategory.WORKSPACE_STATUS, "File is not part of any workspace folder", {
+      Logger.instance.logTrace(LogCategory.WORKSPACE_STATUS, "File is not part of any workspace folder", {
         filePath: resource.fsPath,
       });
       return {
@@ -123,7 +123,7 @@ async function getCurrentFolder(): Promise<Result<string | undefined>> {
       };
     }
 
-    Logger.instance.logDebug(LogCategory.WORKSPACE_STATUS, "Resolved workspace folder for file", {
+    Logger.instance.logTrace(LogCategory.WORKSPACE_STATUS, "Resolved workspace folder for file", {
       workspaceFolder: folder.uri.fsPath,
       filePath: resource.fsPath,
     });
@@ -133,7 +133,7 @@ async function getCurrentFolder(): Promise<Result<string | undefined>> {
     const filePath = resource.fsPath;
     const fileDir = dirname(filePath);
 
-    Logger.instance.logDebug(LogCategory.WORKSPACE_STATUS, "Using file directory for git search", {
+    Logger.instance.logTrace(LogCategory.WORKSPACE_STATUS, "Using file directory for git search", {
       filePath,
       fileDir,
     });
@@ -150,7 +150,7 @@ async function getCurrentFolder(): Promise<Result<string | undefined>> {
       const notebookPath = notebookEditor.notebook.uri.fsPath;
       if (notebookPath) {
         const notebookDir = dirname(notebookPath);
-        Logger.instance.logDebug(LogCategory.WORKSPACE_STATUS, "Using active notebook directory for git search", {
+        Logger.instance.logTrace(LogCategory.WORKSPACE_STATUS, "Using active notebook directory for git search", {
           notebookPath,
           notebookDir,
         });
@@ -163,7 +163,7 @@ async function getCurrentFolder(): Promise<Result<string | undefined>> {
 
     // No file is open in the editor
     // In this case, we cannot determine which git repo to use if there are multiple nested repos
-    Logger.instance.logDebug(LogCategory.WORKSPACE_STATUS, "No active editor or notebook", {
+    Logger.instance.logTrace(LogCategory.WORKSPACE_STATUS, "No active editor or notebook", {
       workspaceFoldersCount: vscode.workspace.workspaceFolders.length,
     });
 
@@ -199,7 +199,7 @@ export async function isValidWorkspace(): Promise<{ isValid: boolean; message: s
 }
 
 export async function getCurrentGitConfig(gitFolder: string): Promise<{ userName: string; email: string; signingKey: string }> {
-  Logger.instance.logDebug(LogCategory.GIT_CONFIG_FILE, "Reading local git config", { folder: basename(gitFolder) });
+  Logger.instance.logTrace(LogCategory.GIT_CONFIG_FILE, "Reading local git config", { folder: basename(gitFolder) });
   const git: SimpleGit = simpleGit(gitFolder);
   const rawUserName = await git.getConfig("user.name", "local");
   const rawEmail = await git.getConfig("user.email", "local");
@@ -211,7 +211,7 @@ export async function getCurrentGitConfig(gitFolder: string): Promise<{ userName
     signingKey: rawSigningKey.value || "",
   };
 
-  Logger.instance.logDebug(LogCategory.GIT_CONFIG_FILE, "Local git config retrieved", {
+  Logger.instance.logTrace(LogCategory.GIT_CONFIG_FILE, "Local git config retrieved", {
     folder: basename(gitFolder),
     userName: currentConfig.userName,
     email: currentConfig.email,
@@ -222,7 +222,7 @@ export async function getCurrentGitConfig(gitFolder: string): Promise<{ userName
 }
 
 export async function getGlobalGitConfig(): Promise<{ userName: string; email: string; signingKey: string }> {
-  Logger.instance.logDebug(LogCategory.GIT_CONFIG_FILE, "Reading global git config", {});
+  Logger.instance.logTrace(LogCategory.GIT_CONFIG_FILE, "Reading global git config", {});
   const git: SimpleGit = simpleGit();
   const rawUserName = await git.getConfig("user.name", "global");
   const rawEmail = await git.getConfig("user.email", "global");
@@ -234,7 +234,7 @@ export async function getGlobalGitConfig(): Promise<{ userName: string; email: s
     signingKey: rawSigningKey.value || "",
   };
 
-  Logger.instance.logDebug(LogCategory.GIT_CONFIG_FILE, "Global git config retrieved", {
+  Logger.instance.logTrace(LogCategory.GIT_CONFIG_FILE, "Global git config retrieved", {
     userName: currentConfig.userName,
     email: currentConfig.email,
     hasSigningKey: !!currentConfig.signingKey,
@@ -244,7 +244,7 @@ export async function getGlobalGitConfig(): Promise<{ userName: string; email: s
 }
 
 export async function updateGitConfig(gitFolder: string, profile: Profile) {
-  Logger.instance.logDebug(LogCategory.GIT_CONFIG_FILE, "Updating local git config", {
+  Logger.instance.logTrace(LogCategory.GIT_CONFIG_FILE, "Updating local git config", {
     folder: basename(gitFolder),
     profileLabel: profile.label,
     userName: profile.userName,
@@ -255,14 +255,32 @@ export async function updateGitConfig(gitFolder: string, profile: Profile) {
   const git = simpleGit(gitFolder);
   await git.addConfig("user.name", profile.userName, false, "local");
   await git.addConfig("user.email", profile.email, false, "local");
-  await git.addConfig("user.signingkey", profile.signingKey, false, "local");
+
+  // Only set signingKey if it's not empty, to avoid overriding global config
+  if (profile.signingKey && profile.signingKey.trim() !== "") {
+    await git.addConfig("user.signingkey", profile.signingKey, false, "local");
+  } else {
+    // Remove the local signingKey config if profile doesn't have one
+    // This allows the global config to be used and prevents old values from lingering
+    try {
+      await git.raw(["config", "--local", "--unset", "user.signingkey"]);
+      Logger.instance.logTrace(LogCategory.GIT_CONFIG_FILE, "Unset local signingkey", {
+        folder: basename(gitFolder),
+      });
+    } catch (error) {
+      // Ignore errors if the config key doesn't exist
+      Logger.instance.logTrace(LogCategory.GIT_CONFIG_FILE, "No local signingkey to unset", {
+        folder: basename(gitFolder),
+      });
+    }
+  }
 
   Logger.instance.logInfo(`Git config updated for '${basename(gitFolder)}' with profile '${profile.label}'`);
 }
 
 export async function getGitRoot(path: string): Promise<string | null> {
   try {
-    Logger.instance.logDebug(LogCategory.GIT_REPOSITORY, "Searching for git repository", { path });
+    Logger.instance.logTrace(LogCategory.GIT_REPOSITORY, "Searching for git repository", { path });
 
     const git = simpleGit(path);
 
@@ -270,7 +288,7 @@ export async function getGitRoot(path: string): Promise<string | null> {
     const isRepo = await git.checkIsRepo();
 
     if (!isRepo) {
-      Logger.instance.logDebug(LogCategory.GIT_REPOSITORY, "Path is not within a git repository", { path });
+      Logger.instance.logTrace(LogCategory.GIT_REPOSITORY, "Path is not within a git repository", { path });
       return null;
     }
 
@@ -278,11 +296,11 @@ export async function getGitRoot(path: string): Promise<string | null> {
     // This works even if 'path' is not the repo root itself
     const root = (await git.revparse(["--show-toplevel"])).trim();
 
-    Logger.instance.logDebug(LogCategory.GIT_REPOSITORY, "Found git root", { root });
+    Logger.instance.logTrace(LogCategory.GIT_REPOSITORY, "Found git root", { root });
 
     return root;
   } catch (error) {
-    Logger.instance.logDebug(LogCategory.GIT_REPOSITORY, "Could not find git root", {
+    Logger.instance.logTrace(LogCategory.GIT_REPOSITORY, "Could not find git root", {
       path,
       error: error instanceof Error ? error.message : String(error),
     });
@@ -332,11 +350,11 @@ export async function getWorkspaceStatus(): Promise<{
   currentFolder?: string;
   currentGitConfig?: { userName: string; email: string; signingKey: string };
 }> {
-  Logger.instance.logDebug(LogCategory.WORKSPACE_STATUS, "Evaluating workspace status");
+  Logger.instance.logTrace(LogCategory.WORKSPACE_STATUS, "Evaluating workspace status");
 
   const result = await getCurrentFolder();
   if (!result.result) {
-    Logger.instance.logDebug(LogCategory.WORKSPACE_STATUS, "No valid workspace folder", {
+    Logger.instance.logTrace(LogCategory.WORKSPACE_STATUS, "No valid workspace folder", {
       message: result.message,
     });
     const statusResult = {
@@ -349,7 +367,7 @@ export async function getWorkspaceStatus(): Promise<{
   const workspaceFolder = result.result as string;
   const gitRoot = await getGitRoot(workspaceFolder);
   if (!gitRoot) {
-    Logger.instance.logDebug(LogCategory.WORKSPACE_STATUS, "Folder is not a git repository", {
+    Logger.instance.logTrace(LogCategory.WORKSPACE_STATUS, "Folder is not a git repository", {
       folder: basename(workspaceFolder),
     });
     const statusResult = {
@@ -367,7 +385,7 @@ export async function getWorkspaceStatus(): Promise<{
   const cached = workspaceStatusCacheMap.get(folder);
   if (cached && now - cached.timestamp < CACHE_DURATION_MS) {
     const cacheAge = now - cached.timestamp;
-    Logger.instance.logDebug(LogCategory.WORKSPACE_STATUS, "Returning cached workspace status", {
+    Logger.instance.logTrace(LogCategory.WORKSPACE_STATUS, "Returning cached workspace status", {
       folder: basename(folder),
       cacheAgeMs: cacheAge,
       status: WorkspaceStatus[cached.status],
@@ -396,7 +414,7 @@ export async function getWorkspaceStatus(): Promise<{
   // This ensures each git repo can have its own profile selection
   const gitRootUri = vscode.Uri.file(folder);
 
-  Logger.instance.logDebug(LogCategory.WORKSPACE_STATUS, "Looking up workspace folder for git root", {
+  Logger.instance.logTrace(LogCategory.WORKSPACE_STATUS, "Looking up workspace folder for git root", {
     gitRoot: folder,
     workspaceFolders: vscode.workspace.workspaceFolders?.map((wf) => wf.uri.fsPath),
     matchedWorkspaceFolder: vscWorkspaceFolder?.uri.fsPath,
@@ -407,7 +425,7 @@ export async function getWorkspaceStatus(): Promise<{
   // Falls back to legacy storage locations for automatic migration
   const selectedProfileId = getSelectedProfileId(gitRootUri);
 
-  Logger.instance.logDebug(LogCategory.WORKSPACE_STATUS, "Profile resolution", {
+  Logger.instance.logTrace(LogCategory.WORKSPACE_STATUS, "Profile resolution", {
     selectedProfileId: selectedProfileId || "<none>",
     totalProfiles: profilesInVscConfig.length,
     profileIds: profilesInVscConfig.map((p) => ({ id: p.id, label: p.label })),
@@ -438,7 +456,7 @@ export async function getWorkspaceStatus(): Promise<{
   // Check if current git config matches any profile, before checking for selected profile
   // This allows auto-selecting a profile even when none is currently selected
 
-  Logger.instance.logDebug(LogCategory.PROFILE_MATCHING, "Attempting to match git config with profiles", {
+  Logger.instance.logTrace(LogCategory.PROFILE_MATCHING, "Attempting to match git config with profiles", {
     gitConfigUserName: currentGitConfig.userName,
     gitConfigEmail: currentGitConfig.email,
     gitConfigSigningKey: currentGitConfig.signingKey,
@@ -449,7 +467,7 @@ export async function getWorkspaceStatus(): Promise<{
   const matchedProfileToLocalConfig = profilesInVscConfig.find((x) => {
     const isMatch = util.profilesMatch(x, currentGitConfig);
 
-    Logger.instance.logDebug(LogCategory.PROFILE_MATCHING, `Comparing with profile '${x.label}'`, {
+    Logger.instance.logTrace(LogCategory.PROFILE_MATCHING, `Comparing with profile '${x.label}'`, {
       profileUserName: x.userName,
       profileEmail: x.email,
       profileSigningKey: x.signingKey,
@@ -463,7 +481,7 @@ export async function getWorkspaceStatus(): Promise<{
   const selectMatchedProfileAutomatically = await vscode.workspace.getConfiguration("gitConfigUser").get("selectMatchedProfileAutomatically");
 
   if (matchedProfileToLocalConfig) {
-    Logger.instance.logDebug(LogCategory.PROFILE_MATCHING, "Found matching profile for current git config", {
+    Logger.instance.logTrace(LogCategory.PROFILE_MATCHING, "Found matching profile for current git config", {
       matchedProfile: matchedProfileToLocalConfig.label,
       autoSelectEnabled: selectMatchedProfileAutomatically === true,
       currentSelectedProfile: selectedVscProfile?.label,
@@ -540,7 +558,7 @@ export async function getWorkspaceStatus(): Promise<{
 
   const configInSync = util.isConfigInSync(currentGitConfig, selectedVscProfile);
 
-  Logger.instance.logDebug(LogCategory.WORKSPACE_STATUS, "Workspace status evaluated", {
+  Logger.instance.logTrace(LogCategory.WORKSPACE_STATUS, "Workspace status evaluated", {
     folder: basename(folder),
     selectedProfile: selectedVscProfile?.label,
     configInSync: configInSync.result,

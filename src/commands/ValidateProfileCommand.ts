@@ -2,9 +2,7 @@ import * as vscode from "vscode";
 import { LogCategory } from "../constants";
 import { Profile } from "../models";
 import * as util from "../util";
-import * as gm from "../util/gitManager";
 import { ICommand, Result } from "./ICommand";
-import simpleGit from "simple-git";
 
 export class ValidateProfileCommand implements ICommand<boolean> {
   private static instance: ValidateProfileCommand | null = null;
@@ -55,38 +53,6 @@ export class ValidateProfileCommand implements ICommand<boolean> {
         }
       }
 
-      // Test if git accepts these values (dry-run test) - only if basic validation passed
-      if (validationErrors.length === 0) {
-        try {
-          // Get workspace status to find git repository
-          const workspaceStatus = await gm.getWorkspaceStatus();
-
-          if (workspaceStatus.currentFolder) {
-            const git = simpleGit(workspaceStatus.currentFolder);
-
-            // Test userName
-            await git.addConfig("user.name", selectedProfile.userName, false, "local");
-
-            // Test email
-            await git.addConfig("user.email", selectedProfile.email, false, "local");
-
-            // Test signing key if present
-            if (selectedProfile.signingKey && selectedProfile.signingKey.trim() !== "") {
-              await git.addConfig("user.signingkey", selectedProfile.signingKey, false, "local");
-            }
-
-            util.Logger.instance.logInfo(`Profile '${selectedProfile.label}' validation successful`);
-          } else {
-            // No git repository available for testing, but basic validation passed
-            util.Logger.instance.logInfo(`Profile '${selectedProfile.label}' passed basic validation (no git repository to test against)`);
-          }
-        } catch (error) {
-          const errorMessage = error instanceof Error ? error.message : String(error);
-          validationErrors.push(`Git configuration test failed: ${errorMessage}`);
-          util.Logger.instance.logError("Git configuration test failed during validation", error as Error);
-        }
-      }
-
       // Show validation results
       if (validationErrors.length > 0) {
         const errorMessage = `Profile '${selectedProfile.label}' validation failed:\n\n${validationErrors.map(e => `• ${e}`).join('\n')}`;
@@ -97,7 +63,9 @@ export class ValidateProfileCommand implements ICommand<boolean> {
         });
         return { result: false };
       } else {
-        const successMessage = `✅ Profile '${selectedProfile.label}' is valid and ready to use!`;
+        const hasSigningKey = !!selectedProfile.signingKey && selectedProfile.signingKey.trim().length > 0;
+        const signingKeyNote = hasSigningKey ? "" : " (Signing key not set; this optional field can be left blank.)";
+        const successMessage = `✅ Profile '${selectedProfile.label}' is valid and ready to use!${signingKeyNote}`;
         vscode.window.showInformationMessage(successMessage);
         util.Logger.instance.logInfo(`Profile '${selectedProfile.label}' passed all validation checks`);
         return { result: true };
