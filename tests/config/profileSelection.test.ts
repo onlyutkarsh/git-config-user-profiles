@@ -14,6 +14,7 @@ jest.mock('fs');
 jest.mock('../../src/util/logger', () => ({
   Logger: {
     instance: {
+      logTrace: jest.fn(),
       logDebug: jest.fn(),
       logInfo: jest.fn(),
       logWarning: jest.fn(),
@@ -27,6 +28,7 @@ jest.mock('../../src/util', () => ({
   trimProperties: jest.fn((profile) => profile),
   Logger: {
     instance: {
+      logTrace: jest.fn(),
       logDebug: jest.fn(),
       logInfo: jest.fn(),
       logWarning: jest.fn(),
