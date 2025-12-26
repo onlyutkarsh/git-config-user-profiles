@@ -252,6 +252,10 @@ A: Yes! Each person has their own private selections.
 
 A: Profile definitions sync via VSCode Settings Sync. Selections are stored in user settings and will sync if you have Settings Sync enabled, allowing your profile selections to follow you across machines.
 
+### Star History
+
+[![Star History Chart](https://api.star-history.com/svg?repos=onlyutkarsh/git-config-user-profiles&type=date&legend=top-left)](https://www.star-history.com/#onlyutkarsh/git-config-user-profiles&type=date&legend=top-left)
+
 ### Issues and feature requests
 
 If you find any bug or have any suggestion/feature request, please submit the [issue](https://github.com/onlyutkarsh/git-config-user-profiles/issues) in the GitHub repo.
