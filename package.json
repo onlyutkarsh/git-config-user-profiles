@@ -31,14 +31,12 @@
   ],
   "capabilities": {
     "untrustedWorkspaces": {
-      "supported": true
+      "supported": false,
+      "description": "Git operations require a trusted workspace."
     }
   },
   "activationEvents": [
-    "*"
-  ],
-  "extensionDependencies": [
-    "vscode.git"
+    "onStartupFinished"
   ],
   "main": "./out/extension.js",
   "scripts": {
@@ -160,6 +158,19 @@
           "type": "boolean",
           "default": true,
           "markdownDescription": "Select the matched profile automatically when opening a workspace"
+        },
+        "gitConfigUser.statusBarVisibility": {
+          "type": "string",
+          "enum": [
+            "always",
+            "git-repos-only"
+          ],
+          "default": "always",
+          "markdownDescription": "Controls when the status bar item is visible:\n- **Always**: Show in all folders, even non-git ones (default)\n- **Only in Git Repositories**: Hide when no git repository is detected",
+          "enumDescriptions": [
+            "Always",
+            "Only in Git Repositories"
+          ]
         },
         "gitConfigUser.statusBarFormat": {
           "type": "string",

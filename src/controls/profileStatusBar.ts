@@ -295,6 +295,12 @@ export class ProfileStatusBar {
     // Hide status bar when dealing with non-file schemes or when not applicable
     // Empty tooltip with no profile and no repo folder indicates a silent ignore case (e.g., non-file scheme)
     if (!content && !repoFolder && (!tooltip || tooltip.length === 0)) {
+      Logger.instance.logDebug(LogCategory.STATUS_BAR, "Hiding status bar - no content, folder, or tooltip (likely non-file scheme)", {
+        hasContent: false,
+        hasRepoFolder: false,
+        hasTooltip: false,
+        platform: process.platform,
+      });
       ProfileStatusBar._statusBar.hide();
       return;
     }
@@ -309,7 +315,17 @@ export class ProfileStatusBar {
     ProfileStatusBar._statusBar.show();
   }
 
+  public showPlaceholder() {
+    ProfileStatusBar._statusBar.text = `${ICONS.SOURCE_CONTROL} Git Config User Profiles`;
+    ProfileStatusBar._statusBar.tooltip = undefined;
+    ProfileStatusBar._statusBar.backgroundColor = ProfileStatusBar.NORMAL_BACKGROUND;
+    ProfileStatusBar._statusBar.show();
+  }
+
   public hide() {
+    Logger.instance.logDebug(LogCategory.STATUS_BAR, "Hiding status bar - explicitly requested", {
+      platform: process.platform,
+    });
     ProfileStatusBar._statusBar.hide();
   }
 

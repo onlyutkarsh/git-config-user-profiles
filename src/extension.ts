@@ -30,13 +30,12 @@ export async function activate(context: vscode.ExtensionContext) {
     // Now register event listeners before initial load
     registerForVSCodeEditorEvents(context);
 
-    // Get the initial user profile after everything is set up
-    // Call immediately to ensure status bar appears on activation
-    try {
-      await vscode.commands.executeCommand(constants.CommandIds.GET_USER_PROFILE, "extension activated");
-    } catch (error) {
-      Logger.instance.logError("Error occurred during initial profile load", error as Error);
-    }
+    // Show the status bar immediately with a placeholder so it's visible from the start.
+    // At activation time the active editor state may not reflect reality yet (VS Code is
+    // still settling), so calling GET_USER_PROFILE now can produce a spurious hide.
+    // The event listeners registered above will update it correctly once the editor settles.
+    statusBar.instance.showPlaceholder();
+    Logger.instance.logDebug(LogCategory.WORKSPACE_STATUS, "Status bar placeholder shown on activation");
   } catch (error) {
     Logger.instance.logError("Error occurred during extension activation", error as Error);
   }
@@ -79,6 +78,7 @@ function registerForVSCodeEditorEvents(context: vscode.ExtensionContext) {
           affectsProfiles: e.affectsConfiguration("gitConfigUser.profiles"),
           affectsAutoSelect: e.affectsConfiguration("gitConfigUser.selectMatchedProfileAutomatically"),
           affectsStatusBarAlignment: e.affectsConfiguration("gitConfigUser.statusBarAlignment"),
+          affectsStatusBarVisibility: e.affectsConfiguration("gitConfigUser.statusBarVisibility"),
         });
 
         // Handle status bar alignment changes immediately (no debounce needed)
@@ -156,6 +156,7 @@ function createGitConfigFileWatcher() {
   _fileWatchersBySrc.set("**/.git/config", fsWatcher);
   Logger.instance.logInfo("File watcher created for git config");
 }
+
 
 export function deactivate() {
   for (const entry of _fileWatchersBySrc.values()) {

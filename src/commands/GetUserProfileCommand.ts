@@ -1,5 +1,6 @@
 import { basename } from "path";
-import { LogCategory } from "../constants";
+import * as vscode from "vscode";
+import { LogCategory, Messages } from "../constants";
 import { StatusBarStatus, ProfileStatusBar as statusBar } from "../controls";
 import { Logger } from "../util";
 import * as gm from "../util/gitManager";
@@ -13,16 +14,64 @@ export class GetUserProfileCommand implements ICommand<void> {
 
     const result = await gm.getWorkspaceStatus();
 
-    // Hide status bar if not in a valid workspace (not a git repo)
-    // but allow showing it when there's no active editor or no profiles
-    const isNotValidGitRepo = result.status === gm.WorkspaceStatus.NotAValidWorkspace && !result.currentFolder;
+    Logger.instance.logDebug(LogCategory.STATUS_BAR, "Workspace status evaluated", {
+      origin,
+      status: gm.WorkspaceStatus[result.status],
+      message: result.message || "<none>",
+      hasCurrentFolder: !!result.currentFolder,
+      currentFolder: result.currentFolder ? basename(result.currentFolder) : "<none>",
+      hasSelectedProfile: !!result.selectedProfile,
+      selectedProfile: result.selectedProfile?.label ?? "<none>",
+      configInSync: result.configInSync ?? "<n/a>",
+      platform: process.platform,
+    });
 
-    if (isNotValidGitRepo) {
-      Logger.instance.logTrace(LogCategory.PROFILE_MATCHING, "Hiding status bar - not in a git repository", {
-        status: gm.WorkspaceStatus[result.status],
-        message: result.message,
-      });
-      await statusBar.instance.hide();
+    const visibility = vscode.workspace.getConfiguration("gitConfigUser").get<string>("statusBarVisibility") ?? "always";
+
+    Logger.instance.logDebug(LogCategory.STATUS_BAR, "Status bar visibility setting", { visibility });
+
+    const isActuallyNotAGitRepo =
+      result.status === gm.WorkspaceStatus.NotAValidWorkspace &&
+      !result.currentFolder &&
+      result.message === Messages.NOT_A_VALID_REPO;
+
+    if (isActuallyNotAGitRepo) {
+      if (visibility === "git-repos-only") {
+        Logger.instance.logDebug(LogCategory.STATUS_BAR, "Hiding status bar - not a git repository (git-repos-only mode)", {
+          platform: process.platform,
+        });
+        await statusBar.instance.hide();
+      } else {
+        // "always" mode: show with "not a git repo" tooltip instead of hiding
+        Logger.instance.logDebug(LogCategory.STATUS_BAR, "Showing status bar with 'not a git repo' tooltip (always mode)", {
+          platform: process.platform,
+        });
+        await statusBar.instance.updateStatus(undefined, undefined, StatusBarStatus.Normal, result.message);
+      }
+      return {};
+    }
+
+    // No active editor (or non-file scheme active)
+    const isNoActiveEditor =
+      result.status === gm.WorkspaceStatus.NotAValidWorkspace &&
+      !result.currentFolder &&
+      result.message !== Messages.NOT_A_VALID_REPO;
+
+    if (isNoActiveEditor) {
+      if (visibility === "git-repos-only") {
+        Logger.instance.logDebug(LogCategory.STATUS_BAR, "Hiding status bar - no active editor (git-repos-only mode)", {
+          platform: process.platform,
+        });
+        await statusBar.instance.hide();
+      } else {
+        const promptMessage = result.message || "Open a file from a git repository";
+        Logger.instance.logDebug(LogCategory.STATUS_BAR, "No active editor - showing status bar with prompt tooltip (always mode)", {
+          message: promptMessage,
+          workspaceFolderCount: vscode.workspace.workspaceFolders?.length ?? 0,
+          platform: process.platform,
+        });
+        await statusBar.instance.updateStatus(undefined, undefined, StatusBarStatus.Normal, promptMessage);
+      }
       return {};
     }
 

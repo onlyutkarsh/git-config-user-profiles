@@ -1,3 +1,23 @@
+# [2.5.0] (2026-03-26)
+
+### Bug Fixes
+
+* **status bar**: fix status bar not showing on Windows 11 and other platforms when no file is open ([#120](https://github.com/onlyutkarsh/git-config-user-profiles/issues/120))
+* **activation**: changed activation event from `*` to `onStartupFinished` to avoid premature activation before workspace state is ready
+* **activation**: removed hard dependency on `vscode.git` extension — the extension uses `simple-git` directly and never needed it; this also resolves the Restricted Mode activation error
+* **activation**: fixed spurious "not a git repository" hide on startup caused by stale editor state at activation time
+* **status bar**: fixed "no active editor" state being incorrectly treated as "not a git repo", causing the status bar to hide
+* **status bar**: fixed empty string message from non-file schemes (Output panel, terminal) being coerced to `NOT_A_VALID_REPO` via `||` fallback
+
+### Features
+
+* **status bar**: new `gitConfigUser.statusBarVisibility` setting to control when the status bar is shown:
+  - **Always** (default): status bar is always visible, even in non-git folders
+  - **Only in Git Repositories**: status bar is hidden when no git repository is detected (previous behavior)
+* **logging**: added `debug`-level logging to all status bar hide/show paths including `platform` info to aid issue reporting
+
+---
+
 # [2.4.0](https://github.com/onlyutkarsh/git-config-user-profiles/compare/v2.3.3...v2.4.0) (2025-12-19)
 
 

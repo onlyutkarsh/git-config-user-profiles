@@ -49,19 +49,13 @@ async function getCurrentFolder(): Promise<Result<string | undefined>> {
   const editor = vscode.window.activeTextEditor;
   let folder: vscode.WorkspaceFolder | undefined;
 
-  if (!vscode.workspace.workspaceFolders) {
-    Logger.instance.logTrace(LogCategory.WORKSPACE_STATUS, "No workspace folders available", {});
+  if (!vscode.workspace.workspaceFolders || vscode.workspace.workspaceFolders.length === 0) {
+    Logger.instance.logTrace(LogCategory.WORKSPACE_STATUS, "No workspace folders available", {
+      workspaceFolders: vscode.workspace.workspaceFolders ?? null,
+    });
     return {
       result: undefined,
-      message: Messages.NOT_A_VALID_REPO,
-    };
-  }
-
-  if (vscode.workspace.workspaceFolders.length === 0) {
-    Logger.instance.logTrace(LogCategory.WORKSPACE_STATUS, "Workspace folders array is empty", {});
-    return {
-      result: undefined,
-      message: "No workspace folder found.",
+      message: "Open a file from a git repository",
     };
   }
 
@@ -161,14 +155,47 @@ async function getCurrentFolder(): Promise<Result<string | undefined>> {
       }
     }
 
-    // No file is open in the editor
-    // In this case, we cannot determine which git repo to use if there are multiple nested repos
+    // No file is open in the editor. Prefer a workspace-folder fallback so the status bar
+    // can still be shown in common single-root setups (for example at startup).
     Logger.instance.logTrace(LogCategory.WORKSPACE_STATUS, "No active editor or notebook", {
       workspaceFoldersCount: vscode.workspace.workspaceFolders.length,
+      workspaceFolders: vscode.workspace.workspaceFolders.map((f) => f.uri.fsPath),
     });
 
-    // Return undefined with a friendly message
-    // The status bar will show this message instead of hiding
+    // Fast path for the common case: exactly one workspace folder.
+    if (vscode.workspace.workspaceFolders.length === 1) {
+      const singleFolderPath = vscode.workspace.workspaceFolders[0].uri.fsPath;
+      Logger.instance.logTrace(LogCategory.WORKSPACE_STATUS, "Using single workspace folder as fallback", {
+        folder: singleFolderPath,
+      });
+      return {
+        result: singleFolderPath,
+        message: "",
+      };
+    }
+
+    // Multi-root workspace without an active editor: only proceed if there is a single
+    // unambiguous git root across all workspace folders.
+    const gitRoots = new Set<string>();
+    for (const workspaceFolder of vscode.workspace.workspaceFolders) {
+      const root = await getGitRoot(workspaceFolder.uri.fsPath);
+      if (root) {
+        gitRoots.add(root);
+      }
+    }
+
+    if (gitRoots.size === 1) {
+      const [singleGitRoot] = Array.from(gitRoots);
+      Logger.instance.logTrace(LogCategory.WORKSPACE_STATUS, "Using detected single git root fallback", {
+        gitRoot: singleGitRoot,
+      });
+      return {
+        result: singleGitRoot,
+        message: "",
+      };
+    }
+
+    // Ambiguous or no git roots: ask user to focus/open a file so we can resolve repo context.
     return {
       result: undefined,
       message: "Open a file from a git repository", // Friendly message for status bar tooltip
@@ -359,7 +386,7 @@ export async function getWorkspaceStatus(): Promise<{
     });
     const statusResult = {
       status: WorkspaceStatus.NotAValidWorkspace,
-      message: result.message || Messages.NOT_A_VALID_REPO,
+      message: result.message !== undefined ? result.message : Messages.NOT_A_VALID_REPO,
     };
     // Don't cache this as there's no folder to key on
     return statusResult;

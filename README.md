@@ -9,7 +9,7 @@ Ever wanted to use different username and email addresses for your commits at wo
 - ✅ **Auto Profile Matching** - Automatically selects the right profile based on your repository's existing git config
 - ✅ **Multi-Folder Workspace Support** - Detects which git repository you're working in based on the active file, perfect for monorepos
 - ✅ **Visual Sync Indicators** - Status bar shows when your git config is out of sync with the selected profile
-- ✅ **Customizable Status Bar** - Choose `full` or `compact` display formats and `left` or `right` alignment to suit your workflow
+- ✅ **Customizable Status Bar** - Choose `full` or `compact` display formats, `left` or `right` alignment, and whether to show the status bar always or only in git repositories
 - ✅ **Detailed Comparison Tooltips** - Hover over the status bar to see:
   - When in sync: Confirmation message with quick action hints
   - When out of sync: Side-by-side comparison showing exactly what differs (username, email, signing key)
@@ -135,6 +135,25 @@ Or add to your `settings.json`:
 
 The change takes effect immediately without needing to reload the window.
 
+### Status Bar Visibility
+
+Control when the status bar item is shown:
+
+- **Always (default)**: Status bar is always visible, even in non-git folders. Shows a helpful tooltip when no git repository is detected.
+- **Only in Git Repositories**: Status bar is hidden when no git repository is detected - the previous behavior.
+
+To change the visibility:
+1. Open Settings (`Cmd+,` / `Ctrl+,`)
+2. Search for "Git Config User Profiles Status Bar Visibility"
+3. Select your preferred option
+
+Or add to your `settings.json`:
+```json
+{
+  "gitConfigUser.statusBarVisibility": "git-repos-only"
+}
+```
+
 ### Auto Profile Selection
 
 Enable or disable automatic profile selection based on git config:
@@ -153,19 +172,19 @@ The extension intelligently handles various workspace configurations and provide
 
 ### Workspace Configurations
 
-| Scenario                                             | Status Bar Display                                                            | Tooltip                                                                                                                                                       |
-| ---------------------------------------------------- | ----------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **No editors open**                                  | Shows repo name → "No Profile" with question mark icon and warning background | 📂 **No File Open** - No file is currently open in the editor                                                                                                  |
-| **Non-file schemes** (Output window, Settings, etc.) | Hidden                                                                        | Status bar is hidden as these are not associated with git repositories                                                                                        |
-| **Jupyter Notebooks** (.ipynb)                       | Same as regular files - shows git profile information                         | Same as regular files - displays profile sync status                                                                                                          |
-| **File in non-git folder**                           | Hidden                                                                        | ⚠️ Status bar is hidden when not in a git repository. Use "Show Extension Status" command to see why                                                           |
-| **No profiles created**                              | Shows repo name → "No Profile" with question mark icon and warning background | 📋 **No Profiles Created** - No profiles have been created yet                                                                                                 |
-| **Git repo, no profile selected**                    | Shows repo name → "No Profile" with question mark icon and warning background | ⚠️ **No Profile Selected** - No profile has been selected for this repository                                                                                  |
-| **Git repo, profile selected, in sync**              | Shows repo name → profile name with normal background (no icons)              | ✅ **Profile Active: Profile Name** - Your git config is in sync with this profile. *Click to switch profiles*                                                 |
-| **Git repo, profile selected, out of sync**          | Shows repo name → profile name with alert icon and warning background         | ⚠️ **Git Config Out of Sync** - Shows side-by-side comparison of differences (username, email, signing key). *Click to apply the profile or update git config* |
-| **Profile configuration error**                      | Shows repo name → profile name with error icon and error background           | ❌ **Profile Configuration Error** - Selected profile is missing required information                                                                          |
-| **Nested git repositories**                          | Works correctly by detecting git root from file location                      | Each nested git repo can have its own profile selection                                                                                                       |
-| **Extension status hidden**                          | Use "Show Extension Status" command                                           | ⚠️ Status bar is hidden when not in a git repository. Use "Show Extension Status" command to see why                                                           |
+| Scenario                                             | Status Bar Display                                                                              | Tooltip                                                                                                                                                       |
+| ---------------------------------------------------- | ----------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **No editors open**                                  | Shows git icon → "Git Config User Profiles → No Profile ?" (always mode) or hidden (git-repos-only mode) | ℹ️ **Open a file from a git repository**                                                                                                               |
+| **Non-file schemes** (Output window, Settings, etc.) | Shows git icon → "Git Config User Profiles → No Profile ?" (always mode) or hidden (git-repos-only mode) | ℹ️ **Open a file from a git repository**                                                                                                               |
+| **Jupyter Notebooks** (.ipynb)                       | Same as regular files - shows git profile information                                                     | Same as regular files - displays profile sync status                                                                                                   |
+| **File in non-git folder**                           | Shows git icon → "Git Config User Profiles → No Profile ?" (always mode) or hidden (git-repos-only mode) | ℹ️ **This does not seem to be a valid git repository**                                                                                                 |
+| **No profiles created**                              | Shows repo name → "No Profile" with question mark icon and warning background                   | 📋 **No Profiles Created** - No profiles have been created yet                                                                                                 |
+| **Git repo, no profile selected**                    | Shows repo name → "No Profile" with question mark icon and warning background                   | ⚠️ **No Profile Selected** - No profile has been selected for this repository                                                                                  |
+| **Git repo, profile selected, in sync**              | Shows repo name → profile name with normal background (no icons)                                | ✅ **Profile Active: Profile Name** - Your git config is in sync with this profile. *Click to switch profiles*                                                 |
+| **Git repo, profile selected, out of sync**          | Shows repo name → profile name with alert icon and warning background                           | ⚠️ **Git Config Out of Sync** - Shows side-by-side comparison of differences (username, email, signing key). *Click to apply the profile or update git config* |
+| **Profile configuration error**                      | Shows repo name → profile name with error icon and error background                             | ❌ **Profile Configuration Error** - Selected profile is missing required information                                                                          |
+| **Nested git repositories**                          | Works correctly by detecting git root from file location                                        | Each nested git repo can have its own profile selection                                                                                                       |
+| **Extension status hidden**                          | Use "Show Extension Status" command                                                             | ⚠️ Status bar is hidden when not in a git repository. Use "Show Extension Status" command to see why                                                           |
 
 ### Checking Extension Status
 
