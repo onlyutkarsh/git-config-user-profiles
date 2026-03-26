@@ -1,6 +1,6 @@
 //interface for command pattern useful for accurate typing
 export interface ICommand<T> {
-  execute(...params: any[]): Promise<Result<T>>;
+  execute(...params: unknown[]): Promise<Result<T>>;
 }
 
 //result type with bool and error

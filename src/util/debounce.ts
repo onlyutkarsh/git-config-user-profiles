@@ -4,10 +4,10 @@
  * @param delay Delay in milliseconds (default: 300ms)
  * @returns Debounced function
  */
-export function debounce<T extends (...args: any[]) => any>(func: T, delay: number = 300): (...args: Parameters<T>) => void {
+export function debounce<T extends (...args: Parameters<T>) => ReturnType<T>>(func: T, delay: number = 300): (...args: Parameters<T>) => void {
   let timeoutId: NodeJS.Timeout | undefined;
 
-  return function (this: any, ...args: Parameters<T>) {
+  return function (this: unknown, ...args: Parameters<T>) {
     if (timeoutId) {
       clearTimeout(timeoutId);
     }
@@ -24,11 +24,11 @@ export function debounce<T extends (...args: any[]) => any>(func: T, delay: numb
  * @param delay Delay in milliseconds (default: 300ms)
  * @returns Throttled function
  */
-export function throttle<T extends (...args: any[]) => any>(func: T, delay: number = 300): (...args: Parameters<T>) => void {
+export function throttle<T extends (...args: Parameters<T>) => ReturnType<T>>(func: T, delay: number = 300): (...args: Parameters<T>) => void {
   let lastCall = 0;
   let timeoutId: NodeJS.Timeout | undefined;
 
-  return function (this: any, ...args: Parameters<T>) {
+  return function (this: unknown, ...args: Parameters<T>) {
     const now = Date.now();
     const timeSinceLastCall = now - lastCall;
 

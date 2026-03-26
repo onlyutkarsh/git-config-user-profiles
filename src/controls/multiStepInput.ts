@@ -102,7 +102,7 @@ export class MultiStepInput {
             if (item === QuickInputButtons.Back) {
               reject(InputFlowAction.back);
             } else {
-              resolve(<any>item);
+              resolve(item as P extends { buttons: (infer I)[] } ? I : never);
             }
           }),
           input.onDidChangeSelection((items) => resolve(items[0])),
@@ -142,7 +142,7 @@ export class MultiStepInput {
             if (item === QuickInputButtons.Back) {
               reject(InputFlowAction.back);
             } else {
-              resolve(item as any);
+              resolve(item as P extends { buttons: (infer I)[] } ? I : never);
             }
           }),
           input.onDidAccept(async () => {
