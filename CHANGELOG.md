@@ -1,22 +1,17 @@
-# [2.5.0] (2026-03-26)
+# [2.5.0](https://github.com/onlyutkarsh/git-config-user-profiles/compare/v2.4.0...v2.5.0) (2026-03-28)
+
 
 ### Bug Fixes
 
-* **status bar**: fix status bar not showing on Windows 11 and other platforms when no file is open ([#120](https://github.com/onlyutkarsh/git-config-user-profiles/issues/120))
-* **activation**: changed activation event from `*` to `onStartupFinished` to avoid premature activation before workspace state is ready
-* **activation**: removed hard dependency on `vscode.git` extension — the extension uses `simple-git` directly and never needed it; this also resolves the Restricted Mode activation error
-* **activation**: fixed spurious "not a git repository" hide on startup caused by stale editor state at activation time
-* **status bar**: fixed "no active editor" state being incorrectly treated as "not a git repo", causing the status bar to hide
-* **status bar**: fixed empty string message from non-file schemes (Output panel, terminal) being coerced to `NOT_A_VALID_REPO` via `||` fallback
+* correct typeRoots path in tsconfig.json ([94ed438](https://github.com/onlyutkarsh/git-config-user-profiles/commit/94ed438b42b93d4ec5c3f13de6f63465eaa00808))
+* update Node.js setup to version 24.x in CI workflows and improve type safety in debounce and ICommand interfaces ([8945f97](https://github.com/onlyutkarsh/git-config-user-profiles/commit/8945f9719bc0be5c3a9e4c64a412348cdcd3efd7))
+
 
 ### Features
 
-* **status bar**: new `gitConfigUser.statusBarVisibility` setting to control when the status bar is shown:
-  - **Always** (default): status bar is always visible, even in non-git folders
-  - **Only in Git Repositories**: status bar is hidden when no git repository is detected (previous behavior)
-* **logging**: added `debug`-level logging to all status bar hide/show paths including `platform` info to aid issue reporting
+* enhance status bar visibility settings and improve changelog ([a59ef6d](https://github.com/onlyutkarsh/git-config-user-profiles/commit/a59ef6d78d34b2c29807008af03fc9104548b5a1))
 
----
+
 
 # [2.4.0](https://github.com/onlyutkarsh/git-config-user-profiles/compare/v2.3.3...v2.4.0) (2025-12-19)
 
