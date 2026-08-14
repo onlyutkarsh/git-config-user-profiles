@@ -316,7 +316,7 @@ export class ProfileStatusBar {
   }
 
   public showPlaceholder() {
-    ProfileStatusBar._statusBar.text = `${ICONS.SOURCE_CONTROL} Git Config User Profiles`;
+    ProfileStatusBar._statusBar.text = `${ICONS.SOURCE_CONTROL} Loading…`;
     ProfileStatusBar._statusBar.tooltip = undefined;
     ProfileStatusBar._statusBar.backgroundColor = ProfileStatusBar.NORMAL_BACKGROUND;
     ProfileStatusBar._statusBar.show();

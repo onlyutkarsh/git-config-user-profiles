@@ -1,17 +1,12 @@
-import * as path from 'path';
-import * as os from 'os';
-import * as fs from 'fs-extra';
-import { getGitRoot, isGitRepository, getCurrentGitConfig } from '../../src/util/gitManager';
-import {
-  createTestGitRepo,
-  createNestedGitRepo,
-  createSubfolder,
-  getGitConfig,
-  TestRepo,
-} from './testHelpers';
+import * as fs from "fs-extra";
+import * as os from "os";
+import * as path from "path";
+import * as vscode from "vscode";
+import { getCurrentGitConfig, getGitRoot, getWorkspaceStatus, invalidateWorkspaceStatusCache, isGitRepository, restoreGitConfig, updateGitConfig } from "../../src/util/gitManager";
+import { createNestedGitRepo, createSubfolder, createTestGitRepo, TestRepo } from "./testHelpers";
 
-describe('gitManager - Multi-Folder Workspace Scenarios', () => {
-  describe('getGitRoot', () => {
+describe("gitManager - Multi-Folder Workspace Scenarios", () => {
+  describe("getGitRoot", () => {
     let testRepo: TestRepo;
 
     afterEach(async () => {
@@ -20,10 +15,10 @@ describe('gitManager - Multi-Folder Workspace Scenarios', () => {
       }
     });
 
-    test('should find git root when given repository root path', async () => {
+    test("should find git root when given repository root path", async () => {
       testRepo = await createTestGitRepo({
-        userName: 'Test User',
-        email: 'test@example.com',
+        userName: "Test User",
+        email: "test@example.com",
       });
 
       const gitRoot = await getGitRoot(testRepo.path);
@@ -31,14 +26,14 @@ describe('gitManager - Multi-Folder Workspace Scenarios', () => {
       expect(gitRoot).toBe(testRepo.path);
     });
 
-    test('should find git root when given a subfolder path', async () => {
+    test("should find git root when given a subfolder path", async () => {
       testRepo = await createTestGitRepo({
-        userName: 'Test User',
-        email: 'test@example.com',
+        userName: "Test User",
+        email: "test@example.com",
       });
 
       // Create subfolder structure: repo/packages/app
-      const subfolderPath = await createSubfolder(testRepo.path, 'packages/app');
+      const subfolderPath = await createSubfolder(testRepo.path, "packages/app");
 
       const gitRoot = await getGitRoot(subfolderPath);
 
@@ -46,8 +41,8 @@ describe('gitManager - Multi-Folder Workspace Scenarios', () => {
       expect(gitRoot).not.toBe(subfolderPath);
     });
 
-    test('should return null for non-git directory', async () => {
-      const tmpDir = await fs.mkdtemp(path.join(os.tmpdir(), 'non-git-'));
+    test("should return null for non-git directory", async () => {
+      const tmpDir = await fs.mkdtemp(path.join(os.tmpdir(), "non-git-"));
 
       const gitRoot = await getGitRoot(tmpDir);
 
@@ -56,7 +51,7 @@ describe('gitManager - Multi-Folder Workspace Scenarios', () => {
     });
   });
 
-  describe('Nested Repositories (Monorepo)', () => {
+  describe("Nested Repositories (Monorepo)", () => {
     let parentRepo: TestRepo;
     let nestedRepo1: TestRepo;
     let nestedRepo2: TestRepo;
@@ -67,22 +62,22 @@ describe('gitManager - Multi-Folder Workspace Scenarios', () => {
       }
     });
 
-    test('should identify separate git roots in nested repositories', async () => {
+    test("should identify separate git roots in nested repositories", async () => {
       // Create parent repo
       parentRepo = await createTestGitRepo({
-        userName: 'Parent User',
-        email: 'parent@example.com',
+        userName: "Parent User",
+        email: "parent@example.com",
       });
 
       // Create nested repos
-      nestedRepo1 = await createNestedGitRepo(parentRepo.path, 'packages/app1', {
-        userName: 'App1 User',
-        email: 'app1@example.com',
+      nestedRepo1 = await createNestedGitRepo(parentRepo.path, "packages/app1", {
+        userName: "App1 User",
+        email: "app1@example.com",
       });
 
-      nestedRepo2 = await createNestedGitRepo(parentRepo.path, 'packages/app2', {
-        userName: 'App2 User',
-        email: 'app2@example.com',
+      nestedRepo2 = await createNestedGitRepo(parentRepo.path, "packages/app2", {
+        userName: "App2 User",
+        email: "app2@example.com",
       });
 
       // Test parent repo
@@ -100,25 +95,25 @@ describe('gitManager - Multi-Folder Workspace Scenarios', () => {
       expect(nested2Root).not.toBe(parentRepo.path);
     });
 
-    test('should read correct git config from each nested repository', async () => {
+    test("should read correct git config from each nested repository", async () => {
       // Create parent repo
       parentRepo = await createTestGitRepo({
-        userName: 'Parent User',
-        email: 'parent@example.com',
-        signingKey: 'parent-key',
+        userName: "Parent User",
+        email: "parent@example.com",
+        signingKey: "parent-key",
       });
 
       // Create nested repos with different configs
-      nestedRepo1 = await createNestedGitRepo(parentRepo.path, 'packages/app1', {
-        userName: 'App1 User',
-        email: 'app1@example.com',
-        signingKey: 'app1-key',
+      nestedRepo1 = await createNestedGitRepo(parentRepo.path, "packages/app1", {
+        userName: "App1 User",
+        email: "app1@example.com",
+        signingKey: "app1-key",
       });
 
-      nestedRepo2 = await createNestedGitRepo(parentRepo.path, 'packages/app2', {
-        userName: 'App2 User',
-        email: 'app2@example.com',
-        signingKey: 'app2-key',
+      nestedRepo2 = await createNestedGitRepo(parentRepo.path, "packages/app2", {
+        userName: "App2 User",
+        email: "app2@example.com",
+        signingKey: "app2-key",
       });
 
       // Get configs
@@ -128,26 +123,26 @@ describe('gitManager - Multi-Folder Workspace Scenarios', () => {
 
       // Verify each repo has its own config
       expect(parentConfig).toEqual({
-        userName: 'Parent User',
-        email: 'parent@example.com',
-        signingKey: 'parent-key',
+        userName: "Parent User",
+        email: "parent@example.com",
+        signingKey: "parent-key",
       });
 
       expect(nested1Config).toEqual({
-        userName: 'App1 User',
-        email: 'app1@example.com',
-        signingKey: 'app1-key',
+        userName: "App1 User",
+        email: "app1@example.com",
+        signingKey: "app1-key",
       });
 
       expect(nested2Config).toEqual({
-        userName: 'App2 User',
-        email: 'app2@example.com',
-        signingKey: 'app2-key',
+        userName: "App2 User",
+        email: "app2@example.com",
+        signingKey: "app2-key",
       });
     });
   });
 
-  describe('Workspace Folder as Subfolder Scenario', () => {
+  describe("Workspace Folder as Subfolder Scenario", () => {
     let testRepo: TestRepo;
 
     afterEach(async () => {
@@ -156,14 +151,14 @@ describe('gitManager - Multi-Folder Workspace Scenarios', () => {
       }
     });
 
-    test('should find git root when workspace folder is a subfolder', async () => {
+    test("should find git root when workspace folder is a subfolder", async () => {
       // Scenario: User opens /repo/packages/frontend as workspace folder
       testRepo = await createTestGitRepo({
-        userName: 'Test User',
-        email: 'test@example.com',
+        userName: "Test User",
+        email: "test@example.com",
       });
 
-      const workspaceFolder = await createSubfolder(testRepo.path, 'packages/frontend');
+      const workspaceFolder = await createSubfolder(testRepo.path, "packages/frontend");
 
       const gitRoot = await getGitRoot(workspaceFolder);
 
@@ -171,14 +166,14 @@ describe('gitManager - Multi-Folder Workspace Scenarios', () => {
       expect(gitRoot).toBe(testRepo.path);
     });
 
-    test('should read git config from repository root, not subfolder', async () => {
+    test("should read git config from repository root, not subfolder", async () => {
       testRepo = await createTestGitRepo({
-        userName: 'Repo User',
-        email: 'repo@example.com',
-        signingKey: 'repo-key',
+        userName: "Repo User",
+        email: "repo@example.com",
+        signingKey: "repo-key",
       });
 
-      const workspaceFolder = await createSubfolder(testRepo.path, 'src/components');
+      const workspaceFolder = await createSubfolder(testRepo.path, "src/components");
 
       // Get git root from subfolder
       const gitRoot = await getGitRoot(workspaceFolder);
@@ -188,14 +183,14 @@ describe('gitManager - Multi-Folder Workspace Scenarios', () => {
       const config = await getCurrentGitConfig(gitRoot!);
 
       expect(config).toEqual({
-        userName: 'Repo User',
-        email: 'repo@example.com',
-        signingKey: 'repo-key',
+        userName: "Repo User",
+        email: "repo@example.com",
+        signingKey: "repo-key",
       });
     });
   });
 
-  describe('Multi-Root Workspace Scenario', () => {
+  describe("Multi-Root Workspace Scenario", () => {
     let repo1: TestRepo;
     let repo2: TestRepo;
 
@@ -204,16 +199,16 @@ describe('gitManager - Multi-Folder Workspace Scenarios', () => {
       if (repo2) await repo2.cleanup();
     });
 
-    test('should correctly identify different git roots for different workspace folders', async () => {
+    test("should correctly identify different git roots for different workspace folders", async () => {
       // Simulate VSCode multi-root workspace with 2 separate repos
       repo1 = await createTestGitRepo({
-        userName: 'User 1',
-        email: 'user1@example.com',
+        userName: "User 1",
+        email: "user1@example.com",
       });
 
       repo2 = await createTestGitRepo({
-        userName: 'User 2',
-        email: 'user2@example.com',
+        userName: "User 2",
+        email: "user2@example.com",
       });
 
       const root1 = await getGitRoot(repo1.path);
@@ -224,37 +219,127 @@ describe('gitManager - Multi-Folder Workspace Scenarios', () => {
       expect(root1).not.toBe(root2);
     });
 
-    test('should read independent git configs for each workspace folder', async () => {
+    test("should read independent git configs for each workspace folder", async () => {
       repo1 = await createTestGitRepo({
-        userName: 'Alice',
-        email: 'alice@work.com',
-        signingKey: 'work-key-123',
+        userName: "Alice",
+        email: "alice@work.com",
+        signingKey: "work-key-123",
       });
 
       repo2 = await createTestGitRepo({
-        userName: 'Bob',
-        email: 'bob@personal.com',
-        signingKey: 'personal-key-456',
+        userName: "Bob",
+        email: "bob@personal.com",
+        signingKey: "personal-key-456",
       });
 
       const config1 = await getCurrentGitConfig(repo1.path);
       const config2 = await getCurrentGitConfig(repo2.path);
 
       expect(config1).toEqual({
-        userName: 'Alice',
-        email: 'alice@work.com',
-        signingKey: 'work-key-123',
+        userName: "Alice",
+        email: "alice@work.com",
+        signingKey: "work-key-123",
       });
 
       expect(config2).toEqual({
-        userName: 'Bob',
-        email: 'bob@personal.com',
-        signingKey: 'personal-key-456',
+        userName: "Bob",
+        email: "bob@personal.com",
+        signingKey: "personal-key-456",
       });
     });
   });
 
-  describe('isGitRepository', () => {
+  describe("Profile auto-selection", () => {
+    let testRepo: TestRepo;
+
+    async function configureWorkspace(profiles: object[], selectedProfileId?: string) {
+      const workspaceFolder = { uri: vscode.Uri.file(testRepo.path), name: "test-repo", index: 0 };
+      (vscode.workspace as any).workspaceFolders = [workspaceFolder];
+      (vscode.window as any).activeTextEditor = {
+        document: {
+          uri: vscode.Uri.file(path.join(testRepo.path, "README.md")),
+          fileName: path.join(testRepo.path, "README.md"),
+        },
+      };
+      (vscode.workspace.getWorkspaceFolder as jest.Mock).mockReturnValue(workspaceFolder);
+
+      const config = vscode.workspace.getConfiguration("gitConfigUser");
+      await config.update("profiles", profiles);
+      await config.update("workspaceProfileSelections", selectedProfileId ? { [testRepo.path]: selectedProfileId } : {});
+      await config.update("selectMatchedProfileAutomatically", true);
+      return config;
+    }
+
+    afterEach(async () => {
+      invalidateWorkspaceStatusCache();
+      (vscode.window as any).activeTextEditor = undefined;
+      (vscode.workspace as any).workspaceFolders = [];
+      if ((vscode.workspace as any)._clearMockConfigurations) {
+        (vscode.workspace as any)._clearMockConfigurations();
+      }
+      if (testRepo) {
+        await testRepo.cleanup();
+      }
+    });
+
+    test("should preserve the selected profile when multiple profiles match git config", async () => {
+      testRepo = await createTestGitRepo({
+        userName: "Shared User",
+        email: "shared@example.com",
+      });
+
+      const config = await configureWorkspace(
+        [
+          { id: "profile-1", label: "First", userName: "Shared User", email: "shared@example.com", signingKey: "" },
+          { id: "profile-2", label: "Selected", userName: "Shared User", email: "shared@example.com", signingKey: "" },
+        ],
+        "profile-2"
+      );
+
+      const result = await getWorkspaceStatus();
+
+      expect(result.selectedProfile?.id).toBe("profile-2");
+      expect(config.get("workspaceProfileSelections")).toEqual({ [testRepo.path]: "profile-2" });
+    });
+
+    test("should auto-select the profile with a signing key when name and email are identical", async () => {
+      const signingKey = "ssh-ed25519 AAAAC3NzaTestKey";
+      testRepo = await createTestGitRepo({
+        userName: "Shared User",
+        email: "shared@example.com",
+        signingKey,
+      });
+
+      const config = await configureWorkspace([
+        { id: "without-key", label: "Without key", userName: "Shared User", email: "shared@example.com", signingKey: "" },
+        { id: "with-key", label: "With key", userName: "Shared User", email: "shared@example.com", signingKey },
+      ]);
+
+      const result = await getWorkspaceStatus();
+
+      expect(result.selectedProfile?.id).toBe("with-key");
+      expect(config.get("workspaceProfileSelections")).toEqual({ [testRepo.path]: "with-key" });
+    });
+
+    test("should auto-select the profile without a signing key when name and email are identical", async () => {
+      testRepo = await createTestGitRepo({
+        userName: "Shared User",
+        email: "shared@example.com",
+      });
+
+      const config = await configureWorkspace([
+        { id: "with-key", label: "With key", userName: "Shared User", email: "shared@example.com", signingKey: "ssh-ed25519 AAAAC3NzaTestKey" },
+        { id: "without-key", label: "Without key", userName: "Shared User", email: "shared@example.com", signingKey: "" },
+      ]);
+
+      const result = await getWorkspaceStatus();
+
+      expect(result.selectedProfile?.id).toBe("without-key");
+      expect(config.get("workspaceProfileSelections")).toEqual({ [testRepo.path]: "without-key" });
+    });
+  });
+
+  describe("Profile application", () => {
     let testRepo: TestRepo;
 
     afterEach(async () => {
@@ -263,21 +348,73 @@ describe('gitManager - Multi-Folder Workspace Scenarios', () => {
       }
     });
 
-    test('should return true for git repository root', async () => {
+    test("should remove a stale signing key when applying an otherwise identical profile without one", async () => {
+      testRepo = await createTestGitRepo({
+        userName: "Shared User",
+        email: "shared@example.com",
+        signingKey: "ssh-ed25519 AAAAC3NzaOldKey",
+      });
+
+      await updateGitConfig(testRepo.path, {
+        id: "without-key",
+        label: "Without key",
+        userName: "Shared User",
+        email: "shared@example.com",
+        signingKey: "",
+      });
+
+      expect(await getCurrentGitConfig(testRepo.path)).toEqual({
+        userName: "Shared User",
+        email: "shared@example.com",
+        signingKey: "",
+      });
+    });
+
+    test("should restore inherited values by removing local keys that were previously absent", async () => {
+      testRepo = await createTestGitRepo({
+        userName: "Applied User",
+        email: "applied@example.com",
+        signingKey: "applied-key",
+      });
+
+      await restoreGitConfig(testRepo.path, {
+        userName: "",
+        email: "",
+        signingKey: "",
+      });
+
+      expect(await getCurrentGitConfig(testRepo.path)).toEqual({
+        userName: "",
+        email: "",
+        signingKey: "",
+      });
+    });
+  });
+
+  describe("isGitRepository", () => {
+    let testRepo: TestRepo;
+
+    afterEach(async () => {
+      if (testRepo) {
+        await testRepo.cleanup();
+      }
+    });
+
+    test("should return true for git repository root", async () => {
       testRepo = await createTestGitRepo();
       const isRepo = await isGitRepository(testRepo.path);
       expect(isRepo).toBe(true);
     });
 
-    test('should return true for subfolder within git repository', async () => {
+    test("should return true for subfolder within git repository", async () => {
       testRepo = await createTestGitRepo();
-      const subfolder = await createSubfolder(testRepo.path, 'src/utils');
+      const subfolder = await createSubfolder(testRepo.path, "src/utils");
       const isRepo = await isGitRepository(subfolder);
       expect(isRepo).toBe(true);
     });
 
-    test('should return false for non-git directory', async () => {
-      const tmpDir = await fs.mkdtemp(path.join(os.tmpdir(), 'non-git-'));
+    test("should return false for non-git directory", async () => {
+      const tmpDir = await fs.mkdtemp(path.join(os.tmpdir(), "non-git-"));
 
       const isRepo = await isGitRepository(tmpDir);
       expect(isRepo).toBe(false);
@@ -286,7 +423,7 @@ describe('gitManager - Multi-Folder Workspace Scenarios', () => {
     });
   });
 
-  describe('Edge Cases', () => {
+  describe("Edge Cases", () => {
     let testRepo: TestRepo;
 
     afterEach(async () => {
@@ -295,46 +432,43 @@ describe('gitManager - Multi-Folder Workspace Scenarios', () => {
       }
     });
 
-    test('should handle deeply nested subfolders', async () => {
+    test("should handle deeply nested subfolders", async () => {
       testRepo = await createTestGitRepo({
-        userName: 'Test User',
-        email: 'test@example.com',
+        userName: "Test User",
+        email: "test@example.com",
       });
 
-      const deepPath = await createSubfolder(
-        testRepo.path,
-        'a/b/c/d/e/f/g'
-      );
+      const deepPath = await createSubfolder(testRepo.path, "a/b/c/d/e/f/g");
 
       const gitRoot = await getGitRoot(deepPath);
       expect(gitRoot).toBe(testRepo.path);
     });
 
-    test('should handle repository with no git config set', async () => {
+    test("should handle repository with no git config set", async () => {
       testRepo = await createTestGitRepo(); // No config provided
 
       const config = await getCurrentGitConfig(testRepo.path);
 
       expect(config).toEqual({
-        userName: '',
-        email: '',
-        signingKey: '',
+        userName: "",
+        email: "",
+        signingKey: "",
       });
     });
 
-    test('should handle partial git config (only name and email)', async () => {
+    test("should handle partial git config (only name and email)", async () => {
       testRepo = await createTestGitRepo({
-        userName: 'Test User',
-        email: 'test@example.com',
+        userName: "Test User",
+        email: "test@example.com",
         // No signing key
       });
 
       const config = await getCurrentGitConfig(testRepo.path);
 
       expect(config).toEqual({
-        userName: 'Test User',
-        email: 'test@example.com',
-        signingKey: '',
+        userName: "Test User",
+        email: "test@example.com",
+        signingKey: "",
       });
     });
   });

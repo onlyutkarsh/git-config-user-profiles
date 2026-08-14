@@ -95,16 +95,37 @@ export class PickUserProfileCommand implements ICommand<Profile> {
 
         const refreshedGitRootUri = vscode.Uri.file(refreshedFolder);
         const refreshedRepoName = basename(refreshedFolder);
+        const previousGitConfig = refreshedStatus.currentGitConfig ?? (await gm.getCurrentGitConfig(refreshedFolder));
         pickedProfile.detail = undefined;
         pickedProfile.label = pickedProfile.label;
         pickedProfile.selected = true;
-        // Save profile selection to user settings (not workspace settings)
-        await saveVscProfile(Object.assign({}, pickedProfile), undefined, refreshedGitRootUri);
         try {
           await gm.updateGitConfig(refreshedFolder, pickedProfile);
         } catch (error) {
           util.Logger.instance.logError("Failed to update git config with selected profile", error as Error);
-          vscode.window.showErrorMessage(`Failed to apply profile '${pickedProfile.label}'. See logs for details.`);
+          try {
+            await gm.restoreGitConfig(refreshedFolder, previousGitConfig);
+            vscode.window.showErrorMessage(`Failed to apply profile '${pickedProfile.label}'. Previous Git config was restored.`);
+          } catch (rollbackError) {
+            util.Logger.instance.logError("Failed to restore previous git config after profile apply failed", rollbackError as Error);
+            vscode.window.showErrorMessage(`Failed to apply profile '${pickedProfile.label}' and restore previous Git config. See logs for details.`);
+          }
+          gm.invalidateWorkspaceStatusCache();
+          return { result: undefined, error: error as Error };
+        }
+        // Persist the selection only after Git accepts the profile.
+        try {
+          await saveVscProfile(Object.assign({}, pickedProfile), undefined, refreshedGitRootUri);
+        } catch (error) {
+          util.Logger.instance.logError("Failed to save selected profile; restoring previous git config", error as Error);
+          try {
+            await gm.restoreGitConfig(refreshedFolder, previousGitConfig);
+            vscode.window.showErrorMessage(`Failed to save profile selection. Previous Git config was restored.`);
+          } catch (rollbackError) {
+            util.Logger.instance.logError("Failed to restore previous git config after profile selection save failed", rollbackError as Error);
+            vscode.window.showErrorMessage(`Failed to save profile selection and restore previous Git config. See logs for details.`);
+          }
+          gm.invalidateWorkspaceStatusCache();
           return { result: undefined, error: error as Error };
         }
 

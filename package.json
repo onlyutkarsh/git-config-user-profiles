@@ -166,6 +166,7 @@
             "git-repos-only"
           ],
           "default": "always",
+          "scope": "machine-overridable",
           "markdownDescription": "Controls when the status bar item is visible:\n- **Always**: Show in all folders, even non-git ones (default)\n- **Only in Git Repositories**: Hide when no git repository is detected",
           "enumDescriptions": [
             "Always",
@@ -179,6 +180,7 @@
             "compact"
           ],
           "default": "full",
+          "scope": "machine-overridable",
           "markdownDescription": "Status bar display format:\n- **full**: `git-icon repo-name > profile` (default)\n- **compact**: `git-icon profile`",
           "enumDescriptions": [
             "Show repository name and profile with icons",
@@ -192,6 +194,7 @@
             "right"
           ],
           "default": "right",
+          "scope": "machine-overridable",
           "markdownDescription": "Status bar item alignment:\n- **left**: Position at the absolute left of the status bar\n- **right**: Position at the absolute right of the status bar (default)",
           "enumDescriptions": [
             "Place status bar item on the left side",

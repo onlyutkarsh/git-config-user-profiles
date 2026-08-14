@@ -30,10 +30,7 @@ export class GetUserProfileCommand implements ICommand<void> {
 
     Logger.instance.logDebug(LogCategory.STATUS_BAR, "Status bar visibility setting", { visibility });
 
-    const isActuallyNotAGitRepo =
-      result.status === gm.WorkspaceStatus.NotAValidWorkspace &&
-      !result.currentFolder &&
-      result.message === Messages.NOT_A_VALID_REPO;
+    const isActuallyNotAGitRepo = result.status === gm.WorkspaceStatus.NotAValidWorkspace && !result.currentFolder && result.message === Messages.NOT_A_VALID_REPO;
 
     if (isActuallyNotAGitRepo) {
       if (visibility === "git-repos-only") {
@@ -52,10 +49,7 @@ export class GetUserProfileCommand implements ICommand<void> {
     }
 
     // No active editor (or non-file scheme active)
-    const isNoActiveEditor =
-      result.status === gm.WorkspaceStatus.NotAValidWorkspace &&
-      !result.currentFolder &&
-      result.message !== Messages.NOT_A_VALID_REPO;
+    const isNoActiveEditor = result.status === gm.WorkspaceStatus.NotAValidWorkspace && !result.currentFolder && result.message !== Messages.NOT_A_VALID_REPO;
 
     if (isNoActiveEditor) {
       if (visibility === "git-repos-only") {

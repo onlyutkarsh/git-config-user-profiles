@@ -305,6 +305,26 @@ export async function updateGitConfig(gitFolder: string, profile: Profile) {
   Logger.instance.logInfo(`Git config updated for '${basename(gitFolder)}' with profile '${profile.label}'`);
 }
 
+export async function restoreGitConfig(gitFolder: string, config: { userName: string; email: string; signingKey: string }): Promise<void> {
+  const git = simpleGit(gitFolder);
+  const restoreValue = async (key: string, value: string): Promise<void> => {
+    if (value !== "") {
+      await git.addConfig(key, value, false, "local");
+      return;
+    }
+
+    const currentValue = await git.getConfig(key, "local");
+    if (currentValue.value != null) {
+      await git.raw(["config", "--local", "--unset-all", key]);
+    }
+  };
+
+  await restoreValue("user.name", config.userName);
+  await restoreValue("user.email", config.email);
+  await restoreValue("user.signingkey", config.signingKey);
+  Logger.instance.logInfo(`Previous Git config restored for '${basename(gitFolder)}'`);
+}
+
 export async function getGitRoot(path: string): Promise<string | null> {
   try {
     Logger.instance.logTrace(LogCategory.GIT_REPOSITORY, "Searching for git repository", { path });
@@ -491,19 +511,22 @@ export async function getWorkspaceStatus(): Promise<{
     totalProfiles: profilesInVscConfig.length,
   });
 
-  const matchedProfileToLocalConfig = profilesInVscConfig.find((x) => {
-    const isMatch = util.profilesMatch(x, currentGitConfig);
+  const selectedProfileMatchesLocalConfig = selectedVscProfile && util.profilesMatch(selectedVscProfile, currentGitConfig);
+  const matchedProfileToLocalConfig = selectedProfileMatchesLocalConfig
+    ? selectedVscProfile
+    : profilesInVscConfig.find((x) => {
+        const isMatch = util.profilesMatch(x, currentGitConfig);
 
-    Logger.instance.logTrace(LogCategory.PROFILE_MATCHING, `Comparing with profile '${x.label}'`, {
-      profileUserName: x.userName,
-      profileEmail: x.email,
-      profileSigningKey: x.signingKey,
-      profileSigningKeyNormalized: util.normalizeSigningKey(x.signingKey),
-      overallMatch: isMatch,
-    });
+        Logger.instance.logTrace(LogCategory.PROFILE_MATCHING, `Comparing with profile '${x.label}'`, {
+          profileUserName: x.userName,
+          profileEmail: x.email,
+          profileSigningKey: x.signingKey,
+          profileSigningKeyNormalized: util.normalizeSigningKey(x.signingKey),
+          overallMatch: isMatch,
+        });
 
-    return isMatch;
-  });
+        return isMatch;
+      });
 
   const selectMatchedProfileAutomatically = await vscode.workspace.getConfiguration("gitConfigUser").get("selectMatchedProfileAutomatically");
 
