@@ -133,24 +133,31 @@ function createGitConfigFileWatcher() {
   // Delete stale file watchers.
   _fileWatchersBySrc.clear();
 
+  // A single profile apply can write user.name/user.email/user.signingkey as separate git
+  // config commands, each touching .git/config. Debounce so we don't fire several concurrent
+  // refreshes (which spawn overlapping git processes and can transiently fail) for one apply.
+  const debouncedGitConfigRefresh = debounce(async (origin: string) => {
+    await vscode.commands.executeCommand(constants.CommandIds.GET_USER_PROFILE, origin);
+  }, 300);
+
   const fsWatcher = vscode.workspace.createFileSystemWatcher("**/.git/config");
-  fsWatcher.onDidChange(async (uri) => {
+  fsWatcher.onDidChange((uri) => {
     Logger.instance.logDebug(LogCategory.GIT_CONFIG_FILE, "Git config file changed", { uri: uri.toString() });
     // Invalidate cache when git config file changes
     invalidateWorkspaceStatusCache();
-    await vscode.commands.executeCommand(constants.CommandIds.GET_USER_PROFILE, "changed git config");
+    debouncedGitConfigRefresh("changed git config");
   });
-  fsWatcher.onDidCreate(async (uri) => {
+  fsWatcher.onDidCreate((uri) => {
     Logger.instance.logDebug(LogCategory.GIT_CONFIG_FILE, "Git config file created", { uri: uri.toString() });
     // Invalidate cache when git config file is created
     invalidateWorkspaceStatusCache();
-    await vscode.commands.executeCommand(constants.CommandIds.GET_USER_PROFILE, "created git config");
+    debouncedGitConfigRefresh("created git config");
   });
-  fsWatcher.onDidDelete(async (uri) => {
+  fsWatcher.onDidDelete((uri) => {
     Logger.instance.logDebug(LogCategory.GIT_CONFIG_FILE, "Git config file deleted", { uri: uri.toString() });
     // Invalidate cache when git config file is deleted
     invalidateWorkspaceStatusCache();
-    await vscode.commands.executeCommand(constants.CommandIds.GET_USER_PROFILE, "deleted git config");
+    debouncedGitConfigRefresh("deleted git config");
   });
   _fileWatchersBySrc.set("**/.git/config", fsWatcher);
   Logger.instance.logInfo("File watcher created for git config");

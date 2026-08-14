@@ -88,6 +88,8 @@ export class StatusBarClickCommand implements ICommand<void> {
         vscode.window.showErrorMessage(message);
         return { error: error as Error };
       }
+      // Invalidate cache after updating git config so the refreshed status reflects the new config
+      gm.invalidateWorkspaceStatusCache(workspaceFolder);
       await vscode.commands.executeCommand(constants.CommandIds.GET_USER_PROFILE, "applied profile");
       await vscode.window.showInformationMessage(`Profile '${result.selectedProfile!.label}' is now applied for '${repositoryName}'. 🎉`, "OK");
       return {};

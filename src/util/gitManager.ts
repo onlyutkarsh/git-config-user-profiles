@@ -45,6 +45,11 @@ export function invalidateWorkspaceStatusCache(folder?: string): void {
   }
 }
 
+// Remembers the most recently resolved git folder so that transient states with no active
+// editor (e.g. right after a status bar action) can still resolve to the correct repository
+// instead of falling back to an ambiguous/ no-profile state.
+let lastResolvedFolder: string | undefined;
+
 async function getCurrentFolder(): Promise<Result<string | undefined>> {
   const editor = vscode.window.activeTextEditor;
   let folder: vscode.WorkspaceFolder | undefined;
@@ -195,6 +200,18 @@ async function getCurrentFolder(): Promise<Result<string | undefined>> {
       };
     }
 
+    // Ambiguous or no git roots: fall back to the last folder we successfully resolved (still
+    // one of the open git roots), so a transient loss of editor focus doesn't reset the status bar.
+    if (lastResolvedFolder && gitRoots.has(lastResolvedFolder)) {
+      Logger.instance.logTrace(LogCategory.WORKSPACE_STATUS, "Using last resolved folder as ambiguous fallback", {
+        folder: lastResolvedFolder,
+      });
+      return {
+        result: lastResolvedFolder,
+        message: "",
+      };
+    }
+
     // Ambiguous or no git roots: ask user to focus/open a file so we can resolve repo context.
     return {
       result: undefined,
@@ -336,6 +353,11 @@ export async function getGitRoot(path: string): Promise<string | null> {
 
     if (!isRepo) {
       Logger.instance.logTrace(LogCategory.GIT_REPOSITORY, "Path is not within a git repository", { path });
+      // Surface at warn level if we previously resolved this same path, since it likely
+      // indicates a transient git failure rather than a genuine non-repo path.
+      if (lastResolvedFolder === path) {
+        Logger.instance.logWarning("Previously resolved git folder no longer reports as a repository", { path });
+      }
       return null;
     }
 
@@ -347,10 +369,10 @@ export async function getGitRoot(path: string): Promise<string | null> {
 
     return root;
   } catch (error) {
-    Logger.instance.logTrace(LogCategory.GIT_REPOSITORY, "Could not find git root", {
-      path,
-      error: error instanceof Error ? error.message : String(error),
-    });
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    // A thrown error (as opposed to checkIsRepo() simply returning false) is unexpected and
+    // worth surfacing at warn level so transient git failures aren't silently swallowed.
+    Logger.instance.logWarning("Could not find git root", { path, error: errorMessage });
     return null;
   }
 }
@@ -401,9 +423,18 @@ export async function getWorkspaceStatus(): Promise<{
 
   const result = await getCurrentFolder();
   if (!result.result) {
-    Logger.instance.logTrace(LogCategory.WORKSPACE_STATUS, "No valid workspace folder", {
-      message: result.message,
-    });
+    // Warn (instead of trace) if we previously had a resolved folder, since losing it is a
+    // user-visible regression (status bar reverting to "No Profile") rather than routine startup.
+    if (lastResolvedFolder) {
+      Logger.instance.logWarning("Lost previously resolved workspace folder", {
+        previousFolder: basename(lastResolvedFolder),
+        message: result.message,
+      });
+    } else {
+      Logger.instance.logTrace(LogCategory.WORKSPACE_STATUS, "No valid workspace folder", {
+        message: result.message,
+      });
+    }
     const statusResult = {
       status: WorkspaceStatus.NotAValidWorkspace,
       message: result.message !== undefined ? result.message : Messages.NOT_A_VALID_REPO,
@@ -414,9 +445,15 @@ export async function getWorkspaceStatus(): Promise<{
   const workspaceFolder = result.result as string;
   const gitRoot = await getGitRoot(workspaceFolder);
   if (!gitRoot) {
-    Logger.instance.logTrace(LogCategory.WORKSPACE_STATUS, "Folder is not a git repository", {
-      folder: basename(workspaceFolder),
-    });
+    if (lastResolvedFolder === workspaceFolder) {
+      Logger.instance.logWarning("Folder previously resolved as a git repository no longer resolves", {
+        folder: basename(workspaceFolder),
+      });
+    } else {
+      Logger.instance.logTrace(LogCategory.WORKSPACE_STATUS, "Folder is not a git repository", {
+        folder: basename(workspaceFolder),
+      });
+    }
     const statusResult = {
       status: WorkspaceStatus.NotAValidWorkspace,
       message: Messages.NOT_A_VALID_REPO,
@@ -426,6 +463,7 @@ export async function getWorkspaceStatus(): Promise<{
   }
   // if control reaches here, we have a valid git repo
   const folder = gitRoot;
+  lastResolvedFolder = folder;
 
   // Check cache for this specific folder
   const now = Date.now();
