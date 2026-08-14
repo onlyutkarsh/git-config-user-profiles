@@ -1,3 +1,12 @@
+## [2.5.1](https://github.com/onlyutkarsh/git-config-user-profiles/compare/v2.5.0...v2.5.1) (2026-08-14)
+
+
+### Bug Fixes
+
+* restore git config on profile apply failure and improve status bar UX ([34e7c4c](https://github.com/onlyutkarsh/git-config-user-profiles/commit/34e7c4c6a064843062cc3cae9b7e32b9b6f480ff)), closes [#125](https://github.com/onlyutkarsh/git-config-user-profiles/issues/125) [#126](https://github.com/onlyutkarsh/git-config-user-profiles/issues/126)
+
+
+
 # [2.5.0](https://github.com/onlyutkarsh/git-config-user-profiles/compare/v2.4.0...v2.5.0) (2026-03-28)
 
 
