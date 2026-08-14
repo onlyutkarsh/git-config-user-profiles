@@ -1,3 +1,12 @@
+## [2.5.2](https://github.com/onlyutkarsh/git-config-user-profiles/compare/v2.5.1...v2.5.2) (2026-08-14)
+
+
+### Bug Fixes
+
+* improve git config handling and workspace status caching ([87c93a0](https://github.com/onlyutkarsh/git-config-user-profiles/commit/87c93a03399deaadf7f4046318ff67f9506dcdb3))
+
+
+
 ## [2.5.1](https://github.com/onlyutkarsh/git-config-user-profiles/compare/v2.5.0...v2.5.1) (2026-08-14)
 
 
