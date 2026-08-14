@@ -30,8 +30,21 @@ export class DeleteUserProfileCommand implements ICommand<boolean> {
       if (selectedProfile) {
         util.Logger.instance.logDebug(LogCategory.DELETE_PROFILE, "Profile selected for deletion", {
           profileLabel: selectedProfile.label,
-          profileId: selectedProfile.id
+          profileId: selectedProfile.id,
         });
+
+        const confirmation = await vscode.window.showQuickPick(["No", "Yes, delete"], {
+          canPickMany: false,
+          ignoreFocusOut: true,
+          placeHolder: `Delete profile '${util.trimLabelIcons(selectedProfile.label)}'? This cannot be undone.`,
+        });
+
+        if (confirmation !== "Yes, delete") {
+          util.Logger.instance.logDebug(LogCategory.DELETE_PROFILE, "User cancelled profile deletion confirmation", {
+            profileLabel: selectedProfile.label,
+          });
+          return { result: false };
+        }
 
         await util.deleteProfile(selectedProfile);
         util.Logger.instance.logInfo(`Profile '${selectedProfile.label}' deleted successfully`);
