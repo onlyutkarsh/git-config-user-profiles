@@ -1,3 +1,19 @@
+## [2.5.3](https://github.com/onlyutkarsh/git-config-user-profiles/compare/v2.5.2...v2.5.3) (2026-08-15)
+
+
+### Bug Fixes
+
+* add confirmation prompt for profile deletion and log cancellation ([f5040bf](https://github.com/onlyutkarsh/git-config-user-profiles/commit/f5040bf16e90642d56d36c629274cf728187926f))
+* remove unused variable for profile signing key in pickSigningKey function ([65c78c0](https://github.com/onlyutkarsh/git-config-user-profiles/commit/65c78c0a985498ddc88a52ff5f81ec3b5fef2c99))
+
+
+### Features
+
+* add CleanupWorkspaceProfileSelectionsCommand and corresponding tests for stale profile cleanup ([7359595](https://github.com/onlyutkarsh/git-config-user-profiles/commit/73595951748ea7b2913ee0de4e845ee556d27609))
+* add per-repository commit signing preference and update related configurations ([eda2095](https://github.com/onlyutkarsh/git-config-user-profiles/commit/eda209586a6db158ab49f3d493b556b9941a7376))
+
+
+
 ## [2.5.2](https://github.com/onlyutkarsh/git-config-user-profiles/compare/v2.5.1...v2.5.2) (2026-08-14)
 
 
