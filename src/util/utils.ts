@@ -305,7 +305,6 @@ async function pickEmail(input: controls.MultiStepInput, state: Partial<controls
   return (input: controls.MultiStepInput) => pickSigningKey(input, state, create);
 }
 async function pickSigningKey(input: controls.MultiStepInput, state: Partial<controls.State>, create = true) {
-  const usesProfileSigningKey = !!state.profileSigningKey;
   const globalSigningKeyDescription = state.globalSigningKey
     ? `Global signing key: ${state.globalSigningKey}`
     : "No global signing key is configured";
