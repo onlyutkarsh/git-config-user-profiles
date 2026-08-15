@@ -152,6 +152,10 @@
               "signingkey": {
                 "type": "string",
                 "description": "User signing key"
+              },
+              "commitGpgSign": {
+                "type": "boolean",
+                "description": "Whether to set commit.gpgSign locally. Omit to use the global Git setting."
               }
             }
           },

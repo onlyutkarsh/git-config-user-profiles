@@ -147,7 +147,7 @@ export class ProfileStatusBar {
     profile: Profile | undefined,
     status: StatusBarStatus,
     customTooltip?: string,
-    currentGitConfig?: { userName: string; email: string; signingKey: string },
+    currentGitConfig?: { userName: string; email: string; signingKey: string; commitGpgSign?: boolean },
     repoFolder?: string
   ): string | MarkdownString {
     // Log what we're building
@@ -269,6 +269,14 @@ export class ProfileStatusBar {
         differences.push(`• **Signing Key:**\n  - Profile: \`${profileKey}\`\n  - Git Config: \`${gitConfigKey}\``);
       }
 
+      if (profile.commitGpgSign !== currentGitConfig.commitGpgSign) {
+        const signingPreference = (value: boolean | undefined): string => {
+          if (value === undefined) return "Use global Git setting";
+          return value ? "Sign commits for this repository" : "Don't sign commits for this repository";
+        };
+        differences.push(`• **Commit Signing:**\n  - Profile: \`${signingPreference(profile.commitGpgSign)}\`\n  - Git Config: \`${signingPreference(currentGitConfig.commitGpgSign)}\``);
+      }
+
       if (differences.length > 0) {
         tooltip.appendMarkdown(`**Differences:**\n\n${differences.join("\n\n")}\n\n`);
       }
@@ -290,7 +298,7 @@ export class ProfileStatusBar {
     repoFolder: string | undefined,
     status: StatusBarStatus = StatusBarStatus.Normal,
     tooltip?: string,
-    currentGitConfig?: { userName: string; email: string; signingKey: string }
+    currentGitConfig?: { userName: string; email: string; signingKey: string; commitGpgSign?: boolean }
   ) {
     // Hide status bar when dealing with non-file schemes or when not applicable
     // Empty tooltip with no profile and no repo folder indicates a silent ignore case (e.g., non-file scheme)

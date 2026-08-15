@@ -2,7 +2,16 @@ import * as fs from "fs-extra";
 import * as os from "os";
 import * as path from "path";
 import * as vscode from "vscode";
-import { getCurrentGitConfig, getGitRoot, getWorkspaceStatus, invalidateWorkspaceStatusCache, isGitRepository, restoreGitConfig, updateGitConfig } from "../../src/util/gitManager";
+import {
+  getCurrentGitConfig,
+  getGitRoot,
+  getWorkspaceStatus,
+  invalidateWorkspaceStatusCache,
+  isGitRepository,
+  restoreGitConfig,
+  updateGitConfig,
+  WorkspaceStatus,
+} from "../../src/util/gitManager";
 import { createNestedGitRepo, createSubfolder, createTestGitRepo, TestRepo } from "./testHelpers";
 
 describe("gitManager - Multi-Folder Workspace Scenarios", () => {
@@ -39,6 +48,69 @@ describe("gitManager - Multi-Folder Workspace Scenarios", () => {
 
       expect(gitRoot).toBe(testRepo.path);
       expect(gitRoot).not.toBe(subfolderPath);
+    });
+
+    test.each([
+      ["document fileName", "not-admin", "config"],
+      ["URI path", "config", "not-admin"],
+      ["document fileName", "not-admin", "description"],
+      ["URI path", "description", "not-admin"],
+      ["document fileName", "not-admin", "hooks/pre-commit"],
+      ["URI path", "hooks/pre-commit", "not-admin"],
+    ])("should keep the repository active when a .git file is identified by the %s", async (_source, uriName, documentName) => {
+      testRepo = await createTestGitRepo({
+        userName: "Test User",
+        email: "test@example.com",
+      });
+
+      const workspaceFolder = { uri: vscode.Uri.file(testRepo.path), name: "test-repo", index: 0 };
+      (vscode.workspace as any).workspaceFolders = [workspaceFolder];
+      const uriPath = path.join(testRepo.path, ".git", uriName);
+      const documentPath = path.join(testRepo.path, ".git", documentName);
+      (vscode.window as any).activeTextEditor = {
+        document: {
+          uri: vscode.Uri.file(uriPath),
+          fileName: documentPath,
+        },
+      };
+      (vscode.workspace.getWorkspaceFolder as jest.Mock).mockReturnValue(undefined);
+      (vscode.workspace.getWorkspaceFolder as jest.Mock).mockClear();
+
+      try {
+        const result = await getWorkspaceStatus();
+
+        expect(result.currentFolder).toBe(testRepo.path);
+        expect(result.message).toBe("No profiles found in settings.");
+        expect(result.status).toBe(WorkspaceStatus.NoProfilesInConfig);
+        expect(vscode.workspace.getWorkspaceFolder).not.toHaveBeenCalled();
+      } finally {
+        (vscode.window as any).activeTextEditor = undefined;
+        (vscode.workspace as any).workspaceFolders = [];
+      }
+    });
+
+    test("should report a non-repository file outside the workspace", async () => {
+      testRepo = await createTestGitRepo();
+
+      (vscode.workspace as any).workspaceFolders = [{ uri: vscode.Uri.file(testRepo.path), name: "test-repo", index: 0 }];
+      (vscode.window as any).activeTextEditor = {
+        document: {
+          uri: vscode.Uri.file(path.join(testRepo.path, "outside.txt")),
+          fileName: path.join(testRepo.path, "outside.txt"),
+        },
+      };
+      (vscode.workspace.getWorkspaceFolder as jest.Mock).mockReturnValue(undefined);
+
+      try {
+        const result = await getWorkspaceStatus();
+
+        expect(result.status).toBe(WorkspaceStatus.NotAValidWorkspace);
+        expect(result.currentFolder).toBeUndefined();
+        expect(result.message).toBe("This file is not part of a workspace folder.");
+      } finally {
+        (vscode.window as any).activeTextEditor = undefined;
+        (vscode.workspace as any).workspaceFolders = [];
+      }
     });
 
     test("should return null for non-git directory", async () => {
@@ -337,6 +409,24 @@ describe("gitManager - Multi-Folder Workspace Scenarios", () => {
       expect(result.selectedProfile?.id).toBe("without-key");
       expect(config.get("workspaceProfileSelections")).toEqual({ [testRepo.path]: "without-key" });
     });
+
+    test("should auto-select the profile with the matching commit signing preference", async () => {
+      testRepo = await createTestGitRepo({
+        userName: "Shared User",
+        email: "shared@example.com",
+      });
+      await testRepo.git.addConfig("commit.gpgsign", "false", false, "local");
+
+      const config = await configureWorkspace([
+        { id: "signing-enabled", label: "Signing enabled", userName: "Shared User", email: "shared@example.com", signingKey: "", commitGpgSign: true },
+        { id: "signing-disabled", label: "Signing disabled", userName: "Shared User", email: "shared@example.com", signingKey: "", commitGpgSign: false },
+      ]);
+
+      const result = await getWorkspaceStatus();
+
+      expect(result.selectedProfile?.id).toBe("signing-disabled");
+      expect(config.get("workspaceProfileSelections")).toEqual({ [testRepo.path]: "signing-disabled" });
+    });
   });
 
   describe("Profile application", () => {
@@ -388,6 +478,52 @@ describe("gitManager - Multi-Folder Workspace Scenarios", () => {
         email: "",
         signingKey: "",
       });
+    });
+
+    test("should apply the selected commit signing preference", async () => {
+      testRepo = await createTestGitRepo({
+        userName: "Signing User",
+        email: "signing@example.com",
+      });
+
+      await updateGitConfig(testRepo.path, {
+        id: "signing-enabled",
+        label: "Signing enabled",
+        userName: "Signing User",
+        email: "signing@example.com",
+        signingKey: "",
+        commitGpgSign: true,
+      });
+
+      expect((await getCurrentGitConfig(testRepo.path)).commitGpgSign).toBe(true);
+
+      await updateGitConfig(testRepo.path, {
+        id: "signing-disabled",
+        label: "Signing disabled",
+        userName: "Signing User",
+        email: "signing@example.com",
+        signingKey: "",
+        commitGpgSign: false,
+      });
+
+      expect((await getCurrentGitConfig(testRepo.path)).commitGpgSign).toBe(false);
+    });
+
+    test("should remove the local commit signing preference when a profile uses the global setting", async () => {
+      testRepo = await createTestGitRepo({
+        userName: "Signing User",
+        email: "signing@example.com",
+      });
+
+      await updateGitConfig(testRepo.path, {
+        id: "global-signing",
+        label: "Global signing",
+        userName: "Signing User",
+        email: "signing@example.com",
+        signingKey: "",
+      });
+
+      expect((await getCurrentGitConfig(testRepo.path)).commitGpgSign).toBeUndefined();
     });
   });
 

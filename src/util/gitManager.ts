@@ -18,7 +18,7 @@ interface WorkspaceStatusCache {
   profilesInVSConfigCount?: number;
   configInSync?: boolean;
   currentFolder?: string;
-  currentGitConfig?: { userName: string; email: string; signingKey: string };
+  currentGitConfig?: { userName: string; email: string; signingKey: string; commitGpgSign?: boolean };
   timestamp: number;
 }
 
@@ -111,7 +111,27 @@ async function getCurrentFolder(): Promise<Result<string | undefined>> {
       };
     }
 
-    folder = vscode.workspace.getWorkspaceFolder(resource);
+    const filePath = resource.fsPath;
+    const documentPath = editor.document.fileName;
+    const getGitDirectoryParent = (path: string): string | undefined => path.match(/^(.*)[\\/]\.git(?:[\\/].+)?$/)?.[1];
+    const gitDirectoryParent = getGitDirectoryParent(filePath) ?? getGitDirectoryParent(documentPath);
+
+    if (gitDirectoryParent) {
+      Logger.instance.logTrace(LogCategory.WORKSPACE_STATUS, "Using parent of Git directory for active administrative file", {
+        filePath,
+        documentPath,
+        gitSearchPath: gitDirectoryParent,
+      });
+      return {
+        result: gitDirectoryParent,
+        message: "",
+      };
+    }
+
+    const workspaceResource = resource;
+    const fileDir = dirname(filePath);
+
+    folder = vscode.workspace.getWorkspaceFolder(workspaceResource);
     if (!folder) {
       Logger.instance.logTrace(LogCategory.WORKSPACE_STATUS, "File is not part of any workspace folder", {
         filePath: resource.fsPath,
@@ -127,18 +147,17 @@ async function getCurrentFolder(): Promise<Result<string | undefined>> {
       filePath: resource.fsPath,
     });
 
-    // Return the file's directory path so git root search can traverse up from the actual file location
-    // This allows the extension to work when a parent folder is opened that contains multiple git repos
-    const filePath = resource.fsPath;
-    const fileDir = dirname(filePath);
+    // Return the file's directory path so git root search can traverse up from the actual file location.
+    const gitSearchPath = fileDir;
 
     Logger.instance.logTrace(LogCategory.WORKSPACE_STATUS, "Using file directory for git search", {
       filePath,
       fileDir,
+      gitSearchPath,
     });
 
     return {
-      result: fileDir,
+      result: gitSearchPath,
       message: "",
     };
   } else {
@@ -242,17 +261,26 @@ export async function isValidWorkspace(): Promise<{ isValid: boolean; message: s
   };
 }
 
-export async function getCurrentGitConfig(gitFolder: string): Promise<{ userName: string; email: string; signingKey: string }> {
+export async function getCurrentGitConfig(gitFolder: string): Promise<{ userName: string; email: string; signingKey: string; commitGpgSign?: boolean }> {
   Logger.instance.logTrace(LogCategory.GIT_CONFIG_FILE, "Reading local git config", { folder: basename(gitFolder) });
   const git: SimpleGit = simpleGit(gitFolder);
   const rawUserName = await git.getConfig("user.name", "local");
   const rawEmail = await git.getConfig("user.email", "local");
   const rawSigningKey = await git.getConfig("user.signingkey", "local");
+  let commitGpgSign: boolean | undefined;
+  try {
+    const localCommitGpgSign = await git.raw(["config", "--local", "--get", "commit.gpgsign"]);
+    const value = localCommitGpgSign.trim().toLowerCase();
+    commitGpgSign = value === "" ? undefined : value === "true";
+  } catch {
+    commitGpgSign = undefined;
+  }
 
   const currentConfig = {
     userName: rawUserName.value || "",
     email: rawEmail.value || "",
     signingKey: rawSigningKey.value || "",
+    ...(commitGpgSign === undefined ? {} : { commitGpgSign }),
   };
 
   Logger.instance.logTrace(LogCategory.GIT_CONFIG_FILE, "Local git config retrieved", {
@@ -260,28 +288,39 @@ export async function getCurrentGitConfig(gitFolder: string): Promise<{ userName
     userName: currentConfig.userName,
     email: currentConfig.email,
     hasSigningKey: !!currentConfig.signingKey,
+    commitGpgSign,
   });
 
   return currentConfig;
 }
 
-export async function getGlobalGitConfig(): Promise<{ userName: string; email: string; signingKey: string }> {
+export async function getGlobalGitConfig(): Promise<{ userName: string; email: string; signingKey: string; commitGpgSign?: boolean }> {
   Logger.instance.logTrace(LogCategory.GIT_CONFIG_FILE, "Reading global git config", {});
   const git: SimpleGit = simpleGit();
   const rawUserName = await git.getConfig("user.name", "global");
   const rawEmail = await git.getConfig("user.email", "global");
   const rawSigningKey = await git.getConfig("user.signingkey", "global");
+  let commitGpgSign: boolean | undefined;
+  try {
+    const globalCommitGpgSign = await git.raw(["config", "--global", "--get", "commit.gpgsign"]);
+    const value = globalCommitGpgSign.trim().toLowerCase();
+    commitGpgSign = value === "" ? undefined : value === "true";
+  } catch {
+    commitGpgSign = undefined;
+  }
 
   const currentConfig = {
     userName: rawUserName.value || "",
     email: rawEmail.value || "",
     signingKey: rawSigningKey.value || "",
+    ...(commitGpgSign === undefined ? {} : { commitGpgSign }),
   };
 
   Logger.instance.logTrace(LogCategory.GIT_CONFIG_FILE, "Global git config retrieved", {
     userName: currentConfig.userName,
     email: currentConfig.email,
     hasSigningKey: !!currentConfig.signingKey,
+    commitGpgSign,
   });
 
   return currentConfig;
@@ -319,10 +358,20 @@ export async function updateGitConfig(gitFolder: string, profile: Profile) {
     }
   }
 
+  if (profile.commitGpgSign === undefined) {
+    try {
+      await git.raw(["config", "--local", "--unset-all", "commit.gpgsign"]);
+    } catch {
+      // The key is already absent, so Git can inherit its global setting.
+    }
+  } else {
+    await git.addConfig("commit.gpgsign", String(profile.commitGpgSign), false, "local");
+  }
+
   Logger.instance.logInfo(`Git config updated for '${basename(gitFolder)}' with profile '${profile.label}'`);
 }
 
-export async function restoreGitConfig(gitFolder: string, config: { userName: string; email: string; signingKey: string }): Promise<void> {
+export async function restoreGitConfig(gitFolder: string, config: { userName: string; email: string; signingKey: string; commitGpgSign?: boolean }): Promise<void> {
   const git = simpleGit(gitFolder);
   const restoreValue = async (key: string, value: string): Promise<void> => {
     if (value !== "") {
@@ -339,6 +388,7 @@ export async function restoreGitConfig(gitFolder: string, config: { userName: st
   await restoreValue("user.name", config.userName);
   await restoreValue("user.email", config.email);
   await restoreValue("user.signingkey", config.signingKey);
+  await restoreValue("commit.gpgsign", config.commitGpgSign === undefined ? "" : String(config.commitGpgSign));
   Logger.instance.logInfo(`Previous Git config restored for '${basename(gitFolder)}'`);
 }
 
@@ -417,7 +467,7 @@ export async function getWorkspaceStatus(): Promise<{
   profilesInVSConfigCount?: number;
   configInSync?: boolean;
   currentFolder?: string;
-  currentGitConfig?: { userName: string; email: string; signingKey: string };
+  currentGitConfig?: { userName: string; email: string; signingKey: string; commitGpgSign?: boolean };
 }> {
   Logger.instance.logTrace(LogCategory.WORKSPACE_STATUS, "Evaluating workspace status");
 

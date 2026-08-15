@@ -55,6 +55,7 @@ export async function createTestGitRepo(config?: TestRepoConfig): Promise<TestRe
   await fs.writeFile(readmePath, '# Test Repository');
   await git.add('README.md');
   await git.commit('Initial commit');
+  await git.raw(['config', '--local', '--unset-all', 'commit.gpgsign']);
 
   return {
     path: tmpDir,
@@ -100,6 +101,7 @@ export async function createNestedGitRepo(
   await fs.writeFile(readmePath, `# Nested Repository ${subPath}`);
   await git.add('README.md');
   await git.commit('Initial commit');
+  await git.raw(['config', '--local', '--unset-all', 'commit.gpgsign']);
 
   return {
     path: normalizedPath,

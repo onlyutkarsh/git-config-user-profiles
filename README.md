@@ -15,6 +15,7 @@ Ever wanted to use different username and email addresses for your commits at wo
   - When out of sync: Side-by-side comparison showing exactly what differs (username, email, signing key)
   ![alt text](images/marketplace/statusbar-tooltip.png)
 - ✅ **Profile Validation** - Validate profiles before applying them to ensure email format and git compatibility
+- ✅ **Per-Repository Commit Signing** - Choose whether a profile inherits the global signing setting, enables signing, or disables it locally
 - ✅ **Robust Error Handling** - Gracefully handles profiles with missing or invalid fields
 - ✅ **Command Palette Access** - All commands available via Command Palette when status bar is crowded
 

@@ -44,6 +44,9 @@ export interface State {
   profileId: string;
   profileSelected: boolean;
   profileSigningKey: string;
+  profileCommitGpgSign?: boolean;
+  globalSigningKey?: string;
+  globalCommitGpgSign?: boolean;
 }
 
 export class MultiStepInput {

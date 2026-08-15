@@ -92,7 +92,8 @@ export class SyncVscProfilesWithGitConfig implements ICommand<boolean> {
         gitProfile.email,
         true,
         gitProfile.signingKey,
-        `${gitProfile.userName} (${gitProfile.email}) `
+        `${gitProfile.userName} (${gitProfile.email}) `,
+        gitProfile.commitGpgSign
       );
       await saveVscProfile(newProfile, undefined, vscWorkspaceFolder?.uri);
     }

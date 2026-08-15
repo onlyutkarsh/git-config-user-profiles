@@ -6,6 +6,7 @@ import * as constants from "../constants";
 import * as controls from "../controls";
 import { Profile } from "../models";
 import * as util from "../util";
+import { getGlobalGitConfig } from "./gitManager";
 
 export function isEmpty(str: string | undefined | null) {
   return !str || 0 === str.length;
@@ -66,6 +67,7 @@ export function trimProperties(profile: Profile): Profile {
     detail: undefined,
     id: profile.id,
     signingKey: profile.signingKey?.trim(),
+    commitGpgSign: profile.commitGpgSign,
   };
 }
 
@@ -82,8 +84,8 @@ export function normalizeSigningKey(key: string | undefined): string {
  * Handles undefined/null values gracefully.
  */
 export function profilesMatch(
-  profile1: { email?: string; userName?: string; signingKey?: string },
-  profile2: { email?: string; userName?: string; signingKey?: string }
+  profile1: { email?: string; userName?: string; signingKey?: string; commitGpgSign?: boolean },
+  profile2: { email?: string; userName?: string; signingKey?: string; commitGpgSign?: boolean }
 ): boolean {
   // Normalize empty/undefined values to empty strings for comparison
   const userName1 = (profile1.userName || "").trim();
@@ -94,13 +96,14 @@ export function profilesMatch(
   return (
     userName1 === userName2 &&
     email1 === email2 &&
-    normalizeSigningKey(profile1.signingKey) === normalizeSigningKey(profile2.signingKey)
+    normalizeSigningKey(profile1.signingKey) === normalizeSigningKey(profile2.signingKey) &&
+    profile1.commitGpgSign === profile2.commitGpgSign
   );
 }
 
 export function isConfigInSync(
-  profile1?: { email: string; userName: string; signingKey: string },
-  profile2?: { email: string; userName: string; signingKey: string }
+  profile1?: { email: string; userName: string; signingKey: string; commitGpgSign?: boolean },
+  profile2?: { email: string; userName: string; signingKey: string; commitGpgSign?: boolean }
 ): Result<boolean> {
   if (profile1 === null || profile1 === undefined || profile2 === null || profile2 === undefined) {
     return {
@@ -133,6 +136,13 @@ export function isConfigInSync(
     };
   }
 
+  if (profile1.commitGpgSign !== profile2.commitGpgSign) {
+    return {
+      result: false,
+      message: `Commit signing preferences are different.`,
+    };
+  }
+
   return {
     result: true,
     message: `Profiles are in sync.`,
@@ -158,6 +168,7 @@ export async function showProfilePicker() {
         detail: `${x.userName} (${x.email}) `,
         id: x.id,
         signingKey: x.signingKey,
+        commitGpgSign: x.commitGpgSign,
       };
     }),
     {
@@ -207,6 +218,7 @@ export async function cleanupStaleWorkspaceProfileSelections(): Promise<number> 
 
 export async function loadProfileInWizard(preloadedProfile: Profile): Promise<Profile> {
   const createNewProfile = false;
+  const globalGitConfig = await getGlobalGitConfig();
   const state: Partial<controls.State> = {
     // give existing profile as default values to the state for editing
     profileEmail: preloadedProfile.email,
@@ -215,6 +227,9 @@ export async function loadProfileInWizard(preloadedProfile: Profile): Promise<Pr
     profileId: preloadedProfile.id || "",
     profileSelected: preloadedProfile.selected,
     profileSigningKey: preloadedProfile.signingKey,
+    profileCommitGpgSign: preloadedProfile.commitGpgSign,
+    globalSigningKey: globalGitConfig.signingKey,
+    globalCommitGpgSign: globalGitConfig.commitGpgSign,
   };
   await controls.MultiStepInput.run(async (input) => await pickProfileName(input, state, createNewProfile));
   const profile: Profile = {
@@ -225,15 +240,20 @@ export async function loadProfileInWizard(preloadedProfile: Profile): Promise<Pr
     detail: undefined,
     id: state.profileId || "",
     signingKey: state.profileSigningKey || "",
+    commitGpgSign: state.profileCommitGpgSign,
   };
   //await saveVscProfile(profile);
   return profile;
 }
 export async function createProfileWithWizard(): Promise<Profile> {
   const createNewProfile = true;
-  const state: Partial<controls.State> = {};
+  const globalGitConfig = await getGlobalGitConfig();
+  const state: Partial<controls.State> = {
+    globalSigningKey: globalGitConfig.signingKey,
+    globalCommitGpgSign: globalGitConfig.commitGpgSign,
+  };
   await controls.MultiStepInput.run(async (input) => await pickProfileName(input, state, createNewProfile));
-  const profile: Profile = new Profile(state.profileName || "Unknown", state.profileUserName || "", state.profileEmail || "", false, state.profileSigningKey || "");
+  const profile: Profile = new Profile(state.profileName || "Unknown", state.profileUserName || "", state.profileEmail || "", false, state.profileSigningKey || "", undefined, state.profileCommitGpgSign);
   return profile;
 }
 async function shouldResume() {
@@ -245,7 +265,7 @@ async function pickProfileName(input: controls.MultiStepInput, state: Partial<co
   state.profileName = await input.showInputBox({
     title: create ? "Create a profile" : "Edit profile",
     step: 1,
-    totalSteps: 4,
+    totalSteps: 6,
     prompt: "Enter name for the profile",
     value: state.profileName || "",
     placeholder: "Work",
@@ -260,7 +280,7 @@ async function pickUserName(input: controls.MultiStepInput, state: Partial<contr
   state.profileUserName = await input.showInputBox({
     title: create ? "Create a profile" : "Edit profile",
     step: 2,
-    totalSteps: 4,
+    totalSteps: 6,
     prompt: "Enter the user name",
     value: state.profileUserName || "",
     placeholder: "John Smith",
@@ -274,7 +294,7 @@ async function pickEmail(input: controls.MultiStepInput, state: Partial<controls
   state.profileEmail = await input.showInputBox({
     title: create ? "Create a profile" : "Edit profile",
     step: 3,
-    totalSteps: 4,
+    totalSteps: 6,
     prompt: "Enter the email",
     value: state.profileEmail || "",
     placeholder: "john.smith@myorg.com",
@@ -285,15 +305,72 @@ async function pickEmail(input: controls.MultiStepInput, state: Partial<controls
   return (input: controls.MultiStepInput) => pickSigningKey(input, state, create);
 }
 async function pickSigningKey(input: controls.MultiStepInput, state: Partial<controls.State>, create = true) {
-  state.profileSigningKey = await input.showInputBox({
+  const usesProfileSigningKey = !!state.profileSigningKey;
+  const globalSigningKeyDescription = state.globalSigningKey
+    ? `Global signing key: ${state.globalSigningKey}`
+    : "No global signing key is configured";
+  const options: Array<vscode.QuickPickItem & { action: "global" | "copy-global" | "custom" }> = [
+    { label: "Use global Git signing key", description: globalSigningKeyDescription, action: "global" },
+    ...(state.globalSigningKey
+      ? [{ label: "Copy global signing key to this profile", description: `Use ${state.globalSigningKey} for this profile`, action: "copy-global" as const }]
+      : []),
+    { label: "Set a signing key for this profile", description: "Enter a key to apply to repositories that use the profile", action: "custom" },
+  ];
+  const activeAction = state.profileSigningKey
+    ? state.profileSigningKey === state.globalSigningKey ? "copy-global" : "custom"
+    : "global";
+  const selected = (await input.showQuickPick({
     title: create ? "Create a profile" : "Edit profile",
     step: 4,
-    totalSteps: 4,
-    prompt: "Enter the signing key (optional)",
+    totalSteps: 6,
+    placeholder: "Choose the signing key source",
+    items: options,
+    activeItem: options.find((option) => option.action === activeAction),
+    shouldResume: shouldResume,
+  })) as (typeof options)[number];
+
+  if (selected.action === "global") {
+    state.profileSigningKey = "";
+    return (input: controls.MultiStepInput) => pickCommitGpgSign(input, state, create);
+  }
+
+  if (selected.action === "copy-global") {
+    state.profileSigningKey = state.globalSigningKey || "";
+    return (input: controls.MultiStepInput) => pickCommitGpgSign(input, state, create);
+  }
+
+  state.profileSigningKey = await input.showInputBox({
+    title: create ? "Create a profile" : "Edit profile",
+    step: 5,
+    totalSteps: 6,
+    prompt: "Enter the signing key for this profile",
     value: state.profileSigningKey || "",
     placeholder: "MY_SIGNING_KEY",
     validate: () => undefined,
     shouldResume: shouldResume,
     ignoreFocusOut: true,
   });
+  return (input: controls.MultiStepInput) => pickCommitGpgSign(input, state, create);
+}
+
+async function pickCommitGpgSign(input: controls.MultiStepInput, state: Partial<controls.State>, create = true) {
+  const globalSigningDescription = state.globalCommitGpgSign === undefined
+    ? "Global commit.gpgSign is not set"
+    : `Global commit.gpgSign is ${state.globalCommitGpgSign}`;
+  const options: Array<vscode.QuickPickItem & { value?: boolean }> = [
+    { label: "Use global Git setting", description: globalSigningDescription },
+    { label: "Sign commits for this repository", description: "Set commit.gpgSign to true", value: true },
+    { label: "Don't sign commits for this repository", description: "Set commit.gpgSign to false", value: false },
+  ];
+  const activeItem = options.find((option) => option.value === state.profileCommitGpgSign);
+  const selected = (await input.showQuickPick({
+    title: create ? "Create a profile" : "Edit profile",
+    step: 6,
+    totalSteps: 6,
+    placeholder: "Choose the commit signing preference",
+    items: options,
+    activeItem,
+    shouldResume: shouldResume,
+  })) as (typeof options)[number];
+  state.profileCommitGpgSign = selected.value;
 }

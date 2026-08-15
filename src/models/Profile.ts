@@ -9,8 +9,9 @@ export class Profile implements QuickPickItem {
   detail?: string | undefined;
   id?: string;
   signingKey: string;
+  commitGpgSign?: boolean;
 
-  constructor(label: string, userName: string, email: string, selected: boolean, signingKey: string, detail?: string) {
+  constructor(label: string, userName: string, email: string, selected: boolean, signingKey: string, detail?: string, commitGpgSign?: boolean) {
     this.label = label;
     this.userName = userName;
     this.email = email;
@@ -18,5 +19,6 @@ export class Profile implements QuickPickItem {
     this.detail = detail;
     this.id = uuidv4();
     this.signingKey = signingKey;
+    this.commitGpgSign = commitGpgSign;
   }
 }
