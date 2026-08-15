@@ -1,4 +1,5 @@
 import * as vscode from "vscode";
+import { CleanupWorkspaceProfileSelectionsCommand } from "./commands/CleanupWorkspaceProfileSelectionsCommand";
 import { CreateUserProfileCommand } from "./commands/CreateUserProfileCommand";
 import { DeleteUserProfileCommand } from "./commands/DeleteUserProfileCommand";
 import { EditUserProfileCommand } from "./commands/EditUserProfileCommand";
@@ -52,6 +53,7 @@ function registerCommands(context: vscode.ExtensionContext) {
   context.subscriptions.push(vscode.commands.registerCommand(constants.CommandIds.VALIDATE_USER_PROFILE, new ValidateProfileCommand().execute));
   context.subscriptions.push(vscode.commands.registerCommand(constants.CommandIds.PICK_USER_PROFILE, new PickUserProfileCommand().execute));
   context.subscriptions.push(vscode.commands.registerCommand(constants.CommandIds.SHOW_STATUS, new ShowStatusCommand().execute));
+  context.subscriptions.push(vscode.commands.registerCommand(constants.CommandIds.CLEANUP_WORKSPACE_PROFILE_SELECTIONS, new CleanupWorkspaceProfileSelectionsCommand().execute));
   statusBar.instance.attachCommand(constants.CommandIds.STATUS_BAR_CLICK);
 }
 

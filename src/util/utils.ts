@@ -182,9 +182,27 @@ export async function deleteProfile(profile: Profile) {
     index = profiles.findIndex((x) => x.label.toLowerCase() === profile.label.toLowerCase());
   }
   if (index > -1) {
+    const config = vscode.workspace.getConfiguration("gitConfigUser");
+
     profiles.splice(index, 1);
-    await vscode.workspace.getConfiguration("gitConfigUser").update("profiles", profiles, vscode.ConfigurationTarget.Global);
+    await config.update("profiles", profiles, vscode.ConfigurationTarget.Global);
+    await cleanupStaleWorkspaceProfileSelections();
   }
+}
+
+export async function cleanupStaleWorkspaceProfileSelections(): Promise<number> {
+  const config = vscode.workspace.getConfiguration("gitConfigUser");
+  const profiles = getProfilesInSettings();
+  const validProfileIds = new Set(profiles.flatMap((profile) => (profile.id ? [profile.id] : [])));
+  const selections = config.get<Record<string, string>>("workspaceProfileSelections") || {};
+  const updatedSelections = Object.fromEntries(Object.entries(selections).filter(([, profileId]) => validProfileIds.has(profileId)));
+  const removedCount = Object.keys(selections).length - Object.keys(updatedSelections).length;
+
+  if (removedCount > 0) {
+    await config.update("workspaceProfileSelections", updatedSelections, vscode.ConfigurationTarget.Global);
+  }
+
+  return removedCount;
 }
 
 export async function loadProfileInWizard(preloadedProfile: Profile): Promise<Profile> {

@@ -1,5 +1,6 @@
 import { getSelectedProfileId, saveVscProfile, getProfilesInSettings } from '../../src/config';
 import { Profile } from '../../src/models';
+import { cleanupStaleWorkspaceProfileSelections, deleteProfile } from '../../src/util/utils';
 import * as vscode from 'vscode';
 
 /**
@@ -321,6 +322,47 @@ describe('Profile Selection - Workspace Scope & Migration', () => {
       // Verify old workspace setting was cleared
       const oldValue = workspaceConfig.get('selectedProfileId');
       expect(oldValue).toBeUndefined();
+    });
+  });
+
+  describe('deleteProfile', () => {
+    test('should remove workspace selections that do not reference a remaining profile', async () => {
+      const config = vscode.workspace.getConfiguration('gitConfigUser');
+      const workProfile = { id: 'work-profile', label: 'Work', userName: 'work', email: 'work@example.com', signingKey: '' };
+      const personalProfile = { id: 'personal-profile', label: 'Personal', userName: 'personal', email: 'personal@example.com', signingKey: '' };
+
+      await config.update('profiles', [workProfile, personalProfile]);
+      await config.update('workspaceProfileSelections', {
+        '/repos/work-a': 'work-profile',
+        '/repos/work-b': 'work-profile',
+        '/repos/personal': 'personal-profile',
+        '/repos/orphaned': 'missing-profile',
+      });
+
+      await deleteProfile(workProfile);
+
+      expect(getProfilesInSettings()).toEqual([personalProfile]);
+      expect(config.get('workspaceProfileSelections')).toEqual({
+        '/repos/personal': 'personal-profile',
+      });
+    });
+  });
+
+  describe('cleanupStaleWorkspaceProfileSelections', () => {
+    test('should remove only workspace selections without a matching profile', async () => {
+      const config = vscode.workspace.getConfiguration('gitConfigUser');
+      await config.update('profiles', [
+        { id: 'work-profile', label: 'Work', userName: 'work', email: 'work@example.com', signingKey: '' },
+      ]);
+      await config.update('workspaceProfileSelections', {
+        '/repos/work': 'work-profile',
+        '/repos/orphaned': 'missing-profile',
+      });
+
+      const removedCount = await cleanupStaleWorkspaceProfileSelections();
+
+      expect(removedCount).toBe(1);
+      expect(config.get('workspaceProfileSelections')).toEqual({ '/repos/work': 'work-profile' });
     });
   });
 });

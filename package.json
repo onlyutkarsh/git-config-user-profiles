@@ -121,6 +121,10 @@
       {
         "command": "git-config-user-profiles.showStatus",
         "title": "Git Config User Profiles: Show Status"
+      },
+      {
+        "command": "git-config-user-profiles.cleanupWorkspaceProfileSelections",
+        "title": "Git Config User Profiles: Clean Up Stale Workspace Selections"
       }
     ],
     "configuration": {
