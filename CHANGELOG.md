@@ -1,3 +1,12 @@
+## [2.5.5](https://github.com/onlyutkarsh/git-config-user-profiles/compare/v2.5.4...v2.5.5) (2026-08-16)
+
+
+### Features
+
+* add gpg.format configuration support for profiles and update related logic ([1298f2c](https://github.com/onlyutkarsh/git-config-user-profiles/commit/1298f2c4afe9f350b45990012d12232c4e7bc2c7))
+
+
+
 ## [2.5.4](https://github.com/onlyutkarsh/git-config-user-profiles/compare/v2.5.3...v2.5.4) (2026-08-16)
 
 
