@@ -1,3 +1,12 @@
+## [2.5.4](https://github.com/onlyutkarsh/git-config-user-profiles/compare/v2.5.3...v2.5.4) (2026-08-16)
+
+
+### Features
+
+* enhance commit signing configuration handling in profiles and tests ([522bf92](https://github.com/onlyutkarsh/git-config-user-profiles/commit/522bf9294f2038f7e4b8664fdc9f0398db99f124))
+
+
+
 ## [2.5.3](https://github.com/onlyutkarsh/git-config-user-profiles/compare/v2.5.2...v2.5.3) (2026-08-15)
 
 
