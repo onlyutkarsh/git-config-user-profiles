@@ -1,6 +1,7 @@
 import * as fs from "fs-extra";
 import * as os from "os";
 import * as path from "path";
+import simpleGit from "simple-git";
 import * as vscode from "vscode";
 import {
   getCurrentGitConfig,
@@ -507,6 +508,31 @@ describe("gitManager - Multi-Folder Workspace Scenarios", () => {
       });
 
       expect((await getCurrentGitConfig(testRepo.path)).commitGpgSign).toBe(false);
+    });
+
+    test("should clear signing configuration when applying a profile with signing disabled", async () => {
+      testRepo = await createTestGitRepo({
+        userName: "Signing User",
+        email: "signing@example.com",
+        signingKey: "stale-signing-key",
+      });
+      await simpleGit(testRepo.path).addConfig("commit.gpgsign", "true", false, "local");
+
+      await updateGitConfig(testRepo.path, {
+        id: "signing-disabled",
+        label: "Signing disabled",
+        userName: "Signing User",
+        email: "signing@example.com",
+        signingKey: "",
+        commitGpgSign: false,
+      });
+
+      expect(await getCurrentGitConfig(testRepo.path)).toEqual({
+        userName: "Signing User",
+        email: "signing@example.com",
+        signingKey: "",
+        commitGpgSign: false,
+      });
     });
 
     test("should remove the local commit signing preference when a profile uses the global setting", async () => {

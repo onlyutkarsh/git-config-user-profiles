@@ -270,11 +270,13 @@ export class ProfileStatusBar {
       }
 
       if (profile.commitGpgSign !== currentGitConfig.commitGpgSign) {
-        const signingPreference = (value: boolean | undefined): string => {
+        const signingPreference = (value: boolean | undefined, subject: "profile" | "repository"): string => {
           if (value === undefined) return "Use global Git setting";
-          return value ? "Sign commits for this repository" : "Don't sign commits for this repository";
+          return value ? `Sign commits for this ${subject}` : `Don't sign commits for this ${subject}`;
         };
-        differences.push(`• **Commit Signing:**\n  - Profile: \`${signingPreference(profile.commitGpgSign)}\`\n  - Git Config: \`${signingPreference(currentGitConfig.commitGpgSign)}\``);
+        differences.push(
+          `• **Commit Signing:**\n  - Profile: \`${signingPreference(profile.commitGpgSign, "profile")}\`\n  - Git Config: \`${signingPreference(currentGitConfig.commitGpgSign, "repository")}\``
+        );
       }
 
       if (differences.length > 0) {

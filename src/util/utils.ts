@@ -253,7 +253,15 @@ export async function createProfileWithWizard(): Promise<Profile> {
     globalCommitGpgSign: globalGitConfig.commitGpgSign,
   };
   await controls.MultiStepInput.run(async (input) => await pickProfileName(input, state, createNewProfile));
-  const profile: Profile = new Profile(state.profileName || "Unknown", state.profileUserName || "", state.profileEmail || "", false, state.profileSigningKey || "", undefined, state.profileCommitGpgSign);
+  const profile: Profile = new Profile(
+    state.profileName || "Unknown",
+    state.profileUserName || "",
+    state.profileEmail || "",
+    false,
+    state.profileSigningKey || "",
+    undefined,
+    state.profileCommitGpgSign
+  );
   return profile;
 }
 async function shouldResume() {
@@ -302,27 +310,23 @@ async function pickEmail(input: controls.MultiStepInput, state: Partial<controls
     shouldResume: shouldResume,
     ignoreFocusOut: true,
   });
-  return (input: controls.MultiStepInput) => pickSigningKey(input, state, create);
+  return (input: controls.MultiStepInput) => pickCommitGpgSign(input, state, create);
 }
 async function pickSigningKey(input: controls.MultiStepInput, state: Partial<controls.State>, create = true) {
-  const globalSigningKeyDescription = state.globalSigningKey
-    ? `Global signing key: ${state.globalSigningKey}`
-    : "No global signing key is configured";
+  const globalSigningKeyDescription = state.globalSigningKey ? `Global signing key: ${state.globalSigningKey}` : "No global signing key is configured";
   const options: Array<vscode.QuickPickItem & { action: "global" | "copy-global" | "custom" }> = [
-    { label: "Use global Git signing key", description: globalSigningKeyDescription, action: "global" },
+    { label: "$(globe) Use global Git signing key", description: globalSigningKeyDescription, action: "global" },
     ...(state.globalSigningKey
-      ? [{ label: "Copy global signing key to this profile", description: `Use ${state.globalSigningKey} for this profile`, action: "copy-global" as const }]
+      ? [{ label: "$(copy) Copy global signing key to this profile", description: `Use ${state.globalSigningKey} for this profile`, action: "copy-global" as const }]
       : []),
-    { label: "Set a signing key for this profile", description: "Enter a key to apply to repositories that use the profile", action: "custom" },
+    { label: "$(key) Set a signing key for this profile", description: "Enter a key to use with this profile", action: "custom" },
   ];
-  const activeAction = state.profileSigningKey
-    ? state.profileSigningKey === state.globalSigningKey ? "copy-global" : "custom"
-    : "global";
+  const activeAction = state.profileSigningKey ? (state.profileSigningKey === state.globalSigningKey ? "copy-global" : "custom") : "global";
   const selected = (await input.showQuickPick({
     title: create ? "Create a profile" : "Edit profile",
-    step: 4,
+    step: 5,
     totalSteps: 6,
-    placeholder: "Choose the signing key source",
+    placeholder: create ? "Choose the signing key source" : "Do you want to copy or set a signing key for this profile?",
     items: options,
     activeItem: options.find((option) => option.action === activeAction),
     shouldResume: shouldResume,
@@ -330,17 +334,17 @@ async function pickSigningKey(input: controls.MultiStepInput, state: Partial<con
 
   if (selected.action === "global") {
     state.profileSigningKey = "";
-    return (input: controls.MultiStepInput) => pickCommitGpgSign(input, state, create);
+    return;
   }
 
   if (selected.action === "copy-global") {
     state.profileSigningKey = state.globalSigningKey || "";
-    return (input: controls.MultiStepInput) => pickCommitGpgSign(input, state, create);
+    return;
   }
 
   state.profileSigningKey = await input.showInputBox({
     title: create ? "Create a profile" : "Edit profile",
-    step: 5,
+    step: 6,
     totalSteps: 6,
     prompt: "Enter the signing key for this profile",
     value: state.profileSigningKey || "",
@@ -349,27 +353,36 @@ async function pickSigningKey(input: controls.MultiStepInput, state: Partial<con
     shouldResume: shouldResume,
     ignoreFocusOut: true,
   });
-  return (input: controls.MultiStepInput) => pickCommitGpgSign(input, state, create);
+  return;
 }
 
 async function pickCommitGpgSign(input: controls.MultiStepInput, state: Partial<controls.State>, create = true) {
-  const globalSigningDescription = state.globalCommitGpgSign === undefined
-    ? "Global commit.gpgSign is not set"
-    : `Global commit.gpgSign is ${state.globalCommitGpgSign}`;
+  const globalSigningDescription = state.globalCommitGpgSign === undefined ? "Global commit.gpgSign is not set" : `Global commit.gpgSign is ${state.globalCommitGpgSign}`;
   const options: Array<vscode.QuickPickItem & { value?: boolean }> = [
-    { label: "Use global Git setting", description: globalSigningDescription },
-    { label: "Sign commits for this repository", description: "Set commit.gpgSign to true", value: true },
-    { label: "Don't sign commits for this repository", description: "Set commit.gpgSign to false", value: false },
+    { label: "$(settings-gear) Use global Git setting", description: globalSigningDescription },
+    { label: create ? "$(check) Sign commits for this profile" : "$(check) Enable signing for this profile", description: "Set commit.gpgSign to true", value: true },
+    {
+      label: create ? "$(circle-slash) Don't sign commits for this profile" : "$(circle-slash) Disable signing for this profile",
+      description: "Set commit.gpgSign to false",
+      value: false,
+    },
   ];
   const activeItem = options.find((option) => option.value === state.profileCommitGpgSign);
   const selected = (await input.showQuickPick({
     title: create ? "Create a profile" : "Edit profile",
-    step: 6,
+    step: 4,
     totalSteps: 6,
-    placeholder: "Choose the commit signing preference",
+    placeholder: create ? "Choose the commit signing preference" : "Do you want to enable signing in this profile?",
     items: options,
     activeItem,
     shouldResume: shouldResume,
   })) as (typeof options)[number];
   state.profileCommitGpgSign = selected.value;
+
+  if (selected.value === false) {
+    state.profileSigningKey = "";
+    return;
+  }
+
+  return (input: controls.MultiStepInput) => pickSigningKey(input, state, create);
 }
