@@ -18,7 +18,7 @@ interface WorkspaceStatusCache {
   profilesInVSConfigCount?: number;
   configInSync?: boolean;
   currentFolder?: string;
-  currentGitConfig?: { userName: string; email: string; signingKey: string; commitGpgSign?: boolean };
+  currentGitConfig?: { userName: string; email: string; signingKey: string; commitGpgSign?: boolean; gpgFormat?: string };
   timestamp: number;
 }
 
@@ -261,7 +261,7 @@ export async function isValidWorkspace(): Promise<{ isValid: boolean; message: s
   };
 }
 
-export async function getCurrentGitConfig(gitFolder: string): Promise<{ userName: string; email: string; signingKey: string; commitGpgSign?: boolean }> {
+export async function getCurrentGitConfig(gitFolder: string): Promise<{ userName: string; email: string; signingKey: string; commitGpgSign?: boolean; gpgFormat?: string }> {
   Logger.instance.logTrace(LogCategory.GIT_CONFIG_FILE, "Reading local git config", { folder: basename(gitFolder) });
   const git: SimpleGit = simpleGit(gitFolder);
   const rawUserName = await git.getConfig("user.name", "local");
@@ -275,12 +275,21 @@ export async function getCurrentGitConfig(gitFolder: string): Promise<{ userName
   } catch {
     commitGpgSign = undefined;
   }
+  let gpgFormat: string | undefined;
+  try {
+    const localGpgFormat = await git.raw(["config", "--local", "--get", "gpg.format"]);
+    const value = localGpgFormat.trim();
+    gpgFormat = value === "" ? undefined : value;
+  } catch {
+    gpgFormat = undefined;
+  }
 
   const currentConfig = {
     userName: rawUserName.value || "",
     email: rawEmail.value || "",
     signingKey: rawSigningKey.value || "",
     ...(commitGpgSign === undefined ? {} : { commitGpgSign }),
+    ...(gpgFormat === undefined ? {} : { gpgFormat }),
   };
 
   Logger.instance.logTrace(LogCategory.GIT_CONFIG_FILE, "Local git config retrieved", {
@@ -289,12 +298,13 @@ export async function getCurrentGitConfig(gitFolder: string): Promise<{ userName
     email: currentConfig.email,
     hasSigningKey: !!currentConfig.signingKey,
     commitGpgSign,
+    gpgFormat,
   });
 
   return currentConfig;
 }
 
-export async function getGlobalGitConfig(): Promise<{ userName: string; email: string; signingKey: string; commitGpgSign?: boolean }> {
+export async function getGlobalGitConfig(): Promise<{ userName: string; email: string; signingKey: string; commitGpgSign?: boolean; gpgFormat?: string }> {
   Logger.instance.logTrace(LogCategory.GIT_CONFIG_FILE, "Reading global git config", {});
   const git: SimpleGit = simpleGit();
   const rawUserName = await git.getConfig("user.name", "global");
@@ -308,12 +318,21 @@ export async function getGlobalGitConfig(): Promise<{ userName: string; email: s
   } catch {
     commitGpgSign = undefined;
   }
+  let gpgFormat: string | undefined;
+  try {
+    const globalGpgFormat = await git.raw(["config", "--global", "--get", "gpg.format"]);
+    const value = globalGpgFormat.trim();
+    gpgFormat = value === "" ? undefined : value;
+  } catch {
+    gpgFormat = undefined;
+  }
 
   const currentConfig = {
     userName: rawUserName.value || "",
     email: rawEmail.value || "",
     signingKey: rawSigningKey.value || "",
     ...(commitGpgSign === undefined ? {} : { commitGpgSign }),
+    ...(gpgFormat === undefined ? {} : { gpgFormat }),
   };
 
   Logger.instance.logTrace(LogCategory.GIT_CONFIG_FILE, "Global git config retrieved", {
@@ -321,6 +340,7 @@ export async function getGlobalGitConfig(): Promise<{ userName: string; email: s
     email: currentConfig.email,
     hasSigningKey: !!currentConfig.signingKey,
     commitGpgSign,
+    gpgFormat,
   });
 
   return currentConfig;
@@ -368,10 +388,23 @@ export async function updateGitConfig(gitFolder: string, profile: Profile) {
     await git.addConfig("commit.gpgsign", String(profile.commitGpgSign), false, "local");
   }
 
+  if (profile.gpgFormat === undefined || profile.gpgFormat.trim() === "") {
+    try {
+      await git.raw(["config", "--local", "--unset-all", "gpg.format"]);
+    } catch {
+      // The key is already absent, so Git can inherit its global setting.
+    }
+  } else {
+    await git.addConfig("gpg.format", profile.gpgFormat, false, "local");
+  }
+
   Logger.instance.logInfo(`Git config updated for '${basename(gitFolder)}' with profile '${profile.label}'`);
 }
 
-export async function restoreGitConfig(gitFolder: string, config: { userName: string; email: string; signingKey: string; commitGpgSign?: boolean }): Promise<void> {
+export async function restoreGitConfig(
+  gitFolder: string,
+  config: { userName: string; email: string; signingKey: string; commitGpgSign?: boolean; gpgFormat?: string }
+): Promise<void> {
   const git = simpleGit(gitFolder);
   const restoreValue = async (key: string, value: string): Promise<void> => {
     if (value !== "") {
@@ -389,6 +422,7 @@ export async function restoreGitConfig(gitFolder: string, config: { userName: st
   await restoreValue("user.email", config.email);
   await restoreValue("user.signingkey", config.signingKey);
   await restoreValue("commit.gpgsign", config.commitGpgSign === undefined ? "" : String(config.commitGpgSign));
+  await restoreValue("gpg.format", config.gpgFormat === undefined ? "" : config.gpgFormat);
   Logger.instance.logInfo(`Previous Git config restored for '${basename(gitFolder)}'`);
 }
 
@@ -467,7 +501,7 @@ export async function getWorkspaceStatus(): Promise<{
   profilesInVSConfigCount?: number;
   configInSync?: boolean;
   currentFolder?: string;
-  currentGitConfig?: { userName: string; email: string; signingKey: string; commitGpgSign?: boolean };
+  currentGitConfig?: { userName: string; email: string; signingKey: string; commitGpgSign?: boolean; gpgFormat?: string };
 }> {
   Logger.instance.logTrace(LogCategory.WORKSPACE_STATUS, "Evaluating workspace status");
 

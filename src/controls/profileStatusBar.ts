@@ -147,7 +147,7 @@ export class ProfileStatusBar {
     profile: Profile | undefined,
     status: StatusBarStatus,
     customTooltip?: string,
-    currentGitConfig?: { userName: string; email: string; signingKey: string; commitGpgSign?: boolean },
+    currentGitConfig?: { userName: string; email: string; signingKey: string; commitGpgSign?: boolean; gpgFormat?: string },
     repoFolder?: string
   ): string | MarkdownString {
     // Log what we're building
@@ -279,6 +279,13 @@ export class ProfileStatusBar {
         );
       }
 
+      const normalizeGpgFormat = (format: string | undefined): string => (format || "").trim();
+      if (normalizeGpgFormat(profile.gpgFormat) !== normalizeGpgFormat(currentGitConfig.gpgFormat)) {
+        const profileFormat = profile.gpgFormat || "(none, uses global)";
+        const gitConfigFormat = currentGitConfig.gpgFormat || "(none, uses global)";
+        differences.push(`• **GPG Format:**\n  - Profile: \`${profileFormat}\`\n  - Git Config: \`${gitConfigFormat}\``);
+      }
+
       if (differences.length > 0) {
         tooltip.appendMarkdown(`**Differences:**\n\n${differences.join("\n\n")}\n\n`);
       }
@@ -300,7 +307,7 @@ export class ProfileStatusBar {
     repoFolder: string | undefined,
     status: StatusBarStatus = StatusBarStatus.Normal,
     tooltip?: string,
-    currentGitConfig?: { userName: string; email: string; signingKey: string; commitGpgSign?: boolean }
+    currentGitConfig?: { userName: string; email: string; signingKey: string; commitGpgSign?: boolean; gpgFormat?: string }
   ) {
     // Hide status bar when dealing with non-file schemes or when not applicable
     // Empty tooltip with no profile and no repo folder indicates a silent ignore case (e.g., non-file scheme)

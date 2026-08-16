@@ -156,6 +156,15 @@
               "commitGpgSign": {
                 "type": "boolean",
                 "description": "Whether to set commit.gpgSign locally. Omit to use the global Git setting."
+              },
+              "gpgFormat": {
+                "type": "string",
+                "enum": [
+                  "openpgp",
+                  "ssh",
+                  "x509"
+                ],
+                "description": "Whether to set gpg.format locally (openpgp, ssh, or x509). Omit to use the global Git setting."
               }
             }
           },

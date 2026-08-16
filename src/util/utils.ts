@@ -68,6 +68,7 @@ export function trimProperties(profile: Profile): Profile {
     id: profile.id,
     signingKey: profile.signingKey?.trim(),
     commitGpgSign: profile.commitGpgSign,
+    gpgFormat: profile.gpgFormat?.trim() || undefined,
   };
 }
 
@@ -84,8 +85,8 @@ export function normalizeSigningKey(key: string | undefined): string {
  * Handles undefined/null values gracefully.
  */
 export function profilesMatch(
-  profile1: { email?: string; userName?: string; signingKey?: string; commitGpgSign?: boolean },
-  profile2: { email?: string; userName?: string; signingKey?: string; commitGpgSign?: boolean }
+  profile1: { email?: string; userName?: string; signingKey?: string; commitGpgSign?: boolean; gpgFormat?: string },
+  profile2: { email?: string; userName?: string; signingKey?: string; commitGpgSign?: boolean; gpgFormat?: string }
 ): boolean {
   // Normalize empty/undefined values to empty strings for comparison
   const userName1 = (profile1.userName || "").trim();
@@ -97,13 +98,14 @@ export function profilesMatch(
     userName1 === userName2 &&
     email1 === email2 &&
     normalizeSigningKey(profile1.signingKey) === normalizeSigningKey(profile2.signingKey) &&
-    profile1.commitGpgSign === profile2.commitGpgSign
+    profile1.commitGpgSign === profile2.commitGpgSign &&
+    (profile1.gpgFormat || undefined) === (profile2.gpgFormat || undefined)
   );
 }
 
 export function isConfigInSync(
-  profile1?: { email: string; userName: string; signingKey: string; commitGpgSign?: boolean },
-  profile2?: { email: string; userName: string; signingKey: string; commitGpgSign?: boolean }
+  profile1?: { email: string; userName: string; signingKey: string; commitGpgSign?: boolean; gpgFormat?: string },
+  profile2?: { email: string; userName: string; signingKey: string; commitGpgSign?: boolean; gpgFormat?: string }
 ): Result<boolean> {
   if (profile1 === null || profile1 === undefined || profile2 === null || profile2 === undefined) {
     return {
@@ -143,6 +145,13 @@ export function isConfigInSync(
     };
   }
 
+  if ((profile1.gpgFormat || undefined) !== (profile2.gpgFormat || undefined)) {
+    return {
+      result: false,
+      message: `GPG formats are different.`,
+    };
+  }
+
   return {
     result: true,
     message: `Profiles are in sync.`,
@@ -169,6 +178,7 @@ export async function showProfilePicker() {
         id: x.id,
         signingKey: x.signingKey,
         commitGpgSign: x.commitGpgSign,
+        gpgFormat: x.gpgFormat,
       };
     }),
     {
@@ -228,8 +238,10 @@ export async function loadProfileInWizard(preloadedProfile: Profile): Promise<Pr
     profileSelected: preloadedProfile.selected,
     profileSigningKey: preloadedProfile.signingKey,
     profileCommitGpgSign: preloadedProfile.commitGpgSign,
+    profileGpgFormat: preloadedProfile.gpgFormat,
     globalSigningKey: globalGitConfig.signingKey,
     globalCommitGpgSign: globalGitConfig.commitGpgSign,
+    globalGpgFormat: globalGitConfig.gpgFormat,
   };
   await controls.MultiStepInput.run(async (input) => await pickProfileName(input, state, createNewProfile));
   const profile: Profile = {
@@ -241,6 +253,7 @@ export async function loadProfileInWizard(preloadedProfile: Profile): Promise<Pr
     id: state.profileId || "",
     signingKey: state.profileSigningKey || "",
     commitGpgSign: state.profileCommitGpgSign,
+    gpgFormat: state.profileGpgFormat,
   };
   //await saveVscProfile(profile);
   return profile;
@@ -251,6 +264,7 @@ export async function createProfileWithWizard(): Promise<Profile> {
   const state: Partial<controls.State> = {
     globalSigningKey: globalGitConfig.signingKey,
     globalCommitGpgSign: globalGitConfig.commitGpgSign,
+    globalGpgFormat: globalGitConfig.gpgFormat,
   };
   await controls.MultiStepInput.run(async (input) => await pickProfileName(input, state, createNewProfile));
   const profile: Profile = new Profile(
@@ -260,7 +274,8 @@ export async function createProfileWithWizard(): Promise<Profile> {
     false,
     state.profileSigningKey || "",
     undefined,
-    state.profileCommitGpgSign
+    state.profileCommitGpgSign,
+    state.profileGpgFormat
   );
   return profile;
 }
@@ -273,7 +288,7 @@ async function pickProfileName(input: controls.MultiStepInput, state: Partial<co
   state.profileName = await input.showInputBox({
     title: create ? "Create a profile" : "Edit profile",
     step: 1,
-    totalSteps: 6,
+    totalSteps: 7,
     prompt: "Enter name for the profile",
     value: state.profileName || "",
     placeholder: "Work",
@@ -288,7 +303,7 @@ async function pickUserName(input: controls.MultiStepInput, state: Partial<contr
   state.profileUserName = await input.showInputBox({
     title: create ? "Create a profile" : "Edit profile",
     step: 2,
-    totalSteps: 6,
+    totalSteps: 7,
     prompt: "Enter the user name",
     value: state.profileUserName || "",
     placeholder: "John Smith",
@@ -302,7 +317,7 @@ async function pickEmail(input: controls.MultiStepInput, state: Partial<controls
   state.profileEmail = await input.showInputBox({
     title: create ? "Create a profile" : "Edit profile",
     step: 3,
-    totalSteps: 6,
+    totalSteps: 7,
     prompt: "Enter the email",
     value: state.profileEmail || "",
     placeholder: "john.smith@myorg.com",
@@ -324,8 +339,8 @@ async function pickSigningKey(input: controls.MultiStepInput, state: Partial<con
   const activeAction = state.profileSigningKey ? (state.profileSigningKey === state.globalSigningKey ? "copy-global" : "custom") : "global";
   const selected = (await input.showQuickPick({
     title: create ? "Create a profile" : "Edit profile",
-    step: 5,
-    totalSteps: 6,
+    step: 6,
+    totalSteps: 7,
     placeholder: create ? "Choose the signing key source" : "Do you want to copy or set a signing key for this profile?",
     items: options,
     activeItem: options.find((option) => option.action === activeAction),
@@ -342,13 +357,20 @@ async function pickSigningKey(input: controls.MultiStepInput, state: Partial<con
     return;
   }
 
+  const signingKeyHints: Record<string, { prompt: string; placeholder: string }> = {
+    ssh: { prompt: "Enter the SSH public key (or path to it) used to sign commits", placeholder: "ssh-ed25519 AAAA... or ~/.ssh/id_ed25519.pub" },
+    x509: { prompt: "Enter the X.509 signing key identity (matches a certificate in your keychain/smimesign store)", placeholder: "user@example.com" },
+    openpgp: { prompt: "Enter the GPG key ID used to sign commits", placeholder: "0123ABCD or long key ID" },
+  };
+  const hint = signingKeyHints[state.profileGpgFormat || "openpgp"];
+
   state.profileSigningKey = await input.showInputBox({
     title: create ? "Create a profile" : "Edit profile",
-    step: 6,
-    totalSteps: 6,
-    prompt: "Enter the signing key for this profile",
+    step: 7,
+    totalSteps: 7,
+    prompt: hint.prompt,
     value: state.profileSigningKey || "",
-    placeholder: "MY_SIGNING_KEY",
+    placeholder: hint.placeholder,
     validate: () => undefined,
     shouldResume: shouldResume,
     ignoreFocusOut: true,
@@ -371,7 +393,7 @@ async function pickCommitGpgSign(input: controls.MultiStepInput, state: Partial<
   const selected = (await input.showQuickPick({
     title: create ? "Create a profile" : "Edit profile",
     step: 4,
-    totalSteps: 6,
+    totalSteps: 7,
     placeholder: create ? "Choose the commit signing preference" : "Do you want to enable signing in this profile?",
     items: options,
     activeItem,
@@ -383,6 +405,29 @@ async function pickCommitGpgSign(input: controls.MultiStepInput, state: Partial<
     state.profileSigningKey = "";
     return;
   }
+
+  return (input: controls.MultiStepInput) => pickGpgFormat(input, state, create);
+}
+
+async function pickGpgFormat(input: controls.MultiStepInput, state: Partial<controls.State>, create = true) {
+  const globalGpgFormatDescription = state.globalGpgFormat ? `Global gpg.format is ${state.globalGpgFormat}` : "Global gpg.format is not set (defaults to openpgp)";
+  const options: Array<vscode.QuickPickItem & { value?: string }> = [
+    { label: "$(settings-gear) Use global Git setting", description: globalGpgFormatDescription },
+    { label: "$(key) openpgp (GPG key)", description: "Set gpg.format to openpgp", value: "openpgp" },
+    { label: "$(key) ssh (SSH signing key)", description: "Set gpg.format to ssh", value: "ssh" },
+    { label: "$(key) x509 (X.509 signing key)", description: "Set gpg.format to x509", value: "x509" },
+  ];
+  const activeItem = options.find((option) => option.value === state.profileGpgFormat);
+  const selected = (await input.showQuickPick({
+    title: create ? "Create a profile" : "Edit profile",
+    step: 5,
+    totalSteps: 7,
+    placeholder: create ? "Choose the gpg.format for this profile" : "Do you want to set a gpg.format for this profile?",
+    items: options,
+    activeItem,
+    shouldResume: shouldResume,
+  })) as (typeof options)[number];
+  state.profileGpgFormat = selected.value;
 
   return (input: controls.MultiStepInput) => pickSigningKey(input, state, create);
 }

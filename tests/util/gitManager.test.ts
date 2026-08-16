@@ -551,6 +551,53 @@ describe("gitManager - Multi-Folder Workspace Scenarios", () => {
 
       expect((await getCurrentGitConfig(testRepo.path)).commitGpgSign).toBeUndefined();
     });
+
+    test("should apply the selected gpg.format", async () => {
+      testRepo = await createTestGitRepo({
+        userName: "Signing User",
+        email: "signing@example.com",
+      });
+
+      await updateGitConfig(testRepo.path, {
+        id: "ssh-format",
+        label: "SSH format",
+        userName: "Signing User",
+        email: "signing@example.com",
+        signingKey: "",
+        gpgFormat: "ssh",
+      });
+
+      expect((await getCurrentGitConfig(testRepo.path)).gpgFormat).toBe("ssh");
+
+      await updateGitConfig(testRepo.path, {
+        id: "openpgp-format",
+        label: "OpenPGP format",
+        userName: "Signing User",
+        email: "signing@example.com",
+        signingKey: "",
+        gpgFormat: "openpgp",
+      });
+
+      expect((await getCurrentGitConfig(testRepo.path)).gpgFormat).toBe("openpgp");
+    });
+
+    test("should remove the local gpg.format when a profile uses the global setting", async () => {
+      testRepo = await createTestGitRepo({
+        userName: "Signing User",
+        email: "signing@example.com",
+      });
+      await simpleGit(testRepo.path).addConfig("gpg.format", "ssh", false, "local");
+
+      await updateGitConfig(testRepo.path, {
+        id: "global-gpg-format",
+        label: "Global gpg format",
+        userName: "Signing User",
+        email: "signing@example.com",
+        signingKey: "",
+      });
+
+      expect((await getCurrentGitConfig(testRepo.path)).gpgFormat).toBeUndefined();
+    });
   });
 
   describe("isGitRepository", () => {
