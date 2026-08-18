@@ -1,6 +1,8 @@
 import * as vscode from "vscode";
+import { getProfilesInSettings } from "../config";
 import * as constants from "../constants";
 import { LogCategory } from "../constants";
+import { showProfileDeleteUi } from "../controls/profileUi";
 import { Profile } from "../models";
 import * as util from "../util";
 import * as gm from "../util/gitManager";
@@ -25,19 +27,22 @@ export class DeleteUserProfileCommand implements ICommand<boolean> {
         return {};
       }
 
-      const pickerResult = await util.showProfilePicker();
-      const selectedProfile = pickerResult.result as Profile;
+      const config = vscode.workspace.getConfiguration("gitConfigUser");
+      const useUIToEdit = config.get<boolean>("useUIToEdit", false);
+      const selectedProfile = useUIToEdit ? await showProfileDeleteUi(getProfilesInSettings()) : ((await util.showProfilePicker()).result as Profile);
       if (selectedProfile) {
         util.Logger.instance.logDebug(LogCategory.DELETE_PROFILE, "Profile selected for deletion", {
           profileLabel: selectedProfile.label,
           profileId: selectedProfile.id,
         });
 
-        const confirmation = await vscode.window.showQuickPick(["No", "Yes, delete"], {
-          canPickMany: false,
-          ignoreFocusOut: true,
-          placeHolder: `Delete profile '${util.trimLabelIcons(selectedProfile.label)}'? This cannot be undone.`,
-        });
+        const confirmation = useUIToEdit
+          ? "Yes, delete"
+          : await vscode.window.showQuickPick(["No", "Yes, delete"], {
+              canPickMany: false,
+              ignoreFocusOut: true,
+              placeHolder: `Delete profile '${util.trimLabelIcons(selectedProfile.label)}'? This cannot be undone.`,
+            });
 
         if (confirmation !== "Yes, delete") {
           util.Logger.instance.logDebug(LogCategory.DELETE_PROFILE, "User cancelled profile deletion confirmation", {

@@ -1,7 +1,8 @@
 import * as vscode from "vscode";
-import { saveVscProfile } from "../config";
+import { getProfilesInSettings, saveVscProfile } from "../config";
 import * as constants from "../constants";
 import { LogCategory } from "../constants";
+import { showProfileForm } from "../controls/profileUi";
 import { Profile } from "../models";
 import * as util from "../util";
 import * as gm from "../util/gitManager";
@@ -26,12 +27,37 @@ export class EditUserProfileCommand implements ICommand<boolean> {
         return {};
       }
 
-      const pickedProfile = await util.showProfilePicker();
-      const selectedProfile = pickedProfile.result as Profile;
+      const config = vscode.workspace.getConfiguration("gitConfigUser");
+      const useUIToEdit = config.get<boolean>("useUIToEdit", false);
+      const profiles = getProfilesInSettings();
+      const workspaceSelections = config.get<Record<string, string>>("workspaceProfileSelections", {});
+      const pickedProfile = useUIToEdit ? undefined : await util.showProfilePicker();
+      const selectedProfile = useUIToEdit ? undefined : (pickedProfile?.result as Profile);
+      if (useUIToEdit) {
+        void showProfileForm(
+          result.selectedProfile,
+          profiles,
+          async (profile, oldProfileId) => {
+            await saveVscProfile(profile, oldProfileId || profile.id || profile.label);
+            util.Logger.instance.logInfo(`Profile '${profile.label}' updated successfully`);
+          },
+          async (profile) => {
+            await util.deleteProfile(profile);
+            util.Logger.instance.logInfo(`Profile '${profile.label}' deleted successfully`);
+          },
+          result.selectedProfile?.id,
+          workspaceSelections,
+          result.currentFolder
+        ).catch((error) => {
+          util.Logger.instance.logError(`Error occurred while managing profiles. ${error}`);
+          vscode.window.showErrorMessage("Error occurred while managing profiles.");
+        });
+        return { result: true };
+      }
       if (selectedProfile) {
         util.Logger.instance.logDebug(LogCategory.EDIT_PROFILE, "Profile selected for editing", {
           profileLabel: selectedProfile.label,
-          profileId: selectedProfile.id
+          profileId: selectedProfile.id,
         });
 
         selectedProfile.detail = undefined;
@@ -44,7 +70,7 @@ export class EditUserProfileCommand implements ICommand<boolean> {
             profileLabel: updatedProfile.label,
             profileId: updatedProfile.id,
             userName: updatedProfile.userName,
-            email: updatedProfile.email
+            email: updatedProfile.email,
           });
 
           if (updatedProfile.id) {

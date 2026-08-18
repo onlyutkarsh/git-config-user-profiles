@@ -190,7 +190,7 @@ export function getSelectedProfileId(workspaceFolder?: vscode.Uri): string | und
     return selectedProfile.id;
   }
 
-util.Logger.instance.logTrace(LogCategory.WORKSPACE_STATUS, "No selected profile found", {
+  util.Logger.instance.logTrace(LogCategory.WORKSPACE_STATUS, "No selected profile found", {
     folderPath: workspacePath,
     totalProfiles: profiles.length,
   });
@@ -233,7 +233,7 @@ export async function setSelectedProfileId(profileId: string, workspaceFolder?: 
   // Save back to user settings (Global scope)
   await config.update("workspaceProfileSelections", selections, vscode.ConfigurationTarget.Global);
 
-util.Logger.instance.logTrace(LogCategory.WORKSPACE_STATUS, "Updated workspace-scoped selected profile in user settings", {
+  util.Logger.instance.logTrace(LogCategory.WORKSPACE_STATUS, "Updated workspace-scoped selected profile in user settings", {
     profileId,
     folderPath: workspacePath,
   });
@@ -243,6 +243,7 @@ export async function saveVscProfile(profile: Profile, oldProfileId?: string, wo
   //get existing profiles
   const profiles = getProfilesInSettings();
   profile = util.trimProperties(profile);
+  const normalizeProfileLabel = (label: string) => (label || "").replace("$(check)", "").trim().toLowerCase();
   let existingProfileIndex = -1;
 
   if (oldProfileId) {
@@ -277,6 +278,20 @@ export async function saveVscProfile(profile: Profile, oldProfileId?: string, wo
       // Remove selected from the profile we're saving too
       delete profile.selected;
       profile.label = profile.label.replace("$(check)", "").trim();
+    }
+  }
+
+  const shouldValidateDuplicateNames = Boolean(oldProfileId) || existingProfileIndex === -1;
+  if (shouldValidateDuplicateNames) {
+    const normalizedNewLabel = normalizeProfileLabel(profile.label);
+    const normalizedExistingLabel = existingProfileIndex > -1 ? normalizeProfileLabel(profiles[existingProfileIndex].label) : undefined;
+    const shouldCheckNameCollision = existingProfileIndex === -1 || normalizedExistingLabel !== normalizedNewLabel;
+
+    if (shouldCheckNameCollision) {
+      const duplicateProfile = profiles.find((item, index) => index !== existingProfileIndex && normalizeProfileLabel(item.label) === normalizedNewLabel);
+      if (duplicateProfile) {
+        throw new Error(`Profile with the same name '${profile.label}' already exists!`);
+      }
     }
   }
 

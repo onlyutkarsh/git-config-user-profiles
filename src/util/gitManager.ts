@@ -360,7 +360,9 @@ export async function updateGitConfig(gitFolder: string, profile: Profile) {
   await git.addConfig("user.email", profile.email, false, "local");
 
   // Only set signingKey if it's not empty, to avoid overriding global config
-  if (profile.signingKey && profile.signingKey.trim() !== "") {
+  if (profile.signingKeyMode === "local") {
+    Logger.instance.logTrace(LogCategory.GIT_CONFIG_FILE, "Preserving local signingkey", { folder: basename(gitFolder) });
+  } else if (profile.signingKey && profile.signingKey.trim() !== "") {
     await git.addConfig("user.signingkey", profile.signingKey, false, "local");
   } else {
     // Remove the local signingKey config if profile doesn't have one
@@ -378,7 +380,9 @@ export async function updateGitConfig(gitFolder: string, profile: Profile) {
     }
   }
 
-  if (profile.commitGpgSign === undefined) {
+  if (profile.commitGpgSignMode === "local") {
+    Logger.instance.logTrace(LogCategory.GIT_CONFIG_FILE, "Preserving local commit.gpgSign", { folder: basename(gitFolder) });
+  } else if (profile.commitGpgSign === undefined) {
     try {
       await git.raw(["config", "--local", "--unset-all", "commit.gpgsign"]);
     } catch {
@@ -388,7 +392,9 @@ export async function updateGitConfig(gitFolder: string, profile: Profile) {
     await git.addConfig("commit.gpgsign", String(profile.commitGpgSign), false, "local");
   }
 
-  if (profile.gpgFormat === undefined || profile.gpgFormat.trim() === "") {
+  if (profile.gpgFormatMode === "local") {
+    Logger.instance.logTrace(LogCategory.GIT_CONFIG_FILE, "Preserving local gpg.format", { folder: basename(gitFolder) });
+  } else if (profile.gpgFormat === undefined || profile.gpgFormat.trim() === "") {
     try {
       await git.raw(["config", "--local", "--unset-all", "gpg.format"]);
     } catch {

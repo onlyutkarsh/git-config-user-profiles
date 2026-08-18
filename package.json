@@ -153,9 +153,29 @@
                 "type": "string",
                 "description": "User signing key"
               },
+              "signingKeyMode": {
+                "type": "string",
+                "enum": [
+                  "global",
+                  "copy-global",
+                  "custom",
+                  "local"
+                ],
+                "description": "Signing key source. Use local to preserve the repository-local value when applying this profile."
+              },
               "commitGpgSign": {
                 "type": "boolean",
                 "description": "Whether to set commit.gpgSign locally. Omit to use the global Git setting."
+              },
+              "commitGpgSignMode": {
+                "type": "string",
+                "enum": [
+                  "global",
+                  "sign",
+                  "dont-sign",
+                  "local"
+                ],
+                "description": "Commit signing policy. Use local to preserve the repository-local value when applying this profile."
               },
               "gpgFormat": {
                 "type": "string",
@@ -165,6 +185,15 @@
                   "x509"
                 ],
                 "description": "Whether to set gpg.format locally (openpgp, ssh, or x509). Omit to use the global Git setting."
+              },
+              "gpgFormatMode": {
+                "type": "string",
+                "enum": [
+                  "global",
+                  "custom",
+                  "local"
+                ],
+                "description": "GPG format source. Use local to preserve the repository-local value when applying this profile."
               }
             }
           },
@@ -175,6 +204,11 @@
           "type": "boolean",
           "default": true,
           "markdownDescription": "Select the matched profile automatically when opening a workspace"
+        },
+        "gitConfigUser.useUIToEdit": {
+          "type": "boolean",
+          "default": false,
+          "markdownDescription": "Use a form-based UI for profile management"
         },
         "gitConfigUser.statusBarVisibility": {
           "type": "string",

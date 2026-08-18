@@ -44,8 +44,11 @@ export interface State {
   profileId: string;
   profileSelected: boolean;
   profileSigningKey: string;
+  profileSigningKeyMode?: "global" | "copy-global" | "custom" | "local";
   profileCommitGpgSign?: boolean;
+  profileCommitGpgSignMode?: "global" | "sign" | "dont-sign" | "local";
   profileGpgFormat?: string;
+  profileGpgFormatMode?: "global" | "custom" | "local";
   globalSigningKey?: string;
   globalCommitGpgSign?: boolean;
   globalGpgFormat?: string;

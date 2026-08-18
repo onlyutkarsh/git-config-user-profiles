@@ -1,7 +1,7 @@
 import * as vscode from "vscode";
 import { window } from "vscode";
 import { Result } from "../commands/ICommand";
-import { getProfilesInSettings, getVscProfile } from "../config";
+import { getProfilesInSettings } from "../config";
 import * as constants from "../constants";
 import * as controls from "../controls";
 import { Profile } from "../models";
@@ -24,26 +24,52 @@ export function isBlank(str: string) {
   return !str || /^\s*$/.test(str);
 }
 
-export function validateProfileName(input: string, checkForDuplicates = true) {
-  if (isEmpty(input) || isBlank(input)) {
+function normalizeProfileLabel(input: string | undefined) {
+  return trimLabelIcons(input || "")
+    .trim()
+    .toLowerCase();
+}
+
+export function validateProfileName(input: string, checkForDuplicates = true, currentProfile?: Partial<Pick<Profile, "id" | "label">>, existingProfiles?: Profile[]) {
+  const sanitizedInput = trimLabelIcons(input || "").trim();
+  if (isEmpty(sanitizedInput) || isBlank(sanitizedInput)) {
     return constants.Messages.ENTER_A_VALID_STRING;
   }
   if (checkForDuplicates) {
-    const existingProfile = getVscProfile(input);
-    if (existingProfile) {
-      return `Profile with the same name '${input}' already exists!`;
+    const normalizedInput = normalizeProfileLabel(sanitizedInput);
+    const profileId = currentProfile?.id?.trim();
+    const normalizedCurrentLabel = normalizeProfileLabel(currentProfile?.label);
+    const profiles = existingProfiles || getProfilesInSettings();
+
+    if (!profileId && normalizedCurrentLabel && normalizedCurrentLabel === normalizedInput) {
+      return undefined;
+    }
+
+    for (const profile of profiles) {
+      if (normalizeProfileLabel(profile.label) !== normalizedInput) {
+        continue;
+      }
+
+      if (profileId && profile.id === profileId) {
+        continue;
+      }
+
+      return `Profile with the same name '${sanitizedInput}' already exists!`;
     }
   }
   return undefined;
 }
 
 export function validateUserName(input: string) {
-  if (isEmpty(input) || isBlank(input)) {
+  const normalizedInput = (input || "").trim();
+  if (isEmpty(normalizedInput) || isBlank(normalizedInput)) {
     return constants.Messages.ENTER_A_VALID_STRING;
   }
   return undefined;
 }
 export function validateEmail(input: string) {
+  const normalizedInput = (input || "").trim();
+
   // More comprehensive email validation regex that supports:
   // - Plus addressing (user+tag@example.com)
   // - Dots in username (first.last@example.com)
@@ -52,7 +78,7 @@ export function validateEmail(input: string) {
   // Note: This is a practical regex, not full RFC 5322 compliant (which is extremely complex)
   const validEmail = /^[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}$/;
 
-  if (!validEmail.test(input)) {
+  if (!validEmail.test(normalizedInput)) {
     return "Invalid email format. Expected format: user@example.com (supports +, dots, and subdomains)";
   }
   return undefined;
@@ -67,8 +93,11 @@ export function trimProperties(profile: Profile): Profile {
     detail: undefined,
     id: profile.id,
     signingKey: profile.signingKey?.trim(),
+    signingKeyMode: profile.signingKeyMode,
     commitGpgSign: profile.commitGpgSign,
+    commitGpgSignMode: profile.commitGpgSignMode,
     gpgFormat: profile.gpgFormat?.trim() || undefined,
+    gpgFormatMode: profile.gpgFormatMode,
   };
 }
 
@@ -85,8 +114,26 @@ export function normalizeSigningKey(key: string | undefined): string {
  * Handles undefined/null values gracefully.
  */
 export function profilesMatch(
-  profile1: { email?: string; userName?: string; signingKey?: string; commitGpgSign?: boolean; gpgFormat?: string },
-  profile2: { email?: string; userName?: string; signingKey?: string; commitGpgSign?: boolean; gpgFormat?: string }
+  profile1: {
+    email?: string;
+    userName?: string;
+    signingKey?: string;
+    signingKeyMode?: string;
+    commitGpgSign?: boolean;
+    commitGpgSignMode?: string;
+    gpgFormat?: string;
+    gpgFormatMode?: string;
+  },
+  profile2: {
+    email?: string;
+    userName?: string;
+    signingKey?: string;
+    signingKeyMode?: string;
+    commitGpgSign?: boolean;
+    commitGpgSignMode?: string;
+    gpgFormat?: string;
+    gpgFormatMode?: string;
+  }
 ): boolean {
   // Normalize empty/undefined values to empty strings for comparison
   const userName1 = (profile1.userName || "").trim();
@@ -97,9 +144,9 @@ export function profilesMatch(
   return (
     userName1 === userName2 &&
     email1 === email2 &&
-    normalizeSigningKey(profile1.signingKey) === normalizeSigningKey(profile2.signingKey) &&
-    profile1.commitGpgSign === profile2.commitGpgSign &&
-    (profile1.gpgFormat || undefined) === (profile2.gpgFormat || undefined)
+    (profile1.signingKeyMode === "local" || profile2.signingKeyMode === "local" || normalizeSigningKey(profile1.signingKey) === normalizeSigningKey(profile2.signingKey)) &&
+    (profile1.commitGpgSignMode === "local" || profile2.commitGpgSignMode === "local" || profile1.commitGpgSign === profile2.commitGpgSign) &&
+    (profile1.gpgFormatMode === "local" || profile2.gpgFormatMode === "local" || (profile1.gpgFormat || undefined) === (profile2.gpgFormat || undefined))
   );
 }
 
@@ -237,8 +284,13 @@ export async function loadProfileInWizard(preloadedProfile: Profile): Promise<Pr
     profileId: preloadedProfile.id || "",
     profileSelected: preloadedProfile.selected,
     profileSigningKey: preloadedProfile.signingKey,
+    profileSigningKeyMode:
+      preloadedProfile.signingKeyMode || (!preloadedProfile.signingKey ? "global" : preloadedProfile.signingKey === globalGitConfig.signingKey ? "copy-global" : "custom"),
     profileCommitGpgSign: preloadedProfile.commitGpgSign,
+    profileCommitGpgSignMode:
+      preloadedProfile.commitGpgSignMode || (preloadedProfile.commitGpgSign === true ? "sign" : preloadedProfile.commitGpgSign === false ? "dont-sign" : "global"),
     profileGpgFormat: preloadedProfile.gpgFormat,
+    profileGpgFormatMode: preloadedProfile.gpgFormatMode || (preloadedProfile.gpgFormat ? "custom" : "global"),
     globalSigningKey: globalGitConfig.signingKey,
     globalCommitGpgSign: globalGitConfig.commitGpgSign,
     globalGpgFormat: globalGitConfig.gpgFormat,
@@ -252,8 +304,11 @@ export async function loadProfileInWizard(preloadedProfile: Profile): Promise<Pr
     detail: undefined,
     id: state.profileId || "",
     signingKey: state.profileSigningKey || "",
+    signingKeyMode: state.profileSigningKeyMode,
     commitGpgSign: state.profileCommitGpgSign,
+    commitGpgSignMode: state.profileCommitGpgSignMode,
     gpgFormat: state.profileGpgFormat,
+    gpgFormatMode: state.profileGpgFormatMode,
   };
   //await saveVscProfile(profile);
   return profile;
@@ -265,6 +320,9 @@ export async function createProfileWithWizard(): Promise<Profile> {
     globalSigningKey: globalGitConfig.signingKey,
     globalCommitGpgSign: globalGitConfig.commitGpgSign,
     globalGpgFormat: globalGitConfig.gpgFormat,
+    profileSigningKeyMode: "global",
+    profileCommitGpgSignMode: "global",
+    profileGpgFormatMode: "global",
   };
   await controls.MultiStepInput.run(async (input) => await pickProfileName(input, state, createNewProfile));
   const profile: Profile = new Profile(
@@ -277,6 +335,9 @@ export async function createProfileWithWizard(): Promise<Profile> {
     state.profileCommitGpgSign,
     state.profileGpgFormat
   );
+  profile.signingKeyMode = state.profileSigningKeyMode;
+  profile.commitGpgSignMode = state.profileCommitGpgSignMode;
+  profile.gpgFormatMode = state.profileGpgFormatMode;
   return profile;
 }
 async function shouldResume() {
@@ -292,7 +353,7 @@ async function pickProfileName(input: controls.MultiStepInput, state: Partial<co
     prompt: "Enter name for the profile",
     value: state.profileName || "",
     placeholder: "Work",
-    validate: (input) => util.validateProfileName(input, create),
+    validate: (input) => util.validateProfileName(input, true, create ? undefined : { id: state.profileId, label: state.profileName }),
     shouldResume: shouldResume,
     ignoreFocusOut: true,
   });
@@ -329,14 +390,15 @@ async function pickEmail(input: controls.MultiStepInput, state: Partial<controls
 }
 async function pickSigningKey(input: controls.MultiStepInput, state: Partial<controls.State>, create = true) {
   const globalSigningKeyDescription = state.globalSigningKey ? `Global signing key: ${state.globalSigningKey}` : "No global signing key is configured";
-  const options: Array<vscode.QuickPickItem & { action: "global" | "copy-global" | "custom" }> = [
+  const options: Array<vscode.QuickPickItem & { action: "global" | "copy-global" | "custom" | "local" }> = [
     { label: "$(globe) Use global Git signing key", description: globalSigningKeyDescription, action: "global" },
     ...(state.globalSigningKey
       ? [{ label: "$(copy) Copy global signing key to this profile", description: `Use ${state.globalSigningKey} for this profile`, action: "copy-global" as const }]
       : []),
     { label: "$(key) Set a signing key for this profile", description: "Enter a key to use with this profile", action: "custom" },
+    { label: "$(pass) Keep local Git signing key", description: "Preserve the repository-local key when applying this profile", action: "local" },
   ];
-  const activeAction = state.profileSigningKey ? (state.profileSigningKey === state.globalSigningKey ? "copy-global" : "custom") : "global";
+  const activeAction = state.profileSigningKeyMode || (state.profileSigningKey ? (state.profileSigningKey === state.globalSigningKey ? "copy-global" : "custom") : "global");
   const selected = (await input.showQuickPick({
     title: create ? "Create a profile" : "Edit profile",
     step: 6,
@@ -349,11 +411,19 @@ async function pickSigningKey(input: controls.MultiStepInput, state: Partial<con
 
   if (selected.action === "global") {
     state.profileSigningKey = "";
+    state.profileSigningKeyMode = "global";
     return;
   }
 
   if (selected.action === "copy-global") {
     state.profileSigningKey = state.globalSigningKey || "";
+    state.profileSigningKeyMode = "copy-global";
+    return;
+  }
+
+  if (selected.action === "local") {
+    state.profileSigningKey = "";
+    state.profileSigningKeyMode = "local";
     return;
   }
 
@@ -375,6 +445,7 @@ async function pickSigningKey(input: controls.MultiStepInput, state: Partial<con
     shouldResume: shouldResume,
     ignoreFocusOut: true,
   });
+  state.profileSigningKeyMode = "custom";
   return;
 }
 
@@ -388,21 +459,26 @@ async function pickCommitGpgSign(input: controls.MultiStepInput, state: Partial<
       description: "Set commit.gpgSign to false",
       value: false,
     },
+    { label: "$(pass) Keep local commit signing setting", description: "Preserve the repository-local commit.gpgSign value", value: undefined },
   ];
-  const activeItem = options.find((option) => option.value === state.profileCommitGpgSign);
+  const activeItem = options.find((option) => option.value === state.profileCommitGpgSign && state.profileCommitGpgSignMode !== "local");
+  const localItem = options[3];
+  const selectedItem = state.profileCommitGpgSignMode === "local" ? localItem : activeItem;
   const selected = (await input.showQuickPick({
     title: create ? "Create a profile" : "Edit profile",
     step: 4,
     totalSteps: 7,
     placeholder: create ? "Choose the commit signing preference" : "Do you want to enable signing in this profile?",
     items: options,
-    activeItem,
+    activeItem: selectedItem,
     shouldResume: shouldResume,
   })) as (typeof options)[number];
   state.profileCommitGpgSign = selected.value;
+  state.profileCommitGpgSignMode = selected === localItem ? "local" : selected.value === true ? "sign" : selected.value === false ? "dont-sign" : "global";
 
   if (selected.value === false) {
     state.profileSigningKey = "";
+    state.profileSigningKeyMode = "global";
     return;
   }
 
@@ -416,8 +492,9 @@ async function pickGpgFormat(input: controls.MultiStepInput, state: Partial<cont
     { label: "$(key) openpgp (GPG key)", description: "Set gpg.format to openpgp", value: "openpgp" },
     { label: "$(key) ssh (SSH signing key)", description: "Set gpg.format to ssh", value: "ssh" },
     { label: "$(key) x509 (X.509 signing key)", description: "Set gpg.format to x509", value: "x509" },
+    { label: "$(pass) Keep local gpg.format", description: "Preserve the repository-local gpg.format value", value: "__local__" },
   ];
-  const activeItem = options.find((option) => option.value === state.profileGpgFormat);
+  const activeItem = options.find((option) => option.value === (state.profileGpgFormatMode === "local" ? "__local__" : state.profileGpgFormat));
   const selected = (await input.showQuickPick({
     title: create ? "Create a profile" : "Edit profile",
     step: 5,
@@ -427,7 +504,8 @@ async function pickGpgFormat(input: controls.MultiStepInput, state: Partial<cont
     activeItem,
     shouldResume: shouldResume,
   })) as (typeof options)[number];
-  state.profileGpgFormat = selected.value;
+  state.profileGpgFormat = selected.value === "__local__" ? undefined : selected.value;
+  state.profileGpgFormatMode = selected.value === "__local__" ? "local" : selected.value ? "custom" : "global";
 
   return (input: controls.MultiStepInput) => pickSigningKey(input, state, create);
 }

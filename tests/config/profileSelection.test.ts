@@ -1,7 +1,7 @@
-import { getSelectedProfileId, saveVscProfile, getProfilesInSettings } from '../../src/config';
-import { Profile } from '../../src/models';
-import { cleanupStaleWorkspaceProfileSelections, deleteProfile } from '../../src/util/utils';
-import * as vscode from 'vscode';
+import { getSelectedProfileId, saveVscProfile, getProfilesInSettings } from "../../src/config";
+import { Profile } from "../../src/models";
+import { cleanupStaleWorkspaceProfileSelections, deleteProfile } from "../../src/util/utils";
+import * as vscode from "vscode";
 
 /**
  * Simplified tests for workspace-scoped profile selection and migration
@@ -9,10 +9,10 @@ import * as vscode from 'vscode';
 
 // Don't use jest.mock('vscode') - it auto-mocks and breaks the manual mock
 // The moduleNameMapper in jest.config.js handles the mocking
-jest.mock('fs');
+jest.mock("fs");
 
 // Mock logger
-jest.mock('../../src/util/logger', () => ({
+jest.mock("../../src/util/logger", () => ({
   Logger: {
     instance: {
       logTrace: jest.fn(),
@@ -25,7 +25,7 @@ jest.mock('../../src/util/logger', () => ({
 }));
 
 // Mock util functions
-jest.mock('../../src/util', () => ({
+jest.mock("../../src/util", () => ({
   trimProperties: jest.fn((profile) => profile),
   Logger: {
     instance: {
@@ -38,15 +38,15 @@ jest.mock('../../src/util', () => ({
   },
 }));
 
-describe('Profile Selection - Workspace Scope & Migration', () => {
+describe("Profile Selection - Workspace Scope & Migration", () => {
   beforeEach(() => {
     jest.clearAllMocks();
 
     // Setup mock file system to always return file not found
-    const fs = require('fs');
+    const fs = require("fs");
     fs.existsSync = jest.fn().mockReturnValue(false);
     fs.readFileSync = jest.fn().mockImplementation(() => {
-      throw new Error('File not found');
+      throw new Error("File not found");
     });
     fs.writeFileSync = jest.fn();
     fs.mkdirSync = jest.fn();
@@ -57,312 +57,357 @@ describe('Profile Selection - Workspace Scope & Migration', () => {
     }
   });
 
-  describe('getSelectedProfileId', () => {
-    test('should return workspace-scoped selectedProfileId when available via user settings map', async () => {
-      const workspaceUri = vscode.Uri.file('/test/workspace-1');
-      const config = vscode.workspace.getConfiguration('gitConfigUser');
-      await config.update('workspaceProfileSelections', { '/test/workspace-1': 'workspace-profile-123' });
+  describe("getSelectedProfileId", () => {
+    test("should return workspace-scoped selectedProfileId when available via user settings map", async () => {
+      const workspaceUri = vscode.Uri.file("/test/workspace-1");
+      const config = vscode.workspace.getConfiguration("gitConfigUser");
+      await config.update("workspaceProfileSelections", { "/test/workspace-1": "workspace-profile-123" });
 
       const result = getSelectedProfileId(workspaceUri);
 
-      expect(result).toBe('workspace-profile-123');
+      expect(result).toBe("workspace-profile-123");
     });
 
-    test('should fallback to legacy global selected flag when workspace scope is empty', async () => {
-      const workspaceUri = vscode.Uri.file('/test/workspace-fallback');
+    test("should fallback to legacy global selected flag when workspace scope is empty", async () => {
+      const workspaceUri = vscode.Uri.file("/test/workspace-fallback");
 
       // No workspace-scoped value
-      const config = vscode.workspace.getConfiguration('gitConfigUser');
-      await config.update('workspaceProfileSelections', {});
+      const config = vscode.workspace.getConfiguration("gitConfigUser");
+      await config.update("workspaceProfileSelections", {});
 
       // Set global profiles with selected flag
       const profiles = [
-        { id: 'profile-1', label: 'Work', userName: 'work', email: 'work@example.com', selected: false },
-        { id: 'profile-2', label: 'Personal', userName: 'personal', email: 'personal@example.com', selected: true },
+        { id: "profile-1", label: "Work", userName: "work", email: "work@example.com", selected: false },
+        { id: "profile-2", label: "Personal", userName: "personal", email: "personal@example.com", selected: true },
       ];
-      await config.update('profiles', profiles);
+      await config.update("profiles", profiles);
 
       const result = getSelectedProfileId(workspaceUri);
 
-      expect(result).toBe('profile-2');
+      expect(result).toBe("profile-2");
     });
 
-    test('should return undefined when no selection exists anywhere', async () => {
-      const workspaceUri = vscode.Uri.file('/test/workspace-empty');
+    test("should return undefined when no selection exists anywhere", async () => {
+      const workspaceUri = vscode.Uri.file("/test/workspace-empty");
 
-      const config = vscode.workspace.getConfiguration('gitConfigUser');
-      await config.update('workspaceProfileSelections', {});
+      const config = vscode.workspace.getConfiguration("gitConfigUser");
+      await config.update("workspaceProfileSelections", {});
 
-      const profiles = [
-        { id: 'profile-1', label: 'Work', userName: 'work', email: 'work@example.com', selected: false },
-      ];
-      await config.update('profiles', profiles);
+      const profiles = [{ id: "profile-1", label: "Work", userName: "work", email: "work@example.com", selected: false }];
+      await config.update("profiles", profiles);
 
       const result = getSelectedProfileId(workspaceUri);
 
       expect(result).toBeUndefined();
     });
 
-    test('should work without workspace URI (backward compatibility)', async () => {
-      const config = vscode.workspace.getConfiguration('gitConfigUser');
-      const profiles = [
-        { id: 'profile-global', label: 'Work', userName: 'work', email: 'work@example.com', selected: true },
-      ];
-      await config.update('profiles', profiles);
+    test("should work without workspace URI (backward compatibility)", async () => {
+      const config = vscode.workspace.getConfiguration("gitConfigUser");
+      const profiles = [{ id: "profile-global", label: "Work", userName: "work", email: "work@example.com", selected: true }];
+      await config.update("profiles", profiles);
 
       const result = getSelectedProfileId();
 
       expect(result).toBeUndefined(); // Should return undefined when no workspace URI is provided
     });
 
-    test('should prioritize user settings map over global selected flag', async () => {
-      const workspaceUri = vscode.Uri.file('/path/to/workspace');
+    test("should prioritize user settings map over global selected flag", async () => {
+      const workspaceUri = vscode.Uri.file("/path/to/workspace");
 
       // Workspace-scoped selection in user settings map
-      const config = vscode.workspace.getConfiguration('gitConfigUser');
-      await config.update('workspaceProfileSelections', { '/path/to/workspace': 'workspace-profile-123' });
+      const config = vscode.workspace.getConfiguration("gitConfigUser");
+      await config.update("workspaceProfileSelections", { "/path/to/workspace": "workspace-profile-123" });
 
       // Global profiles with different selected flag
-      const profiles = [
-        { id: 'global-profile-456', label: 'Global', userName: 'global', email: 'global@example.com', selected: true },
-      ];
-      await config.update('profiles', profiles);
+      const profiles = [{ id: "global-profile-456", label: "Global", userName: "global", email: "global@example.com", selected: true }];
+      await config.update("profiles", profiles);
 
       const result = getSelectedProfileId(workspaceUri);
 
-      expect(result).toBe('workspace-profile-123');
+      expect(result).toBe("workspace-profile-123");
     });
   });
 
-  describe('saveVscProfile - Migration Scenarios', () => {
-    test('should remove global selected flags when selecting a profile', async () => {
-      const workspaceUri = vscode.Uri.file('/path/to/workspace');
+  describe("saveVscProfile - Migration Scenarios", () => {
+    test("should remove global selected flags when selecting a profile", async () => {
+      const workspaceUri = vscode.Uri.file("/path/to/workspace");
 
-      const globalConfig = vscode.workspace.getConfiguration('gitConfigUser');
+      const globalConfig = vscode.workspace.getConfiguration("gitConfigUser");
       const existingProfiles = [
-        { id: 'profile-1', label: 'Work', userName: 'work', email: 'work@example.com', selected: true, signingKey: '' },
-        { id: 'profile-2', label: 'Personal', userName: 'personal', email: 'personal@example.com', selected: false, signingKey: '' },
+        { id: "profile-1", label: "Work", userName: "work", email: "work@example.com", selected: true, signingKey: "" },
+        { id: "profile-2", label: "Personal", userName: "personal", email: "personal@example.com", selected: false, signingKey: "" },
       ];
-      globalConfig.update('profiles', existingProfiles);
+      globalConfig.update("profiles", existingProfiles);
 
-      const profileToSelect = new Profile('Personal', 'personal', 'personal@example.com', true, '', 'Personal (personal@example.com)');
-      profileToSelect.id = 'profile-2';
+      const profileToSelect = new Profile("Personal", "personal", "personal@example.com", true, "", "Personal (personal@example.com)");
+      profileToSelect.id = "profile-2";
 
       await saveVscProfile(profileToSelect, undefined, workspaceUri);
 
       const savedProfiles = getProfilesInSettings();
-      const hasSelectedFlag = savedProfiles.some(p => p.selected === true);
+      const hasSelectedFlag = savedProfiles.some((p) => p.selected === true);
       expect(hasSelectedFlag).toBe(false);
     });
 
-    test('should clean up $(check) markers from labels during migration', async () => {
-      const workspaceUri = vscode.Uri.file('/path/to/workspace');
+    test("should clean up $(check) markers from labels during migration", async () => {
+      const workspaceUri = vscode.Uri.file("/path/to/workspace");
 
-      const globalConfig = vscode.workspace.getConfiguration('gitConfigUser');
-      const existingProfiles = [
-        { id: 'profile-1', label: '$(check) Work', userName: 'work', email: 'work@example.com', selected: true, signingKey: '' },
-      ];
-      globalConfig.update('profiles', existingProfiles);
+      const globalConfig = vscode.workspace.getConfiguration("gitConfigUser");
+      const existingProfiles = [{ id: "profile-1", label: "$(check) Work", userName: "work", email: "work@example.com", selected: true, signingKey: "" }];
+      globalConfig.update("profiles", existingProfiles);
 
-      const profileToSelect = new Profile('$(check) Work', 'work', 'work@example.com', true, '', 'Work');
-      profileToSelect.id = 'profile-1';
+      const profileToSelect = new Profile("$(check) Work", "work", "work@example.com", true, "", "Work");
+      profileToSelect.id = "profile-1";
 
       await saveVscProfile(profileToSelect, undefined, workspaceUri);
 
       const savedProfiles = getProfilesInSettings();
-      const hasCheckMarks = savedProfiles.some(p => p.label.includes('$(check)'));
+      const hasCheckMarks = savedProfiles.some((p) => p.label.includes("$(check)"));
       expect(hasCheckMarks).toBe(false);
     });
 
-    test('should NOT change workspace scope when updating a profile (not selecting)', async () => {
-      const workspaceUri = vscode.Uri.file('/path/to/workspace');
+    test("should NOT change workspace scope when updating a profile (not selecting)", async () => {
+      const workspaceUri = vscode.Uri.file("/path/to/workspace");
 
       // Set initial workspace selection
-      const workspaceConfig = vscode.workspace.getConfiguration('gitConfigUser', workspaceUri);
-      workspaceConfig.update('selectedProfileId', 'original-selection');
+      const workspaceConfig = vscode.workspace.getConfiguration("gitConfigUser", workspaceUri);
+      workspaceConfig.update("selectedProfileId", "original-selection");
 
-      const globalConfig = vscode.workspace.getConfiguration('gitConfigUser');
-      const existingProfiles = [
-        { id: 'profile-1', label: 'Work', userName: 'work', email: 'work@example.com', signingKey: '' },
-      ];
-      globalConfig.update('profiles', existingProfiles);
+      const globalConfig = vscode.workspace.getConfiguration("gitConfigUser");
+      const existingProfiles = [{ id: "profile-1", label: "Work", userName: "work", email: "work@example.com", signingKey: "" }];
+      globalConfig.update("profiles", existingProfiles);
 
-      const updatedProfile = new Profile('Work Updated', 'work-new', 'work@example.com', false, 'KEY123', 'Work');
-      updatedProfile.id = 'profile-1';
+      const updatedProfile = new Profile("Work Updated", "work-new", "work@example.com", false, "KEY123", "Work");
+      updatedProfile.id = "profile-1";
 
       // Pass oldProfileId to indicate this is an update, not a selection
-      await saveVscProfile(updatedProfile, 'profile-1', workspaceUri);
+      await saveVscProfile(updatedProfile, "profile-1", workspaceUri);
 
       // Verify workspace scope was NOT changed
       const selectedId = getSelectedProfileId(workspaceUri);
-      expect(selectedId).toBe('original-selection');
+      expect(selectedId).toBe("original-selection");
     });
 
-    test('should add new profile when it does not exist', async () => {
-      const workspaceUri = vscode.Uri.file('/path/to/workspace');
+    test("should add new profile when it does not exist", async () => {
+      const workspaceUri = vscode.Uri.file("/path/to/workspace");
 
-      const globalConfig = vscode.workspace.getConfiguration('gitConfigUser');
-      globalConfig.update('profiles', []);
+      const globalConfig = vscode.workspace.getConfiguration("gitConfigUser");
+      globalConfig.update("profiles", []);
 
-      const newProfile = new Profile('New Profile', 'new', 'new@example.com', true, 'GPG123', 'New');
+      const newProfile = new Profile("New Profile", "new", "new@example.com", true, "GPG123", "New");
 
       await saveVscProfile(newProfile, undefined, workspaceUri);
 
       const savedProfiles = getProfilesInSettings();
       expect(savedProfiles.length).toBe(1);
-      expect(savedProfiles[0].label).toBe('New Profile');
-      expect(savedProfiles[0].userName).toBe('new');
-      expect(savedProfiles[0].signingKey).toBe('GPG123');
+      expect(savedProfiles[0].label).toBe("New Profile");
+      expect(savedProfiles[0].userName).toBe("new");
+      expect(savedProfiles[0].signingKey).toBe("GPG123");
+    });
+
+    test("should reject creating a duplicate profile name", async () => {
+      const workspaceUri = vscode.Uri.file("/path/to/workspace");
+      const globalConfig = vscode.workspace.getConfiguration("gitConfigUser");
+      await globalConfig.update("profiles", [{ id: "profile-1", label: "Work", userName: "work", email: "work@example.com", signingKey: "" }]);
+
+      const duplicateProfile = new Profile("work", "other", "other@example.com", false, "", "Work duplicate");
+
+      await expect(saveVscProfile(duplicateProfile, undefined, workspaceUri)).rejects.toThrow("already exists");
+    });
+
+    test("should reject renaming a profile to an existing profile name", async () => {
+      const workspaceUri = vscode.Uri.file("/path/to/workspace");
+      const globalConfig = vscode.workspace.getConfiguration("gitConfigUser");
+      await globalConfig.update("profiles", [
+        { id: "profile-1", label: "Work", userName: "work", email: "work@example.com", signingKey: "" },
+        { id: "profile-2", label: "Personal", userName: "personal", email: "personal@example.com", signingKey: "" },
+      ]);
+
+      const renamedProfile = new Profile("Personal", "work", "work@example.com", false, "", "Renamed");
+      renamedProfile.id = "profile-1";
+
+      await expect(saveVscProfile(renamedProfile, "profile-1", workspaceUri)).rejects.toThrow("already exists");
+    });
+
+    test("should update a legacy profile without id when renamed", async () => {
+      const workspaceUri = vscode.Uri.file("/path/to/workspace");
+      const globalConfig = vscode.workspace.getConfiguration("gitConfigUser");
+      await globalConfig.update("profiles", [
+        { label: "Legacy Work", userName: "legacy", email: "legacy@example.com", signingKey: "" },
+        { id: "profile-2", label: "Personal", userName: "personal", email: "personal@example.com", signingKey: "" },
+      ]);
+
+      const updatedLegacyProfile = new Profile("Engineering", "legacy", "legacy@example.com", false, "", "Legacy renamed");
+
+      await saveVscProfile(updatedLegacyProfile, "Legacy Work", workspaceUri);
+
+      const savedProfiles = getProfilesInSettings();
+      const migratedProfile = savedProfiles.find((profile) => profile.label === "Engineering");
+      expect(savedProfiles.some((profile) => profile.label === "Legacy Work")).toBe(false);
+      expect(migratedProfile).toBeDefined();
+      expect(migratedProfile?.id).toBeDefined();
+    });
+
+    test("should keep profile selection working when duplicate names already exist", async () => {
+      const workspaceUri = vscode.Uri.file("/path/to/workspace");
+      const globalConfig = vscode.workspace.getConfiguration("gitConfigUser");
+      await globalConfig.update("profiles", [
+        { id: "profile-1", label: "Work", userName: "work", email: "work@example.com", signingKey: "" },
+        { id: "profile-2", label: "Work", userName: "work-2", email: "work2@example.com", signingKey: "" },
+      ]);
+
+      const profileToSelect = new Profile("Work", "work", "work@example.com", true, "", "Work");
+      profileToSelect.id = "profile-1";
+
+      await expect(saveVscProfile(profileToSelect, undefined, workspaceUri)).resolves.toBeUndefined();
     });
   });
 
-  describe('Migration Edge Cases', () => {
-    test('should handle empty profiles array', async () => {
-      const workspaceUri = vscode.Uri.file('/path/to/workspace');
+  describe("Migration Edge Cases", () => {
+    test("should handle empty profiles array", async () => {
+      const workspaceUri = vscode.Uri.file("/path/to/workspace");
 
-      const globalConfig = vscode.workspace.getConfiguration('gitConfigUser');
-      globalConfig.update('profiles', []);
+      const globalConfig = vscode.workspace.getConfiguration("gitConfigUser");
+      globalConfig.update("profiles", []);
 
-      const newProfile = new Profile('First Profile', 'user', 'user@example.com', true, '', 'First');
+      const newProfile = new Profile("First Profile", "user", "user@example.com", true, "", "First");
 
       await saveVscProfile(newProfile, undefined, workspaceUri);
 
       const savedProfiles = getProfilesInSettings();
       expect(savedProfiles.length).toBe(1);
-      expect(savedProfiles[0].label).toBe('First Profile');
+      expect(savedProfiles[0].label).toBe("First Profile");
     });
 
-    test('should handle multiple profiles with selected=true (data corruption scenario)', () => {
-      const workspaceUri = vscode.Uri.file('/test/corrupted');
+    test("should handle multiple profiles with selected=true (data corruption scenario)", () => {
+      const workspaceUri = vscode.Uri.file("/test/corrupted");
 
-      const workspaceConfig = vscode.workspace.getConfiguration('gitConfigUser', workspaceUri);
-      workspaceConfig.update('selectedProfileId', undefined);
+      const workspaceConfig = vscode.workspace.getConfiguration("gitConfigUser", workspaceUri);
+      workspaceConfig.update("selectedProfileId", undefined);
 
-      const globalConfig = vscode.workspace.getConfiguration('gitConfigUser');
+      const globalConfig = vscode.workspace.getConfiguration("gitConfigUser");
       const corruptedProfiles = [
-        { id: 'corrupt-1', label: 'Work', userName: 'work', email: 'work@example.com', selected: true },
-        { id: 'corrupt-2', label: 'Personal', userName: 'personal', email: 'personal@example.com', selected: true },
+        { id: "corrupt-1", label: "Work", userName: "work", email: "work@example.com", selected: true },
+        { id: "corrupt-2", label: "Personal", userName: "personal", email: "personal@example.com", selected: true },
       ];
-      globalConfig.update('profiles', corruptedProfiles);
+      globalConfig.update("profiles", corruptedProfiles);
 
       const result = getSelectedProfileId(workspaceUri);
 
       // Should return the first one found with selected=true
-      expect(result).toBe('corrupt-1');
+      expect(result).toBe("corrupt-1");
     });
 
-    test('should preserve profile properties during migration', async () => {
-      const workspaceUri = vscode.Uri.file('/test/migration');
+    test("should preserve profile properties during migration", async () => {
+      const workspaceUri = vscode.Uri.file("/test/migration");
 
-      const globalConfig = vscode.workspace.getConfiguration('gitConfigUser');
+      const globalConfig = vscode.workspace.getConfiguration("gitConfigUser");
       const existingProfiles = [
         {
-          id: 'migrate-1',
-          label: '$(check) Work',
-          userName: 'work',
-          email: 'work@example.com',
-          signingKey: 'GPG-KEY-123',
-          selected: true
+          id: "migrate-1",
+          label: "$(check) Work",
+          userName: "work",
+          email: "work@example.com",
+          signingKey: "GPG-KEY-123",
+          selected: true,
         },
       ];
-      globalConfig.update('profiles', existingProfiles);
+      globalConfig.update("profiles", existingProfiles);
 
-      const profileToSelect = new Profile('$(check) Work', 'work', 'work@example.com', true, 'GPG-KEY-123', 'Work');
-      profileToSelect.id = 'migrate-1';
+      const profileToSelect = new Profile("$(check) Work", "work", "work@example.com", true, "GPG-KEY-123", "Work");
+      profileToSelect.id = "migrate-1";
 
       await saveVscProfile(profileToSelect, undefined, workspaceUri);
 
       const savedProfiles = getProfilesInSettings();
-      const migratedProfile = savedProfiles.find(p => p.id === 'migrate-1');
+      const migratedProfile = savedProfiles.find((p) => p.id === "migrate-1");
       expect(migratedProfile).toBeDefined();
-      expect(migratedProfile?.userName).toBe('work');
-      expect(migratedProfile?.email).toBe('work@example.com');
-      expect(migratedProfile?.signingKey).toBe('GPG-KEY-123');
+      expect(migratedProfile?.userName).toBe("work");
+      expect(migratedProfile?.email).toBe("work@example.com");
+      expect(migratedProfile?.signingKey).toBe("GPG-KEY-123");
       expect(migratedProfile?.selected).toBeUndefined();
-      expect(migratedProfile?.label).not.toContain('$(check)');
+      expect(migratedProfile?.label).not.toContain("$(check)");
     });
 
-    test('should handle profiles without selected property (fresh install)', () => {
-      const workspaceUri = vscode.Uri.file('/test/fresh');
+    test("should handle profiles without selected property (fresh install)", () => {
+      const workspaceUri = vscode.Uri.file("/test/fresh");
 
-      const workspaceConfig = vscode.workspace.getConfiguration('gitConfigUser', workspaceUri);
-      workspaceConfig.update('selectedProfileId', undefined);
+      const workspaceConfig = vscode.workspace.getConfiguration("gitConfigUser", workspaceUri);
+      workspaceConfig.update("selectedProfileId", undefined);
 
-      const globalConfig = vscode.workspace.getConfiguration('gitConfigUser');
+      const globalConfig = vscode.workspace.getConfiguration("gitConfigUser");
       const profiles = [
-        { id: 'fresh-1', label: 'Work', userName: 'work', email: 'work@example.com', signingKey: '' },
-        { id: 'fresh-2', label: 'Personal', userName: 'personal', email: 'personal@example.com', signingKey: '' },
+        { id: "fresh-1", label: "Work", userName: "work", email: "work@example.com", signingKey: "" },
+        { id: "fresh-2", label: "Personal", userName: "personal", email: "personal@example.com", signingKey: "" },
       ];
-      globalConfig.update('profiles', profiles);
+      globalConfig.update("profiles", profiles);
 
       const result = getSelectedProfileId(workspaceUri);
 
       expect(result).toBeUndefined();
     });
 
-    test('should migrate from workspace settings and clean up old setting', async () => {
-      const workspaceUri = vscode.Uri.file('/test/migration-cleanup');
+    test("should migrate from workspace settings and clean up old setting", async () => {
+      const workspaceUri = vscode.Uri.file("/test/migration-cleanup");
 
       // Set up old workspace setting
-      const workspaceConfig = vscode.workspace.getConfiguration('gitConfigUser', workspaceUri);
-      await workspaceConfig.update('selectedProfileId', 'old-profile-id');
+      const workspaceConfig = vscode.workspace.getConfiguration("gitConfigUser", workspaceUri);
+      await workspaceConfig.update("selectedProfileId", "old-profile-id");
 
       // First call should return the old setting and trigger migration
       const result = getSelectedProfileId(workspaceUri);
-      expect(result).toBe('old-profile-id');
+      expect(result).toBe("old-profile-id");
 
       // Wait for async migration to complete
-      await new Promise(resolve => setTimeout(resolve, 50));
+      await new Promise((resolve) => setTimeout(resolve, 50));
 
       // Verify the new storage has the migrated value
-      const globalConfig = vscode.workspace.getConfiguration('gitConfigUser');
-      const selections = globalConfig.get('workspaceProfileSelections');
-      expect(selections).toEqual({ '/test/migration-cleanup': 'old-profile-id' });
+      const globalConfig = vscode.workspace.getConfiguration("gitConfigUser");
+      const selections = globalConfig.get("workspaceProfileSelections");
+      expect(selections).toEqual({ "/test/migration-cleanup": "old-profile-id" });
 
       // Verify old workspace setting was cleared
-      const oldValue = workspaceConfig.get('selectedProfileId');
+      const oldValue = workspaceConfig.get("selectedProfileId");
       expect(oldValue).toBeUndefined();
     });
   });
 
-  describe('deleteProfile', () => {
-    test('should remove workspace selections that do not reference a remaining profile', async () => {
-      const config = vscode.workspace.getConfiguration('gitConfigUser');
-      const workProfile = { id: 'work-profile', label: 'Work', userName: 'work', email: 'work@example.com', signingKey: '' };
-      const personalProfile = { id: 'personal-profile', label: 'Personal', userName: 'personal', email: 'personal@example.com', signingKey: '' };
+  describe("deleteProfile", () => {
+    test("should remove workspace selections that do not reference a remaining profile", async () => {
+      const config = vscode.workspace.getConfiguration("gitConfigUser");
+      const workProfile = { id: "work-profile", label: "Work", userName: "work", email: "work@example.com", signingKey: "" };
+      const personalProfile = { id: "personal-profile", label: "Personal", userName: "personal", email: "personal@example.com", signingKey: "" };
 
-      await config.update('profiles', [workProfile, personalProfile]);
-      await config.update('workspaceProfileSelections', {
-        '/repos/work-a': 'work-profile',
-        '/repos/work-b': 'work-profile',
-        '/repos/personal': 'personal-profile',
-        '/repos/orphaned': 'missing-profile',
+      await config.update("profiles", [workProfile, personalProfile]);
+      await config.update("workspaceProfileSelections", {
+        "/repos/work-a": "work-profile",
+        "/repos/work-b": "work-profile",
+        "/repos/personal": "personal-profile",
+        "/repos/orphaned": "missing-profile",
       });
 
       await deleteProfile(workProfile);
 
       expect(getProfilesInSettings()).toEqual([personalProfile]);
-      expect(config.get('workspaceProfileSelections')).toEqual({
-        '/repos/personal': 'personal-profile',
+      expect(config.get("workspaceProfileSelections")).toEqual({
+        "/repos/personal": "personal-profile",
       });
     });
   });
 
-  describe('cleanupStaleWorkspaceProfileSelections', () => {
-    test('should remove only workspace selections without a matching profile', async () => {
-      const config = vscode.workspace.getConfiguration('gitConfigUser');
-      await config.update('profiles', [
-        { id: 'work-profile', label: 'Work', userName: 'work', email: 'work@example.com', signingKey: '' },
-      ]);
-      await config.update('workspaceProfileSelections', {
-        '/repos/work': 'work-profile',
-        '/repos/orphaned': 'missing-profile',
+  describe("cleanupStaleWorkspaceProfileSelections", () => {
+    test("should remove only workspace selections without a matching profile", async () => {
+      const config = vscode.workspace.getConfiguration("gitConfigUser");
+      await config.update("profiles", [{ id: "work-profile", label: "Work", userName: "work", email: "work@example.com", signingKey: "" }]);
+      await config.update("workspaceProfileSelections", {
+        "/repos/work": "work-profile",
+        "/repos/orphaned": "missing-profile",
       });
 
       const removedCount = await cleanupStaleWorkspaceProfileSelections();
 
       expect(removedCount).toBe(1);
-      expect(config.get('workspaceProfileSelections')).toEqual({ '/repos/work': 'work-profile' });
+      expect(config.get("workspaceProfileSelections")).toEqual({ "/repos/work": "work-profile" });
     });
   });
 });

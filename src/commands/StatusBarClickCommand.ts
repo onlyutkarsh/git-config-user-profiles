@@ -96,7 +96,10 @@ export class StatusBarClickCommand implements ICommand<void> {
     }
     if (response === "Create new") {
       await vscode.commands.executeCommand(constants.CommandIds.CREATE_USER_PROFILE);
-      await vscode.commands.executeCommand(constants.CommandIds.GET_USER_PROFILE, "created new profile");
+      const useUIToEdit = vscode.workspace.getConfiguration("gitConfigUser").get<boolean>("useUIToEdit", false);
+      if (!useUIToEdit) {
+        await vscode.commands.executeCommand(constants.CommandIds.GET_USER_PROFILE, "created new profile");
+      }
       return {};
     }
     if (response === "No, pick another" || response === "Pick a profile") {
