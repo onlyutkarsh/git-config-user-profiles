@@ -15,6 +15,9 @@ export async function showProfileForm(
 ): Promise<Profile | undefined> {
   const title = "Git Config User Profiles";
   const globalGitConfig = await getGlobalGitConfig();
+  const refreshProfiles = () => {
+    profiles.splice(0, profiles.length, ...getProfilesInSettings());
+  };
   const panel = vscode.window.createWebviewPanel("gitConfigUserProfileEditor", title, vscode.ViewColumn.One, {
     enableScripts: true,
     retainContextWhenHidden: true,
@@ -22,9 +25,10 @@ export async function showProfileForm(
   panel.webview.html = getProfileFormHtml(panel.webview, initialProfile, profiles, globalGitConfig.signingKey, selectedProfileId, workspaceSelections, workspaceFolderPath);
   const configurationListener = vscode.workspace.onDidChangeConfiguration((event) => {
     if (event.affectsConfiguration("gitConfigUser.profiles") || event.affectsConfiguration("gitConfigUser.workspaceProfileSelections")) {
+      refreshProfiles();
       panel.webview.postMessage({
         command: "profilesChanged",
-        profiles: getProfilesInSettings().map((item) => ({ ...item, detail: undefined })),
+        profiles: profiles.map((item) => ({ ...item, detail: undefined })),
         workspaceSelections: vscode.workspace.getConfiguration("gitConfigUser").get<Record<string, string>>("workspaceProfileSelections", {}),
         workspaceFolderPath,
       });
@@ -53,6 +57,7 @@ export async function showProfileForm(
       return;
     }
     if (message.command === "delete") {
+      refreshProfiles();
       const profileToDelete = profiles.find((item) => item.id === message.id || (!message.id && item.label === message.label));
       if (profileToDelete && onDelete) {
         try {
@@ -87,6 +92,7 @@ export async function showProfileForm(
       gpgFormatMode?: "global" | "custom" | "local";
       originalLabel?: string;
     };
+    refreshProfiles();
     const normalizedOriginalLabel = values.originalLabel?.trim().toLowerCase();
     const currentProfile = profiles.find((item) => item.id === values.id || (!values.id && normalizedOriginalLabel && item.label.toLowerCase() === normalizedOriginalLabel));
     const nameError = util.validateProfileName(values.label, true, { id: currentProfile?.id, label: currentProfile?.label || values.originalLabel }, profiles);

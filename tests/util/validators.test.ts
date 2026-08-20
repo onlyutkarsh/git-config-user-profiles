@@ -1,5 +1,5 @@
-import { validateEmail, validateProfileName, validateUserName } from "../../src/util";
 import { Profile } from "../../src/models";
+import { validateEmail, validateProfileName, validateUserName } from "../../src/util";
 
 describe("validator normalization", () => {
   test("validateProfileName trims input before duplicate check", () => {
@@ -20,6 +20,12 @@ describe("validator normalization", () => {
   test("validateUserName trims before required validation", () => {
     expect(validateUserName("   ")).toBeDefined();
     expect(validateUserName("  utkarsh  ")).toBeUndefined();
+  });
+
+  test("validateUserName rejects quote-only input", () => {
+    expect(validateUserName("''")).toBeDefined();
+    expect(validateUserName('""')).toBeDefined();
+    expect(validateUserName("O'Connor")).toBeUndefined();
   });
 
   test("validateEmail trims before format validation", () => {

@@ -225,4 +225,46 @@ describe("showProfileForm save mapping", () => {
       undefined
     );
   });
+
+  test("deletes a profile added after the webview was opened", async () => {
+    let messageHandler: ((message: any) => Promise<void>) | undefined;
+
+    const webview = {
+      html: "",
+      postMessage: jest.fn(),
+      onDidReceiveMessage: jest.fn((handler: (message: any) => Promise<void>) => {
+        messageHandler = handler;
+        return { dispose: jest.fn() };
+      }),
+      cspSource: "vscode-webview",
+    };
+
+    const panel = {
+      webview,
+      onDidDispose: jest.fn(() => ({ dispose: jest.fn() })),
+      dispose: jest.fn(),
+    };
+
+    (vscode.window as any).createWebviewPanel = jest.fn(() => panel);
+    (vscode as any).ViewColumn = { One: 1 };
+    (vscode.workspace.onDidChangeConfiguration as jest.Mock).mockReturnValue({ dispose: jest.fn() });
+
+    const initialProfile = { id: "work-id", label: "Work", userName: "utkarsh", email: "work@example.com", signingKey: "" };
+    const addedProfile = { id: "personal-id", label: "Personal", userName: "utkarsh", email: "personal@example.com", signingKey: "" };
+    await vscode.workspace.getConfiguration("gitConfigUser").update("profiles", [initialProfile, addedProfile], vscode.ConfigurationTarget.Global);
+
+    const onDelete = jest.fn().mockResolvedValue(undefined);
+
+    await showProfileForm(initialProfile, [initialProfile], jest.fn(), onDelete);
+
+    expect(messageHandler).toBeDefined();
+
+    await messageHandler!({
+      command: "delete",
+      id: "personal-id",
+      label: "Personal",
+    });
+
+    expect(onDelete).toHaveBeenCalledWith(expect.objectContaining({ id: "personal-id", label: "Personal" }));
+  });
 });

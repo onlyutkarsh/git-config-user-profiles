@@ -62,7 +62,8 @@ export function validateProfileName(input: string, checkForDuplicates = true, cu
 
 export function validateUserName(input: string) {
   const normalizedInput = (input || "").trim();
-  if (isEmpty(normalizedInput) || isBlank(normalizedInput)) {
+  const unquotedInput = normalizedInput.replace(/["']/g, "").trim();
+  if (isEmpty(normalizedInput) || isBlank(normalizedInput) || isEmpty(unquotedInput)) {
     return constants.Messages.ENTER_A_VALID_STRING;
   }
   return undefined;
