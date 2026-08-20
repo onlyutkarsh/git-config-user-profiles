@@ -1,5 +1,5 @@
 import * as vscode from "vscode";
-import { getProfilesInSettings, saveVscProfile } from "../config";
+import { getProfilesInSettings } from "../config";
 import * as constants from "../constants";
 import { LogCategory } from "../constants";
 import { showProfileForm } from "../controls/profileUi";
@@ -7,6 +7,7 @@ import { Profile } from "../models";
 import * as util from "../util";
 import * as gm from "../util/gitManager";
 import { ICommand, Result } from "./ICommand";
+import { deleteManagedProfile, updateManagedProfile } from "./profileCommandActions";
 export class EditUserProfileCommand implements ICommand<boolean> {
   private static instance: EditUserProfileCommand | null = null;
 
@@ -33,17 +34,19 @@ export class EditUserProfileCommand implements ICommand<boolean> {
       const workspaceSelections = config.get<Record<string, string>>("workspaceProfileSelections", {});
       const pickedProfile = useUIToEdit ? undefined : await util.showProfilePicker();
       const selectedProfile = useUIToEdit ? undefined : (pickedProfile?.result as Profile);
+
       if (useUIToEdit) {
         void showProfileForm(
           result.selectedProfile,
           profiles,
           async (profile, oldProfileId) => {
-            await saveVscProfile(profile, oldProfileId || profile.id || profile.label);
-            util.Logger.instance.logInfo(`Profile '${profile.label}' updated successfully`);
+            await updateManagedProfile({
+              profile,
+              profileIdToUpdate: oldProfileId || profile.id || profile.label,
+            });
           },
           async (profile) => {
-            await util.deleteProfile(profile);
-            util.Logger.instance.logInfo(`Profile '${profile.label}' deleted successfully`);
+            await deleteManagedProfile({ profile });
           },
           result.selectedProfile?.id,
           workspaceSelections,
@@ -54,38 +57,40 @@ export class EditUserProfileCommand implements ICommand<boolean> {
         });
         return { result: true };
       }
-      if (selectedProfile) {
-        util.Logger.instance.logDebug(LogCategory.EDIT_PROFILE, "Profile selected for editing", {
-          profileLabel: selectedProfile.label,
-          profileId: selectedProfile.id,
-        });
 
-        selectedProfile.detail = undefined;
-        selectedProfile.label = selectedProfile.label;
-
-        const result = await util.loadProfileInWizard(selectedProfile);
-        const updatedProfile = result as Profile;
-        if (updatedProfile) {
-          util.Logger.instance.logDebug(LogCategory.EDIT_PROFILE, "Profile updated", {
-            profileLabel: updatedProfile.label,
-            profileId: updatedProfile.id,
-            userName: updatedProfile.userName,
-            email: updatedProfile.email,
-          });
-
-          if (updatedProfile.id) {
-            await saveVscProfile(updatedProfile, updatedProfile.id);
-          } else {
-            await saveVscProfile(updatedProfile, updatedProfile.label);
-          }
-          util.Logger.instance.logInfo(`Profile '${updatedProfile.label}' updated successfully`);
-          vscode.commands.executeCommand(constants.CommandIds.GET_USER_PROFILE, "edited profile");
-        } else {
-          util.Logger.instance.logDebug(LogCategory.EDIT_PROFILE, "User cancelled profile update", {});
-        }
-      } else {
+      if (!selectedProfile) {
         util.Logger.instance.logDebug(LogCategory.EDIT_PROFILE, "User cancelled profile selection", {});
+        return { result: true };
       }
+
+      util.Logger.instance.logDebug(LogCategory.EDIT_PROFILE, "Profile selected for editing", {
+        profileLabel: selectedProfile.label,
+        profileId: selectedProfile.id,
+      });
+
+      selectedProfile.detail = undefined;
+
+      const loadedProfile = await util.loadProfileInWizard(selectedProfile);
+      const updatedProfile = loadedProfile as Profile;
+      if (!updatedProfile) {
+        util.Logger.instance.logDebug(LogCategory.EDIT_PROFILE, "User cancelled profile update", {});
+        return { result: true };
+      }
+
+      util.Logger.instance.logDebug(LogCategory.EDIT_PROFILE, "Profile updated", {
+        profileLabel: updatedProfile.label,
+        profileId: updatedProfile.id,
+        userName: updatedProfile.userName,
+        email: updatedProfile.email,
+      });
+
+      const profileIdentifier = updatedProfile.id || updatedProfile.label;
+      await updateManagedProfile({
+        profile: updatedProfile,
+        profileIdToUpdate: profileIdentifier,
+      });
+      vscode.commands.executeCommand(constants.CommandIds.GET_USER_PROFILE, "edited profile");
+
       return { result: true };
     } catch (error) {
       util.Logger.instance.logError(`Error occurred while editing profile. ${error}`);

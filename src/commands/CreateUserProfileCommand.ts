@@ -1,11 +1,12 @@
 import * as vscode from "vscode";
-import { getProfilesInSettings, saveVscProfile } from "../config";
+import { getProfilesInSettings } from "../config";
 import { LogCategory } from "../constants";
 import { showProfileForm } from "../controls/profileUi";
 import { Profile } from "../models";
 import * as util from "../util";
 import * as gm from "../util/gitManager";
 import { ICommand, Result } from "./ICommand";
+import { createManagedProfile, deleteManagedProfile } from "./profileCommandActions";
 
 export class CreateUserProfileCommand implements ICommand<Profile | undefined> {
   async execute(): Promise<Result<Profile | undefined>> {
@@ -21,12 +22,12 @@ export class CreateUserProfileCommand implements ICommand<Profile | undefined> {
           undefined,
           getProfilesInSettings(),
           async (profile) => {
-            await saveVscProfile(profile);
-            util.Logger.instance.logInfo(`Profile '${profile.label}' created successfully`);
+            await createManagedProfile({
+              profile,
+            });
           },
           async (profile) => {
-            await util.deleteProfile(profile);
-            util.Logger.instance.logInfo(`Profile '${profile.label}' deleted successfully`);
+            await deleteManagedProfile({ profile });
           },
           undefined,
           workspaceSelections,
@@ -40,22 +41,23 @@ export class CreateUserProfileCommand implements ICommand<Profile | undefined> {
 
       const result = await util.createProfileWithWizard();
       const profile = result as Profile;
-      if (profile) {
-        util.Logger.instance.logDebug(LogCategory.CREATE_PROFILE, "New profile created", {
-          profileLabel: profile.label,
-          profileId: profile.id,
-          userName: profile.userName,
-          email: profile.email,
-        });
-
-        await saveVscProfile(profile);
-        util.Logger.instance.logInfo(`Profile '${profile.label}' created successfully`);
-        vscode.window.showInformationMessage(`Profile '${profile.label}' created. 🎉`);
-        return { result: profile };
-      } else {
+      if (!profile) {
         util.Logger.instance.logDebug(LogCategory.CREATE_PROFILE, "User cancelled profile creation", {});
         return { result: undefined };
       }
+
+      util.Logger.instance.logDebug(LogCategory.CREATE_PROFILE, "New profile created", {
+        profileLabel: profile.label,
+        profileId: profile.id,
+        userName: profile.userName,
+        email: profile.email,
+      });
+
+      await createManagedProfile({
+        profile,
+        successMessage: `Profile '${profile.label}' created. 🎉`,
+      });
+      return { result: profile };
     } catch (error) {
       util.Logger.instance.logError(`Error occurred while creating profile. ${error}`);
       vscode.window.showErrorMessage(`Error occurred while creating profile.`);

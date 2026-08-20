@@ -7,6 +7,7 @@ import { Profile } from "../models";
 import * as util from "../util";
 import * as gm from "../util/gitManager";
 import { ICommand, Result } from "./ICommand";
+import { deleteManagedProfile } from "./profileCommandActions";
 export class DeleteUserProfileCommand implements ICommand<boolean> {
   private static instance: DeleteUserProfileCommand | null = null;
 
@@ -51,10 +52,11 @@ export class DeleteUserProfileCommand implements ICommand<boolean> {
           return { result: false };
         }
 
-        await util.deleteProfile(selectedProfile);
-        util.Logger.instance.logInfo(`Profile '${selectedProfile.label}' deleted successfully`);
+        await deleteManagedProfile({
+          profile: selectedProfile,
+          successMessage: `Profile '${selectedProfile.label}' deleted.`,
+        });
         vscode.commands.executeCommand(constants.CommandIds.GET_USER_PROFILE, "deleted profile");
-        vscode.window.showInformationMessage(`Profile '${selectedProfile.label}' deleted.`);
       } else {
         util.Logger.instance.logDebug(LogCategory.DELETE_PROFILE, "User cancelled profile deletion", {});
       }

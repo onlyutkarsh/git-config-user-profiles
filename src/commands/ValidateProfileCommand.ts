@@ -7,6 +7,26 @@ import { ICommand, Result } from "./ICommand";
 export class ValidateProfileCommand implements ICommand<boolean> {
   private static instance: ValidateProfileCommand | null = null;
 
+  private getValidationErrors(profile: Profile): string[] {
+    const validationErrors: string[] = [];
+
+    if (!profile.userName || profile.userName.trim() === "") {
+      validationErrors.push("User name is empty");
+    }
+
+    if (!profile.email || profile.email.trim() === "") {
+      validationErrors.push("Email is empty");
+      return validationErrors;
+    }
+
+    const emailValidationError = util.validateEmail(profile.email);
+    if (emailValidationError) {
+      validationErrors.push(emailValidationError);
+    }
+
+    return validationErrors;
+  }
+
   public static Instance(): ValidateProfileCommand {
     if (this.instance === null) {
       this.instance = new ValidateProfileCommand();
@@ -35,41 +55,24 @@ export class ValidateProfileCommand implements ICommand<boolean> {
         hasSigningKey: !!selectedProfile.signingKey,
       });
 
-      // Validate the profile fields
-      const validationErrors: string[] = [];
+      const validationErrors = this.getValidationErrors(selectedProfile);
 
-      // Validate userName
-      if (!selectedProfile.userName || selectedProfile.userName.trim() === "") {
-        validationErrors.push("User name is empty");
-      }
-
-      // Validate email
-      if (!selectedProfile.email || selectedProfile.email.trim() === "") {
-        validationErrors.push("Email is empty");
-      } else {
-        const emailValidationError = util.validateEmail(selectedProfile.email);
-        if (emailValidationError) {
-          validationErrors.push(emailValidationError);
-        }
-      }
-
-      // Show validation results
       if (validationErrors.length > 0) {
-        const errorMessage = `Profile '${selectedProfile.label}' validation failed:\n\n${validationErrors.map(e => `• ${e}`).join('\n')}`;
+        const errorMessage = `Profile '${selectedProfile.label}' validation failed:\n\n${validationErrors.map((errorMessageItem) => `• ${errorMessageItem}`).join("\n")}`;
         vscode.window.showErrorMessage(errorMessage);
         util.Logger.instance.logWarning("Profile validation failed", {
           profileLabel: selectedProfile.label,
           errors: validationErrors,
         });
         return { result: false };
-      } else {
-        const hasSigningKey = !!selectedProfile.signingKey && selectedProfile.signingKey.trim().length > 0;
-        const signingKeyNote = hasSigningKey ? "" : " (Signing key not set; this optional field can be left blank.)";
-        const successMessage = `✅ Profile '${selectedProfile.label}' is valid and ready to use!${signingKeyNote}`;
-        vscode.window.showInformationMessage(successMessage);
-        util.Logger.instance.logInfo(`Profile '${selectedProfile.label}' passed all validation checks`);
-        return { result: true };
       }
+
+      const hasSigningKey = !!selectedProfile.signingKey && selectedProfile.signingKey.trim().length > 0;
+      const signingKeyNote = hasSigningKey ? "" : " (Signing key not set; this optional field can be left blank.)";
+      const successMessage = `✅ Profile '${selectedProfile.label}' is valid and ready to use!${signingKeyNote}`;
+      vscode.window.showInformationMessage(successMessage);
+      util.Logger.instance.logInfo(`Profile '${selectedProfile.label}' passed all validation checks`);
+      return { result: true };
     } catch (error) {
       util.Logger.instance.logError("Validate profile command failed", error as Error);
       vscode.window.showErrorMessage("Failed to validate profile. Please check the extension logs for details.");
