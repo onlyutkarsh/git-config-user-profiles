@@ -461,6 +461,28 @@ describe("gitManager - Multi-Folder Workspace Scenarios", () => {
       });
     });
 
+    test("should apply and read back a complete git config profile", async () => {
+      testRepo = await createTestGitRepo();
+
+      await updateGitConfig(testRepo.path, {
+        id: "complete-profile",
+        label: "Complete profile",
+        userName: "Complete User",
+        email: "complete@example.com",
+        signingKey: "ssh-ed25519 AAAAC3NzaCompleteKey",
+        commitGpgSign: true,
+        gpgFormat: "ssh",
+      });
+
+      expect(await getCurrentGitConfig(testRepo.path)).toEqual({
+        userName: "Complete User",
+        email: "complete@example.com",
+        signingKey: "ssh-ed25519 AAAAC3NzaCompleteKey",
+        commitGpgSign: true,
+        gpgFormat: "ssh",
+      });
+    });
+
     test("should restore inherited values by removing local keys that were previously absent", async () => {
       testRepo = await createTestGitRepo({
         userName: "Applied User",
