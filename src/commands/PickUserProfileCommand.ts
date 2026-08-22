@@ -1,12 +1,12 @@
 import { basename, sep } from "path";
 import * as vscode from "vscode";
-import { saveVscProfile } from "../config";
 import * as constants from "../constants";
 import { LogCategory } from "../constants";
 import { Profile } from "../models";
 import * as util from "../util";
 import * as gm from "../util/gitManager";
 import { ICommand, Result } from "./ICommand";
+import { applyProfileToWorkspace } from "./profileCommandActions";
 export class PickUserProfileCommand implements ICommand<Profile> {
   private static instance: PickUserProfileCommand | null = null;
 
@@ -77,64 +77,12 @@ export class PickUserProfileCommand implements ICommand<Profile> {
           workspaceFolder: basename(workspaceFolder),
         });
 
-        // Re-evaluate workspace after picker closes to avoid stale state (e.g., user changed active editor during picker)
-        const refreshedStatus = await gm.getWorkspaceStatus();
-        if (!(await gm.validateWorkspace(refreshedStatus))) {
-          util.Logger.instance.logWarning("Workspace validation failed after picker closed", {
-            status: gm.WorkspaceStatus[refreshedStatus.status],
-            message: refreshedStatus.message,
-          });
-          return {};
+        const applyResult = await applyProfileToWorkspace(pickedProfile);
+        if (applyResult.error || !applyResult.result) {
+          return { result: undefined, error: applyResult.error };
         }
 
-        const refreshedFolder = refreshedStatus.currentFolder;
-        if (!refreshedFolder) {
-          util.Logger.instance.logWarning("No active workspace folder after picker selection", {});
-          return {};
-        }
-
-        const refreshedGitRootUri = vscode.Uri.file(refreshedFolder);
-        const refreshedRepoName = basename(refreshedFolder);
-        const previousGitConfig = refreshedStatus.currentGitConfig ?? (await gm.getCurrentGitConfig(refreshedFolder));
-        pickedProfile.detail = undefined;
-        pickedProfile.label = pickedProfile.label;
-        pickedProfile.selected = true;
-        try {
-          await gm.updateGitConfig(refreshedFolder, pickedProfile);
-        } catch (error) {
-          util.Logger.instance.logError("Failed to update git config with selected profile", error as Error);
-          try {
-            await gm.restoreGitConfig(refreshedFolder, previousGitConfig);
-            vscode.window.showErrorMessage(`Failed to apply profile '${pickedProfile.label}'. Previous Git config was restored.`);
-          } catch (rollbackError) {
-            util.Logger.instance.logError("Failed to restore previous git config after profile apply failed", rollbackError as Error);
-            vscode.window.showErrorMessage(`Failed to apply profile '${pickedProfile.label}' and restore previous Git config. See logs for details.`);
-          }
-          gm.invalidateWorkspaceStatusCache();
-          return { result: undefined, error: error as Error };
-        }
-        // Persist the selection only after Git accepts the profile.
-        try {
-          await saveVscProfile(Object.assign({}, pickedProfile), undefined, refreshedGitRootUri);
-        } catch (error) {
-          util.Logger.instance.logError("Failed to save selected profile; restoring previous git config", error as Error);
-          try {
-            await gm.restoreGitConfig(refreshedFolder, previousGitConfig);
-            vscode.window.showErrorMessage(`Failed to save profile selection. Previous Git config was restored.`);
-          } catch (rollbackError) {
-            util.Logger.instance.logError("Failed to restore previous git config after profile selection save failed", rollbackError as Error);
-            vscode.window.showErrorMessage(`Failed to save profile selection and restore previous Git config. See logs for details.`);
-          }
-          gm.invalidateWorkspaceStatusCache();
-          return { result: undefined, error: error as Error };
-        }
-
-        // Invalidate cache after updating git config
-        gm.invalidateWorkspaceStatusCache();
-        await vscode.commands.executeCommand(constants.CommandIds.GET_USER_PROFILE, "picked profile");
-
-        util.Logger.instance.logInfo(`Profile '${pickedProfile.label}' applied successfully to '${refreshedRepoName}'`);
-        await vscode.window.showInformationMessage(`Profile '${pickedProfile.label}' is now applied for '${refreshedRepoName}'. 🎉`, "OK");
+        await vscode.window.showInformationMessage(`Profile '${pickedProfile.label}' is now applied for '${applyResult.message}'. 🎉`, "OK");
         return { result: pickedProfile };
       }
       util.Logger.instance.logDebug(LogCategory.PICK_PROFILE, "User cancelled profile selection", {});

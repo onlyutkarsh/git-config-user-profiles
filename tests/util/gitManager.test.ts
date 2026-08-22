@@ -428,6 +428,49 @@ describe("gitManager - Multi-Folder Workspace Scenarios", () => {
       expect(result.selectedProfile?.id).toBe("signing-disabled");
       expect(config.get("workspaceProfileSelections")).toEqual({ [testRepo.path]: "signing-disabled" });
     });
+
+    test("should silently remove legacy signing mode keys from profiles", async () => {
+      testRepo = await createTestGitRepo({
+        userName: "Shared User",
+        email: "shared@example.com",
+      });
+
+      const config = await configureWorkspace([
+        {
+          id: "legacy-profile",
+          label: "Legacy",
+          userName: "Shared User",
+          email: "shared@example.com",
+          signingKey: "",
+          signingKeyMode: "local",
+          commitGpgSignMode: "local",
+          gpgFormatMode: "local",
+        },
+      ]);
+
+      await getWorkspaceStatus();
+
+      const profiles = config.get("profiles") as Record<string, unknown>[];
+      expect(profiles).toHaveLength(1);
+      expect(profiles[0]).not.toHaveProperty("signingKeyMode");
+      expect(profiles[0]).not.toHaveProperty("commitGpgSignMode");
+      expect(profiles[0]).not.toHaveProperty("gpgFormatMode");
+      expect(profiles[0]).toMatchObject({ id: "legacy-profile", label: "Legacy", userName: "Shared User", email: "shared@example.com", signingKey: "" });
+    });
+
+    test("should not rewrite profiles that have no legacy mode keys", async () => {
+      testRepo = await createTestGitRepo({
+        userName: "Shared User",
+        email: "shared@example.com",
+      });
+
+      const cleanProfile = { id: "clean-profile", label: "Clean", userName: "Shared User", email: "shared@example.com", signingKey: "key-1" };
+      const config = await configureWorkspace([cleanProfile]);
+
+      await getWorkspaceStatus();
+
+      expect(config.get("profiles")).toEqual([cleanProfile]);
+    });
   });
 
   describe("Profile application", () => {

@@ -15,7 +15,7 @@ Ever wanted to use different username and email addresses for your commits at wo
   - When out of sync: Side-by-side comparison showing exactly what differs (username, email, signing key)
   ![alt text](images/marketplace/statusbar-tooltip.png)
 - ✅ **Profile Validation** - Validate profiles before applying them to ensure email format and git compatibility
-- ✅ **Per-Repository Commit Signing** - Choose whether a profile inherits the global signing setting, enables signing, or disables it locally
+- ✅ **Per-Repository Commit Signing** - Profiles can prescribe a signing key, `commit.gpgSign`, and `gpg.format`. These are enforced on the repository when the profile is applied; fields left empty inherit your global Git settings
 - ✅ **Robust Error Handling** - Gracefully handles profiles with missing or invalid fields
 - ✅ **Command Palette Access** - All commands available via Command Palette when status bar is crowded
 
@@ -79,6 +79,19 @@ If you want to apply the username and email defined in the selected profile to t
 Once the repository's username and email are in sync, you will see warning color go away confirming that repository config is in sync with the profile selected.
 
 ![repo in sync](images/marketplace/repo-in-sync.png)
+
+### Cycling between profiles
+
+If you frequently switch between two or more profiles, use the **Git Config User Profiles: Cycle to Next Profile** command to apply the next profile in your list to the current repository — no picker required. The command wraps around to the first profile when it reaches the end, and confirms the switch with a brief status bar message.
+
+It is most useful when bound to a keyboard shortcut. Add a binding to your `keybindings.json`, for example:
+
+```json
+{
+  "key": "cmd+alt+g",
+  "command": "git-config-user-profiles.cycleUserProfile"
+}
+```
 
 ### Deleting a profile
 Open the Command Palette and type `git config user profiles` or `gcup` and select `Delete a profile`. You will be presented with a list of profiles to delete.
@@ -181,6 +194,15 @@ Enable or disable automatic profile selection based on git config:
 ```
 
 When enabled, the extension automatically selects a profile if your current git config matches one of your saved profiles.
+
+## Commit Signing Behavior
+
+Profiles define signing settings (`signingKey`, `commitGpgSign`, `gpgFormat`) as the source of truth for the repository:
+
+- **Applying a profile writes its values to the repository's local git config.** Fields left empty on the profile have the corresponding *local* setting removed, so the repository falls back to your global Git configuration.
+- **Sync checking compares strictly.** A repository is shown as out of sync if its local values differ from the profile. When a profile leaves a signing field empty, a local repository value is only considered in sync if it matches your *global* Git setting (since that's what the repository would resolve to after applying the profile).
+
+This means applying a profile can remove a repository-local signing key override. If a specific repository needs a different signing key than your global config, either set that key on the profile itself or re-apply the repository's key after switching.
 
 ## Supported Scenarios
 

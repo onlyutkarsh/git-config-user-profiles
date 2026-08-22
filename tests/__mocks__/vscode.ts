@@ -12,11 +12,11 @@ const getMockConfigValue = (key: string, property: string, defaultValue?: any) =
     return mockConfigurations.get(fullKey);
   }
   // Return sensible defaults for known config keys
-  if (property === 'logLevel') return 'error'; // Use error level to reduce noise in tests
-  if (property === 'profiles') return [];
-  if (property === 'selectMatchedProfileAutomatically') return false;
-  if (property === 'selectedProfileId') return '';
-  if (property === 'workspaceProfileSelections') return {};
+  if (property === "logLevel") return "error"; // Use error level to reduce noise in tests
+  if (property === "profiles") return [];
+  if (property === "selectMatchedProfileAutomatically") return false;
+  if (property === "selectedProfileId") return "";
+  if (property === "workspaceProfileSelections") return {};
   return defaultValue;
 };
 
@@ -30,7 +30,7 @@ const updateMockConfigValue = (key: string, property: string, value: any) => {
 export const workspace = {
   getConfiguration: jest.fn((section?: string, resource?: any) => {
     // Use fsPath for stable keying instead of toString()
-    const resourceKey = resource?.fsPath || resource?.path || 'global';
+    const resourceKey = resource?.fsPath || resource?.path || "global";
     const key = resource ? `${section}:${resourceKey}` : `${section}:global`;
 
     return {
@@ -74,6 +74,7 @@ export const window = {
   showWarningMessage: jest.fn(),
   showQuickPick: jest.fn(),
   showInputBox: jest.fn(),
+  setStatusBarMessage: jest.fn(() => ({ dispose: jest.fn() })),
   createOutputChannel: jest.fn(() => ({
     appendLine: jest.fn(),
     append: jest.fn(),
@@ -101,7 +102,7 @@ export class Uri {
   static file(path: string) {
     return {
       fsPath: path,
-      scheme: 'file',
+      scheme: "file",
       path,
       toString: () => path,
     };
@@ -110,7 +111,7 @@ export class Uri {
   static parse(value: string) {
     return {
       fsPath: value,
-      scheme: 'file',
+      scheme: "file",
       path: value,
       toString: () => value,
     };
@@ -133,7 +134,7 @@ export class ThemeColor {
 }
 
 export class MarkdownString {
-  public value: string = '';
+  public value: string = "";
   public isTrusted?: boolean;
   public supportHtml?: boolean;
 

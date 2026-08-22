@@ -9,11 +9,8 @@ export class Profile implements QuickPickItem {
   detail?: string | undefined;
   id?: string;
   signingKey: string;
-  signingKeyMode?: "global" | "copy-global" | "custom" | "local";
   commitGpgSign?: boolean;
-  commitGpgSignMode?: "global" | "sign" | "dont-sign" | "local";
   gpgFormat?: string;
-  gpgFormatMode?: "global" | "custom" | "local";
 
   constructor(label: string, userName: string, email: string, selected: boolean, signingKey: string, detail?: string, commitGpgSign?: boolean, gpgFormat?: string) {
     this.label = label;

@@ -11,60 +11,7 @@ describe("showProfileForm save mapping", () => {
     (vscode.workspace as any)._clearMockConfigurations();
   });
 
-  test("preserves commitGpgSignMode local when saving from webview", async () => {
-    let messageHandler: ((message: any) => Promise<void>) | undefined;
-
-    const webview = {
-      html: "",
-      postMessage: jest.fn(),
-      onDidReceiveMessage: jest.fn((handler: (message: any) => Promise<void>) => {
-        messageHandler = handler;
-        return { dispose: jest.fn() };
-      }),
-      cspSource: "vscode-webview",
-    };
-
-    const panel = {
-      webview,
-      onDidDispose: jest.fn(() => ({ dispose: jest.fn() })),
-      dispose: jest.fn(),
-    };
-
-    (vscode.window as any).createWebviewPanel = jest.fn(() => panel);
-    (vscode as any).ViewColumn = { One: 1 };
-    (vscode.workspace.onDidChangeConfiguration as jest.Mock).mockReturnValue({ dispose: jest.fn() });
-
-    const onSave = jest.fn().mockResolvedValue(undefined);
-
-    await showProfileForm(undefined, [], onSave);
-
-    expect(messageHandler).toBeDefined();
-
-    await messageHandler!({
-      command: "save",
-      profile: {
-        label: "Work",
-        userName: "utkarsh",
-        email: "utkarsh@example.com",
-        signingKey: "",
-        signingKeySource: "global",
-        commitGpgSignMode: "local",
-        commitGpgSign: undefined,
-        gpgFormat: "",
-        gpgFormatMode: undefined,
-      },
-    });
-
-    expect(onSave).toHaveBeenCalledWith(
-      expect.objectContaining({
-        label: "Work",
-        commitGpgSignMode: "local",
-      }),
-      undefined
-    );
-  });
-
-  test("clears signing key when signingKeySource is local", async () => {
+  test("saves profile values directly without modes", async () => {
     let messageHandler: ((message: any) => Promise<void>) | undefined;
 
     const webview = {
@@ -100,79 +47,23 @@ describe("showProfileForm save mapping", () => {
         userName: "utkarsh",
         email: "utkarsh@example.com",
         signingKey: "GLOBAL-KEY-123",
-        signingKeySource: "local",
-        commitGpgSignMode: "global",
-        commitGpgSign: undefined,
-        gpgFormat: "",
-        gpgFormatMode: undefined,
-      },
-    });
-
-    expect(onSave).toHaveBeenCalledWith(
-      expect.objectContaining({
-        label: "Work",
-        signingKeyMode: "local",
-        signingKey: "",
-      }),
-      undefined
-    );
-  });
-
-  test("clears commitGpgSign when commitGpgSignMode is local", async () => {
-    let messageHandler: ((message: any) => Promise<void>) | undefined;
-
-    const webview = {
-      html: "",
-      postMessage: jest.fn(),
-      onDidReceiveMessage: jest.fn((handler: (message: any) => Promise<void>) => {
-        messageHandler = handler;
-        return { dispose: jest.fn() };
-      }),
-      cspSource: "vscode-webview",
-    };
-
-    const panel = {
-      webview,
-      onDidDispose: jest.fn(() => ({ dispose: jest.fn() })),
-      dispose: jest.fn(),
-    };
-
-    (vscode.window as any).createWebviewPanel = jest.fn(() => panel);
-    (vscode as any).ViewColumn = { One: 1 };
-    (vscode.workspace.onDidChangeConfiguration as jest.Mock).mockReturnValue({ dispose: jest.fn() });
-
-    const onSave = jest.fn().mockResolvedValue(undefined);
-
-    await showProfileForm(undefined, [], onSave);
-
-    expect(messageHandler).toBeDefined();
-
-    await messageHandler!({
-      command: "save",
-      profile: {
-        label: "Work",
-        userName: "utkarsh",
-        email: "utkarsh@example.com",
-        signingKey: "",
-        signingKeySource: "global",
-        commitGpgSignMode: "local",
         commitGpgSign: true,
-        gpgFormat: "",
-        gpgFormatMode: undefined,
+        gpgFormat: "ssh",
       },
     });
 
     expect(onSave).toHaveBeenCalledWith(
       expect.objectContaining({
         label: "Work",
-        commitGpgSignMode: "local",
-        commitGpgSign: undefined,
+        signingKey: "GLOBAL-KEY-123",
+        commitGpgSign: true,
+        gpgFormat: "ssh",
       }),
       undefined
     );
   });
 
-  test("clears gpgFormat when gpgFormatMode is local", async () => {
+  test("normalizes empty signing values to inherit the global git config", async () => {
     let messageHandler: ((message: any) => Promise<void>) | undefined;
 
     const webview = {
@@ -207,19 +98,17 @@ describe("showProfileForm save mapping", () => {
         label: "Work",
         userName: "utkarsh",
         email: "utkarsh@example.com",
-        signingKey: "",
-        signingKeySource: "global",
-        commitGpgSignMode: "global",
+        signingKey: "   ",
         commitGpgSign: undefined,
-        gpgFormat: "ssh",
-        gpgFormatMode: "local",
+        gpgFormat: "",
       },
     });
 
     expect(onSave).toHaveBeenCalledWith(
       expect.objectContaining({
         label: "Work",
-        gpgFormatMode: "local",
+        signingKey: "",
+        commitGpgSign: undefined,
         gpgFormat: undefined,
       }),
       undefined

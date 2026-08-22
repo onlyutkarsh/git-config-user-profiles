@@ -8,6 +8,7 @@ export const CommandIds = {
   SYNC_VSC_PROFILES_WITH_GIT_CONFIG: "git-config-user-profiles.syncVscProfilesWithGitConfig",
   STATUS_BAR_CLICK: "git-config-user-profiles.statusBarClick",
   SHOW_STATUS: "git-config-user-profiles.showStatus",
+  CYCLE_USER_PROFILE: "git-config-user-profiles.cycleUserProfile",
   CLEANUP_WORKSPACE_PROFILE_SELECTIONS: "git-config-user-profiles.cleanupWorkspaceProfileSelections",
 };
 

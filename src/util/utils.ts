@@ -94,11 +94,8 @@ export function trimProperties(profile: Profile): Profile {
     detail: undefined,
     id: profile.id,
     signingKey: profile.signingKey?.trim(),
-    signingKeyMode: profile.signingKeyMode,
     commitGpgSign: profile.commitGpgSign,
-    commitGpgSignMode: profile.commitGpgSignMode,
     gpgFormat: profile.gpgFormat?.trim() || undefined,
-    gpgFormatMode: profile.gpgFormatMode,
   };
 }
 
@@ -119,21 +116,15 @@ export function profilesMatch(
     email?: string;
     userName?: string;
     signingKey?: string;
-    signingKeyMode?: string;
     commitGpgSign?: boolean;
-    commitGpgSignMode?: string;
     gpgFormat?: string;
-    gpgFormatMode?: string;
   },
   profile2: {
     email?: string;
     userName?: string;
     signingKey?: string;
-    signingKeyMode?: string;
     commitGpgSign?: boolean;
-    commitGpgSignMode?: string;
     gpgFormat?: string;
-    gpgFormatMode?: string;
   }
 ): boolean {
   // Normalize empty/undefined values to empty strings for comparison
@@ -145,9 +136,9 @@ export function profilesMatch(
   return (
     userName1 === userName2 &&
     email1 === email2 &&
-    (profile1.signingKeyMode === "local" || profile2.signingKeyMode === "local" || normalizeSigningKey(profile1.signingKey) === normalizeSigningKey(profile2.signingKey)) &&
-    (profile1.commitGpgSignMode === "local" || profile2.commitGpgSignMode === "local" || profile1.commitGpgSign === profile2.commitGpgSign) &&
-    (profile1.gpgFormatMode === "local" || profile2.gpgFormatMode === "local" || (profile1.gpgFormat || undefined) === (profile2.gpgFormat || undefined))
+    normalizeSigningKey(profile1.signingKey) === normalizeSigningKey(profile2.signingKey) &&
+    profile1.commitGpgSign === profile2.commitGpgSign &&
+    (profile1.gpgFormat || undefined) === (profile2.gpgFormat || undefined)
   );
 }
 
@@ -208,6 +199,100 @@ export function isConfigInSync(
 
 export function isNameAndEmailEmpty(profile: { email: string; userName: string }): boolean {
   return !(profile.email || profile.userName);
+}
+
+export interface SyncGitConfig {
+  userName: string;
+  email: string;
+  signingKey: string;
+  commitGpgSign?: boolean;
+  gpgFormat?: string;
+}
+
+/**
+ * Determines whether a repository's local git config is in sync with a profile.
+ * Profile values are enforced strictly: unset profile fields mean the repo should
+ * inherit the global git config, so a local value is only in sync when it matches
+ * the global value (applying the profile would unset that local value).
+ */
+export function isProfileInSyncWithRepo(gitConfig: SyncGitConfig, profile: Profile, globalGitConfig?: Partial<SyncGitConfig>): Result<boolean> {
+  if (profile.userName !== gitConfig.userName) {
+    return {
+      result: false,
+      message: "User names are different.",
+    };
+  }
+
+  if (profile.email.toLowerCase() !== gitConfig.email.toLowerCase()) {
+    return {
+      result: false,
+      message: "Emails are different.",
+    };
+  }
+
+  const profileKey = normalizeSigningKey(profile.signingKey);
+  const localKey = normalizeSigningKey(gitConfig.signingKey);
+  if (profileKey !== "") {
+    if (localKey !== profileKey) {
+      return {
+        result: false,
+        message: "Signing keys are different.",
+      };
+    }
+  } else if (localKey !== "" && localKey !== normalizeSigningKey(globalGitConfig?.signingKey)) {
+    // Profile does not prescribe a key; a local override is only in sync when it matches the global value
+    return {
+      result: false,
+      message: "Signing keys are different.",
+    };
+  }
+
+  if (profile.commitGpgSign !== undefined) {
+    if (gitConfig.commitGpgSign !== profile.commitGpgSign) {
+      return {
+        result: false,
+        message: "Commit signing preferences are different.",
+      };
+    }
+  } else if (gitConfig.commitGpgSign !== undefined && gitConfig.commitGpgSign !== globalGitConfig?.commitGpgSign) {
+    return {
+      result: false,
+      message: "Commit signing preferences are different.",
+    };
+  }
+
+  const profileFormat = profile.gpgFormat?.trim() || undefined;
+  const localFormat = gitConfig.gpgFormat?.trim() || undefined;
+  if (profileFormat !== undefined) {
+    if (localFormat !== profileFormat) {
+      return {
+        result: false,
+        message: "GPG formats are different.",
+      };
+    }
+  } else if (localFormat !== undefined && localFormat !== (globalGitConfig?.gpgFormat?.trim() || undefined)) {
+    return {
+      result: false,
+      message: "GPG formats are different.",
+    };
+  }
+
+  return {
+    result: true,
+    message: "Profiles are in sync.",
+  };
+}
+
+/**
+ * Whether the sync check for this profile needs the global git config: the profile leaves
+ * at least one signing-related setting unset while the repository has a local value for it.
+ * Used to avoid reading the global git config unnecessarily.
+ */
+export function syncCheckNeedsGlobalGitConfig(gitConfig: SyncGitConfig, profile: Profile): boolean {
+  const inheritsSigningKey = normalizeSigningKey(profile.signingKey) === "" && normalizeSigningKey(gitConfig.signingKey) !== "";
+  const inheritsCommitGpgSign = profile.commitGpgSign === undefined && gitConfig.commitGpgSign !== undefined;
+  const inheritsGpgFormat = !profile.gpgFormat?.trim() && !!gitConfig.gpgFormat?.trim();
+  return inheritsSigningKey || inheritsCommitGpgSign || inheritsGpgFormat;
 }
 
 export async function showProfilePicker() {
@@ -285,13 +370,8 @@ export async function loadProfileInWizard(preloadedProfile: Profile): Promise<Pr
     profileId: preloadedProfile.id || "",
     profileSelected: preloadedProfile.selected,
     profileSigningKey: preloadedProfile.signingKey,
-    profileSigningKeyMode:
-      preloadedProfile.signingKeyMode || (!preloadedProfile.signingKey ? "global" : preloadedProfile.signingKey === globalGitConfig.signingKey ? "copy-global" : "custom"),
     profileCommitGpgSign: preloadedProfile.commitGpgSign,
-    profileCommitGpgSignMode:
-      preloadedProfile.commitGpgSignMode || (preloadedProfile.commitGpgSign === true ? "sign" : preloadedProfile.commitGpgSign === false ? "dont-sign" : "global"),
     profileGpgFormat: preloadedProfile.gpgFormat,
-    profileGpgFormatMode: preloadedProfile.gpgFormatMode || (preloadedProfile.gpgFormat ? "custom" : "global"),
     globalSigningKey: globalGitConfig.signingKey,
     globalCommitGpgSign: globalGitConfig.commitGpgSign,
     globalGpgFormat: globalGitConfig.gpgFormat,
@@ -305,11 +385,8 @@ export async function loadProfileInWizard(preloadedProfile: Profile): Promise<Pr
     detail: undefined,
     id: state.profileId || "",
     signingKey: state.profileSigningKey || "",
-    signingKeyMode: state.profileSigningKeyMode,
     commitGpgSign: state.profileCommitGpgSign,
-    commitGpgSignMode: state.profileCommitGpgSignMode,
     gpgFormat: state.profileGpgFormat,
-    gpgFormatMode: state.profileGpgFormatMode,
   };
   //await saveVscProfile(profile);
   return profile;
@@ -321,9 +398,6 @@ export async function createProfileWithWizard(): Promise<Profile> {
     globalSigningKey: globalGitConfig.signingKey,
     globalCommitGpgSign: globalGitConfig.commitGpgSign,
     globalGpgFormat: globalGitConfig.gpgFormat,
-    profileSigningKeyMode: "global",
-    profileCommitGpgSignMode: "global",
-    profileGpgFormatMode: "global",
   };
   await controls.MultiStepInput.run(async (input) => await pickProfileName(input, state, createNewProfile));
   const profile: Profile = new Profile(
@@ -336,9 +410,6 @@ export async function createProfileWithWizard(): Promise<Profile> {
     state.profileCommitGpgSign,
     state.profileGpgFormat
   );
-  profile.signingKeyMode = state.profileSigningKeyMode;
-  profile.commitGpgSignMode = state.profileCommitGpgSignMode;
-  profile.gpgFormatMode = state.profileGpgFormatMode;
   return profile;
 }
 async function shouldResume() {
@@ -350,7 +421,7 @@ async function pickProfileName(input: controls.MultiStepInput, state: Partial<co
   state.profileName = await input.showInputBox({
     title: create ? "Create a profile" : "Edit profile",
     step: 1,
-    totalSteps: 7,
+    totalSteps: 5,
     prompt: "Enter name for the profile",
     value: state.profileName || "",
     placeholder: "Work",
@@ -365,7 +436,7 @@ async function pickUserName(input: controls.MultiStepInput, state: Partial<contr
   state.profileUserName = await input.showInputBox({
     title: create ? "Create a profile" : "Edit profile",
     step: 2,
-    totalSteps: 7,
+    totalSteps: 5,
     prompt: "Enter the user name",
     value: state.profileUserName || "",
     placeholder: "John Smith",
@@ -379,7 +450,7 @@ async function pickEmail(input: controls.MultiStepInput, state: Partial<controls
   state.profileEmail = await input.showInputBox({
     title: create ? "Create a profile" : "Edit profile",
     step: 3,
-    totalSteps: 7,
+    totalSteps: 5,
     prompt: "Enter the email",
     value: state.profileEmail || "",
     placeholder: "john.smith@myorg.com",
@@ -391,20 +462,16 @@ async function pickEmail(input: controls.MultiStepInput, state: Partial<controls
 }
 async function pickSigningKey(input: controls.MultiStepInput, state: Partial<controls.State>, create = true) {
   const globalSigningKeyDescription = state.globalSigningKey ? `Global signing key: ${state.globalSigningKey}` : "No global signing key is configured";
-  const options: Array<vscode.QuickPickItem & { action: "global" | "copy-global" | "custom" | "local" }> = [
+  const options: Array<vscode.QuickPickItem & { action: "global" | "custom" }> = [
     { label: "$(globe) Use global Git signing key", description: globalSigningKeyDescription, action: "global" },
-    ...(state.globalSigningKey
-      ? [{ label: "$(copy) Copy global signing key to this profile", description: `Use ${state.globalSigningKey} for this profile`, action: "copy-global" as const }]
-      : []),
-    { label: "$(key) Set a signing key for this profile", description: "Enter a key to use with this profile", action: "custom" },
-    { label: "$(pass) Keep local Git signing key", description: "Preserve the repository-local key when applying this profile", action: "local" },
+    { label: "$(key) Set a signing key for this profile", description: "Enforce this key on the repository when applying the profile", action: "custom" },
   ];
-  const activeAction = state.profileSigningKeyMode || (state.profileSigningKey ? (state.profileSigningKey === state.globalSigningKey ? "copy-global" : "custom") : "global");
+  const activeAction = state.profileSigningKey ? "custom" : "global";
   const selected = (await input.showQuickPick({
     title: create ? "Create a profile" : "Edit profile",
-    step: 6,
-    totalSteps: 7,
-    placeholder: create ? "Choose the signing key source" : "Do you want to copy or set a signing key for this profile?",
+    step: 5,
+    totalSteps: 5,
+    placeholder: "Choose the signing key for this profile",
     items: options,
     activeItem: options.find((option) => option.action === activeAction),
     shouldResume: shouldResume,
@@ -412,19 +479,6 @@ async function pickSigningKey(input: controls.MultiStepInput, state: Partial<con
 
   if (selected.action === "global") {
     state.profileSigningKey = "";
-    state.profileSigningKeyMode = "global";
-    return;
-  }
-
-  if (selected.action === "copy-global") {
-    state.profileSigningKey = state.globalSigningKey || "";
-    state.profileSigningKeyMode = "copy-global";
-    return;
-  }
-
-  if (selected.action === "local") {
-    state.profileSigningKey = "";
-    state.profileSigningKeyMode = "local";
     return;
   }
 
@@ -437,8 +491,8 @@ async function pickSigningKey(input: controls.MultiStepInput, state: Partial<con
 
   state.profileSigningKey = await input.showInputBox({
     title: create ? "Create a profile" : "Edit profile",
-    step: 7,
-    totalSteps: 7,
+    step: 5,
+    totalSteps: 5,
     prompt: hint.prompt,
     value: state.profileSigningKey || "",
     placeholder: hint.placeholder,
@@ -446,40 +500,30 @@ async function pickSigningKey(input: controls.MultiStepInput, state: Partial<con
     shouldResume: shouldResume,
     ignoreFocusOut: true,
   });
-  state.profileSigningKeyMode = "custom";
   return;
 }
 
 async function pickCommitGpgSign(input: controls.MultiStepInput, state: Partial<controls.State>, create = true) {
   const globalSigningDescription = state.globalCommitGpgSign === undefined ? "Global commit.gpgSign is not set" : `Global commit.gpgSign is ${state.globalCommitGpgSign}`;
   const options: Array<vscode.QuickPickItem & { value?: boolean }> = [
-    { label: "$(settings-gear) Use global Git setting", description: globalSigningDescription },
-    { label: create ? "$(check) Sign commits for this profile" : "$(check) Enable signing for this profile", description: "Set commit.gpgSign to true", value: true },
-    {
-      label: create ? "$(circle-slash) Don't sign commits for this profile" : "$(circle-slash) Disable signing for this profile",
-      description: "Set commit.gpgSign to false",
-      value: false,
-    },
-    { label: "$(pass) Keep local commit signing setting", description: "Preserve the repository-local commit.gpgSign value", value: undefined },
+    { label: "$(settings-gear) Use global Git setting", description: globalSigningDescription, value: undefined },
+    { label: "$(check) Sign commits", description: "Set commit.gpgSign to true for this repository", value: true },
+    { label: "$(circle-slash) Do not sign commits", description: "Set commit.gpgSign to false for this repository", value: false },
   ];
-  const activeItem = options.find((option) => option.value === state.profileCommitGpgSign && state.profileCommitGpgSignMode !== "local");
-  const localItem = options[3];
-  const selectedItem = state.profileCommitGpgSignMode === "local" ? localItem : activeItem;
+  const activeItem = options.find((option) => option.value === state.profileCommitGpgSign);
   const selected = (await input.showQuickPick({
     title: create ? "Create a profile" : "Edit profile",
     step: 4,
-    totalSteps: 7,
-    placeholder: create ? "Choose the commit signing preference" : "Do you want to enable signing in this profile?",
+    totalSteps: 5,
+    placeholder: "Choose the commit signing preference for this profile",
     items: options,
-    activeItem: selectedItem,
+    activeItem,
     shouldResume: shouldResume,
   })) as (typeof options)[number];
   state.profileCommitGpgSign = selected.value;
-  state.profileCommitGpgSignMode = selected === localItem ? "local" : selected.value === true ? "sign" : selected.value === false ? "dont-sign" : "global";
 
   if (selected.value === false) {
     state.profileSigningKey = "";
-    state.profileSigningKeyMode = "global";
     return;
   }
 
@@ -489,24 +533,22 @@ async function pickCommitGpgSign(input: controls.MultiStepInput, state: Partial<
 async function pickGpgFormat(input: controls.MultiStepInput, state: Partial<controls.State>, create = true) {
   const globalGpgFormatDescription = state.globalGpgFormat ? `Global gpg.format is ${state.globalGpgFormat}` : "Global gpg.format is not set (defaults to openpgp)";
   const options: Array<vscode.QuickPickItem & { value?: string }> = [
-    { label: "$(settings-gear) Use global Git setting", description: globalGpgFormatDescription },
+    { label: "$(settings-gear) Use global Git setting", description: globalGpgFormatDescription, value: undefined },
     { label: "$(key) openpgp (GPG key)", description: "Set gpg.format to openpgp", value: "openpgp" },
     { label: "$(key) ssh (SSH signing key)", description: "Set gpg.format to ssh", value: "ssh" },
     { label: "$(key) x509 (X.509 signing key)", description: "Set gpg.format to x509", value: "x509" },
-    { label: "$(pass) Keep local gpg.format", description: "Preserve the repository-local gpg.format value", value: "__local__" },
   ];
-  const activeItem = options.find((option) => option.value === (state.profileGpgFormatMode === "local" ? "__local__" : state.profileGpgFormat));
+  const activeItem = options.find((option) => option.value === state.profileGpgFormat);
   const selected = (await input.showQuickPick({
     title: create ? "Create a profile" : "Edit profile",
     step: 5,
-    totalSteps: 7,
-    placeholder: create ? "Choose the gpg.format for this profile" : "Do you want to set a gpg.format for this profile?",
+    totalSteps: 5,
+    placeholder: "Choose the gpg.format for this profile",
     items: options,
     activeItem,
     shouldResume: shouldResume,
   })) as (typeof options)[number];
-  state.profileGpgFormat = selected.value === "__local__" ? undefined : selected.value;
-  state.profileGpgFormatMode = selected.value === "__local__" ? "local" : selected.value ? "custom" : "global";
+  state.profileGpgFormat = selected.value;
 
   return (input: controls.MultiStepInput) => pickSigningKey(input, state, create);
 }

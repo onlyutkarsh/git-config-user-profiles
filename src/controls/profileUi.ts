@@ -88,8 +88,6 @@ export async function showProfileForm(
     }
 
     const values = message.profile as Profile & {
-      signingKeySource?: "global" | "copy-global" | "custom" | "local";
-      gpgFormatMode?: "global" | "custom" | "local";
       originalLabel?: string;
     };
     refreshProfiles();
@@ -110,22 +108,15 @@ export async function showProfileForm(
       return;
     }
 
-    const signingKeyMode = values.signingKeySource || "global";
-    const signingKey = signingKeyMode === "copy-global" ? globalGitConfig.signingKey || "" : signingKeyMode === "custom" ? values.signingKey || "" : "";
-    const commitGpgSignMode = values.commitGpgSignMode || (values.commitGpgSign === true ? "sign" : values.commitGpgSign === false ? "dont-sign" : "global");
-    const commitGpgSign = commitGpgSignMode === "sign" ? true : commitGpgSignMode === "dont-sign" ? false : undefined;
-    const gpgFormatMode =
-      values.gpgFormatMode === "local" || values.gpgFormat === "__local__" ? "local" : values.gpgFormatMode === "custom" || Boolean(values.gpgFormat) ? "custom" : "global";
-    const gpgFormat = gpgFormatMode === "custom" ? values.gpgFormat || undefined : undefined;
+    const signingKey = values.signingKey?.trim() || "";
+    const commitGpgSign = values.commitGpgSign === true ? true : values.commitGpgSign === false ? false : undefined;
+    const gpgFormat = values.gpgFormat?.trim() || undefined;
     const profile = new Profile(values.label, values.userName, values.email, currentProfile?.selected || false, signingKey, undefined, commitGpgSign, gpgFormat);
     if (currentProfile?.id) {
       profile.id = currentProfile.id;
     } else if (!currentProfile && values.id) {
       profile.id = values.id;
     }
-    profile.signingKeyMode = signingKeyMode;
-    profile.commitGpgSignMode = commitGpgSignMode;
-    profile.gpgFormatMode = gpgFormatMode;
     if (onSave) {
       try {
         const oldProfileId = currentProfile?.id || currentProfile?.label;
@@ -208,10 +199,8 @@ export function getProfileFormHtml(
 ): string {
   const nonce = Date.now().toString();
   const value = (input: string | undefined) => escapeHtml(input || "");
-  const commitGpgSignMode = profile?.commitGpgSignMode || (profile?.commitGpgSign === true ? "sign" : profile?.commitGpgSign === false ? "dont-sign" : "global");
+  const commitGpgSignValue = profile?.commitGpgSign === true ? "true" : profile?.commitGpgSign === false ? "false" : "";
   const selected = (format: string) => (profile?.gpgFormat === format ? " selected" : "");
-  const signingKeySource = profile?.signingKeyMode || (!profile?.signingKey ? "global" : profile.signingKey === globalSigningKey ? "copy-global" : "custom");
-  const gpgFormatMode = profile?.gpgFormatMode || (profile?.gpgFormat ? "custom" : "global");
   const csp = `default-src 'none'; style-src ${webview.cspSource} 'unsafe-inline'; script-src 'nonce-${nonce}';`;
   const profileItems = profiles
     .map(
@@ -321,7 +310,7 @@ export function getProfileFormHtml(
       <form id="profile-form" novalidate>
         <div class="form-body">
           <section class="section"><div class="section-heading"><h3>Identity</h3><p>Name and email for commits.</p></div><div class="field-grid"><label>Profile name<input name="label" value="${value(profile?.label)}" required><small></small></label><label>Git user name<input name="userName" value="${value(profile?.userName)}" required><small></small></label><label class="full">Email address<input name="email" type="email" value="${value(profile?.email)}" required><small></small></label></div></section>
-          <section class="section"><div class="section-heading"><h3>Commit signing <span class="section-optional">Optional</span></h3><p>Signing options for this profile.</p></div><div class="field-grid"><label class="full">Signing format<select name="gpgFormat"><option value=""${gpgFormatMode === "global" ? " selected" : ""}>Use global setting</option><option value="openpgp"${selected("openpgp")}>GPG</option><option value="ssh"${selected("ssh")}>SSH</option><option value="x509"${selected("x509")}>X.509</option><option value="__local__"${gpgFormatMode === "local" ? " selected" : ""}>Keep local setting</option></select></label><label class="full">Signing key source<select name="signingKeySource"><option value="global"${signingKeySource === "global" ? " selected" : ""}>Use global Git signing key</option><option value="copy-global"${signingKeySource === "copy-global" ? " selected" : ""}>Copy global key to this profile</option><option value="custom"${signingKeySource === "custom" ? " selected" : ""}>Set a key for this profile</option><option value="local"${signingKeySource === "local" ? " selected" : ""}>Keep local signing key</option></select><small class="field-help">${globalSigningKey ? "Global signing key configured" : "No global signing key configured"}</small></label><label class="full" id="custom-key-field">Profile signing key<input name="signingKey" value="${value(profile?.signingKey)}" placeholder="GPG key ID, SSH public key, or X.509 identity"></label><label class="full">Commit signing policy<select name="commitGpgSignMode"><option value="global"${commitGpgSignMode === "global" ? " selected" : ""}>Use global setting</option><option value="sign"${commitGpgSignMode === "sign" ? " selected" : ""}>Sign every commit</option><option value="dont-sign"${commitGpgSignMode === "dont-sign" ? " selected" : ""}>Do not sign commits</option><option value="local"${commitGpgSignMode === "local" ? " selected" : ""}>Keep local setting</option></select></label></div></section>
+          <section class="section"><div class="section-heading"><h3>Commit signing <span class="section-optional">Optional</span></h3><p>Applied to the repository when this profile is used. Empty fields inherit the global Git setting.</p></div><div class="field-grid"><label class="full">Signing format<select name="gpgFormat"><option value=""${profile?.gpgFormat ? "" : " selected"}>Use global setting</option><option value="openpgp"${selected("openpgp")}>GPG</option><option value="ssh"${selected("ssh")}>SSH</option><option value="x509"${selected("x509")}>X.509</option></select></label><label class="full">Signing key<input name="signingKey" value="${value(profile?.signingKey)}" placeholder="GPG key ID, SSH public key, or X.509 identity"><small class="field-help">${globalSigningKey ? `Leave empty to use the global key (${escapeHtml(globalSigningKey)})` : "Leave empty to use the global Git signing key"}</small></label><label class="full">Commit signing<select name="commitGpgSign"><option value=""${commitGpgSignValue === "" ? " selected" : ""}>Use global setting</option><option value="true"${commitGpgSignValue === "true" ? " selected" : ""}>Sign every commit</option><option value="false"${commitGpgSignValue === "false" ? " selected" : ""}>Do not sign commits</option></select></label></div></section>
           <section class="workspace-selections"><div class="section-heading"><h3>Where it applies</h3></div><p class="workspace-summary" id="workspace-summary"></p><ul id="workspace-selection-list"></ul></section>
         </div>
         <footer class="footer"><button type="button" class="danger" id="delete-profile">Delete profile</button><span class="footer-spacer"></span><button type="button" class="secondary" id="cancel">Cancel</button><button type="submit">Save profile</button></footer>
@@ -343,7 +332,6 @@ export function getProfileFormHtml(
     const workspaceSelectionItemHtml = (folder) => '<li><strong title="' + escapeHtml(folder) + '">' + escapeHtml(folder) + '</strong><button type="button" class="workspace-remove" data-workspace-folder="' + escapeHtml(folder) + '" aria-label="Remove workspace selection" title="Remove workspace selection">×</button><button type="button" class="workspace-remove-cancel" data-workspace-cancel="' + escapeHtml(folder) + '" aria-label="Cancel removing workspace selection" title="Cancel removal">Cancel</button></li>';
     const globalSigningKey = ${JSON.stringify(globalSigningKey)};
     const setValue = (name, value) => { form.elements[name].value = value || ''; };
-    const updateSigningKeySource = () => { document.getElementById('custom-key-field').style.display = form.elements.signingKeySource.value === 'custom' ? 'grid' : 'none'; };
     const deleteButton = document.getElementById('delete-profile');
     const workspaceSummary = document.getElementById('workspace-summary');
     const validationFields = ['label', 'userName', 'email'];
@@ -398,9 +386,9 @@ export function getProfileFormHtml(
     const switchToCreateMode = () => {
       form.reset();
       setValue('label', ''); setValue('userName', ''); setValue('email', ''); setValue('signingKey', '');
-      form.elements.gpgFormat.value = ''; form.elements.commitGpgSignMode.value = 'global'; form.elements.signingKeySource.value = 'global';
+      form.elements.gpgFormat.value = ''; form.elements.commitGpgSign.value = '';
       delete form.dataset.profileId; delete form.dataset.profileLabel; focusedProfileId = ''; deleteConfirmationPending = false;
-      deleteButton.classList.remove('confirming'); deleteButton.textContent = 'Delete profile'; updateSigningKeySource(); updateDeleteButton();
+      deleteButton.classList.remove('confirming'); deleteButton.textContent = 'Delete profile'; updateDeleteButton();
       clearValidationErrors();
       renderWorkspaceSelections('');
       document.querySelector('.content-header h2').textContent = 'Create a profile';
@@ -411,7 +399,7 @@ export function getProfileFormHtml(
     const loadProfile = (profile) => {
       focusedProfileId = profileKey(profile);
       setValue('label', profile.label); setValue('userName', profile.userName); setValue('email', profile.email);
-      setValue('signingKey', profile.signingKey); form.elements.gpgFormat.value = profile.gpgFormatMode === 'local' ? '__local__' : profile.gpgFormat || ''; form.elements.signingKeySource.value = profile.signingKeyMode || (!profile.signingKey ? 'global' : profile.signingKey === globalSigningKey ? 'copy-global' : 'custom'); form.elements.commitGpgSignMode.value = profile.commitGpgSignMode || (profile.commitGpgSign === true ? 'sign' : profile.commitGpgSign === false ? 'dont-sign' : 'global'); updateSigningKeySource();
+      setValue('signingKey', profile.signingKey); form.elements.gpgFormat.value = profile.gpgFormat || ''; form.elements.commitGpgSign.value = profile.commitGpgSign === true ? 'true' : profile.commitGpgSign === false ? 'false' : '';
       deleteConfirmationPending = false; deleteButton.classList.remove('confirming'); deleteButton.textContent = 'Delete profile';
       clearValidationErrors();
       form.dataset.profileId = profile.id || ''; form.dataset.profileLabel = profile.label || ''; updateDeleteButton();
@@ -460,7 +448,7 @@ export function getProfileFormHtml(
       const data = new FormData(form);
       vscode.postMessage({ command: 'save', profile: {
         label: data.get('label'), userName: data.get('userName'), email: data.get('email'),
-        signingKey: data.get('signingKey'), signingKeySource: data.get('signingKeySource'), commitGpgSignMode: data.get('commitGpgSignMode'), commitGpgSign: data.get('commitGpgSignMode') === 'sign' ? true : data.get('commitGpgSignMode') === 'dont-sign' ? false : undefined, gpgFormat: data.get('gpgFormat') || undefined, gpgFormatMode: data.get('gpgFormat') === '__local__' ? 'local' : undefined, id: form.dataset.profileId || undefined, originalLabel: form.dataset.profileLabel || undefined
+        signingKey: data.get('signingKey'), commitGpgSign: data.get('commitGpgSign') === 'true' ? true : data.get('commitGpgSign') === 'false' ? false : undefined, gpgFormat: data.get('gpgFormat') || undefined, id: form.dataset.profileId || undefined, originalLabel: form.dataset.profileLabel || undefined
       }});
     });
     document.getElementById('cancel').addEventListener('click', () => vscode.postMessage({ command: 'cancel' }));
@@ -471,8 +459,6 @@ export function getProfileFormHtml(
       }
       vscode.postMessage({ command: 'delete', id: form.dataset.profileId || undefined, label: form.dataset.profileLabel });
     });
-    form.elements.signingKeySource.addEventListener('change', updateSigningKeySource);
-    updateSigningKeySource();
     updateDeleteButton();
     window.addEventListener('message', (event) => {
       if (event.data.command === 'profilesChanged') {

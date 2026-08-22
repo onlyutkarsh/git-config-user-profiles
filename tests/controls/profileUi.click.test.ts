@@ -65,7 +65,7 @@ describe("profile UI click behavior", () => {
     expect(script).toBeDefined();
 
     const form = createElement();
-    ["label", "userName", "email", "signingKey", "gpgFormat", "signingKeySource", "commitGpgSignMode"].forEach((name) => {
+    ["label", "userName", "email", "signingKey", "gpgFormat", "commitGpgSign"].forEach((name) => {
       form.elements[name] = createElement();
     });
     const profileNameHelp = createElement();
@@ -144,7 +144,7 @@ describe("profile UI click behavior", () => {
     expect(script).toBeDefined();
 
     const form = createElement();
-    ["label", "userName", "email", "signingKey", "gpgFormat", "signingKeySource", "commitGpgSignMode"].forEach((name) => {
+    ["label", "userName", "email", "signingKey", "gpgFormat", "commitGpgSign"].forEach((name) => {
       form.elements[name] = createElement();
     });
     form.elements.label.nextElementSibling = createElement();
@@ -216,7 +216,7 @@ describe("profile UI click behavior", () => {
     expect(script).toBeDefined();
 
     const form = createElement();
-    ["label", "userName", "email", "signingKey", "gpgFormat", "signingKeySource", "commitGpgSignMode"].forEach((name) => {
+    ["label", "userName", "email", "signingKey", "gpgFormat", "commitGpgSign"].forEach((name) => {
       form.elements[name] = createElement();
     });
     form.elements.label.value = "Legacy Work";
@@ -224,8 +224,7 @@ describe("profile UI click behavior", () => {
     form.elements.email.value = "legacy@example.com";
     form.elements.signingKey.value = "";
     form.elements.gpgFormat.value = "";
-    form.elements.signingKeySource.value = "global";
-    form.elements.commitGpgSignMode.value = "global";
+    form.elements.commitGpgSign.value = "";
 
     const profileList = createElement();
     profileList.querySelectorAll.mockImplementation((selector: string) => {
@@ -294,7 +293,7 @@ describe("profile UI click behavior", () => {
     expect(script).toBeDefined();
 
     const form = createElement();
-    ["label", "userName", "email", "signingKey", "gpgFormat", "signingKeySource", "commitGpgSignMode"].forEach((name) => {
+    ["label", "userName", "email", "signingKey", "gpgFormat", "commitGpgSign"].forEach((name) => {
       form.elements[name] = createElement();
     });
 
@@ -359,7 +358,7 @@ describe("profile UI click behavior", () => {
     expect(script).toBeDefined();
 
     const form = createElement();
-    ["label", "userName", "email", "signingKey", "gpgFormat", "signingKeySource", "commitGpgSignMode"].forEach((name) => {
+    ["label", "userName", "email", "signingKey", "gpgFormat", "commitGpgSign"].forEach((name) => {
       form.elements[name] = createElement();
     });
     form.elements.label.value = "GitHub";
@@ -367,8 +366,7 @@ describe("profile UI click behavior", () => {
     form.elements.email.value = "gh@example.com";
     form.elements.signingKey.value = "KEY-1";
     form.elements.gpgFormat.value = "ssh";
-    form.elements.signingKeySource.value = "custom";
-    form.elements.commitGpgSignMode.value = "sign";
+    form.elements.commitGpgSign.value = "true";
 
     const profileList = createElement();
     const workspaceList = createElement();
@@ -423,8 +421,7 @@ describe("profile UI click behavior", () => {
     expect(form.elements.email.value).toBe("");
     expect(form.elements.signingKey.value).toBe("");
     expect(form.elements.gpgFormat.value).toBe("");
-    expect(form.elements.signingKeySource.value).toBe("global");
-    expect(form.elements.commitGpgSignMode.value).toBe("global");
+    expect(form.elements.commitGpgSign.value).toBe("");
     expect(headerTitle.textContent).toBe("Create a profile");
     expect(headerEyebrow.textContent).toBe("New profile");
   });
@@ -436,7 +433,7 @@ describe("profile UI click behavior", () => {
     expect(script).toBeDefined();
 
     const form = createElement();
-    ["label", "userName", "email", "signingKey", "gpgFormat", "signingKeySource", "commitGpgSignMode"].forEach((name) => {
+    ["label", "userName", "email", "signingKey", "gpgFormat", "commitGpgSign"].forEach((name) => {
       form.elements[name] = createElement();
     });
 

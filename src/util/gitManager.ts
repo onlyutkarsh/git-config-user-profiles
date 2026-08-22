@@ -359,14 +359,12 @@ export async function updateGitConfig(gitFolder: string, profile: Profile) {
   await git.addConfig("user.name", profile.userName, false, "local");
   await git.addConfig("user.email", profile.email, false, "local");
 
-  // Only set signingKey if it's not empty, to avoid overriding global config
-  if (profile.signingKeyMode === "local") {
-    Logger.instance.logTrace(LogCategory.GIT_CONFIG_FILE, "Preserving local signingkey", { folder: basename(gitFolder) });
-  } else if (profile.signingKey && profile.signingKey.trim() !== "") {
+  // Strict enforcement: the profile is the source of truth for the repository's local config.
+  if (profile.signingKey && profile.signingKey.trim() !== "") {
     await git.addConfig("user.signingkey", profile.signingKey, false, "local");
   } else {
-    // Remove the local signingKey config if profile doesn't have one
-    // This allows the global config to be used and prevents old values from lingering
+    // Remove the local signing key when the profile does not prescribe one, so the repo
+    // inherits the global config instead of keeping a stale local value.
     try {
       await git.raw(["config", "--local", "--unset", "user.signingkey"]);
       Logger.instance.logTrace(LogCategory.GIT_CONFIG_FILE, "Unset local signingkey", {
@@ -380,9 +378,7 @@ export async function updateGitConfig(gitFolder: string, profile: Profile) {
     }
   }
 
-  if (profile.commitGpgSignMode === "local") {
-    Logger.instance.logTrace(LogCategory.GIT_CONFIG_FILE, "Preserving local commit.gpgSign", { folder: basename(gitFolder) });
-  } else if (profile.commitGpgSign === undefined) {
+  if (profile.commitGpgSign === undefined) {
     try {
       await git.raw(["config", "--local", "--unset-all", "commit.gpgsign"]);
     } catch {
@@ -392,9 +388,7 @@ export async function updateGitConfig(gitFolder: string, profile: Profile) {
     await git.addConfig("commit.gpgsign", String(profile.commitGpgSign), false, "local");
   }
 
-  if (profile.gpgFormatMode === "local") {
-    Logger.instance.logTrace(LogCategory.GIT_CONFIG_FILE, "Preserving local gpg.format", { folder: basename(gitFolder) });
-  } else if (profile.gpgFormat === undefined || profile.gpgFormat.trim() === "") {
+  if (profile.gpgFormat === undefined || profile.gpgFormat.trim() === "") {
     try {
       await git.raw(["config", "--local", "--unset-all", "gpg.format"]);
     } catch {
@@ -734,7 +728,10 @@ export async function getWorkspaceStatus(): Promise<{
     return statusResult;
   }
 
-  const configInSync = util.isConfigInSync(currentGitConfig, selectedVscProfile);
+  // Only read the global git config when the sync check can actually depend on it:
+  // the profile leaves a signing setting unset while the repo has a local value for it.
+  const globalGitConfig = util.syncCheckNeedsGlobalGitConfig(currentGitConfig, selectedVscProfile) ? await getGlobalGitConfig() : undefined;
+  const configInSync = util.isProfileInSyncWithRepo(currentGitConfig, selectedVscProfile, globalGitConfig);
 
   Logger.instance.logTrace(LogCategory.WORKSPACE_STATUS, "Workspace status evaluated", {
     folder: basename(folder),
@@ -786,6 +783,18 @@ async function migrateOldProfilesToNew(profilesInVscConfig: Profile[]) {
     }
     if (!x.signingKey) {
       x.signingKey = "";
+    }
+
+    // Silently remove signing mode keys from profiles created by older versions.
+    // Modes were removed in favor of strict enforcement: profile values are applied as-is
+    // and unset fields inherit the global git config.
+    const legacyProfile = x as Profile & { signingKeyMode?: string; commitGpgSignMode?: string; gpgFormatMode?: string };
+    if (legacyProfile.signingKeyMode !== undefined || legacyProfile.commitGpgSignMode !== undefined || legacyProfile.gpgFormatMode !== undefined) {
+      delete legacyProfile.signingKeyMode;
+      delete legacyProfile.commitGpgSignMode;
+      delete legacyProfile.gpgFormatMode;
+      saveConfig = true;
+      Logger.instance.logInfo("Removed legacy signing mode settings from profile", { profileLabel: x.label });
     }
   });
   if (saveConfig) {
