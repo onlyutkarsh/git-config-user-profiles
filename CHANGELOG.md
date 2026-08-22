@@ -1,3 +1,18 @@
+## [2.5.6](https://github.com/onlyutkarsh/git-config-user-profiles/compare/v2.5.5...v2.5.6) (2026-08-22)
+
+
+### Bug Fixes
+
+* update Jest transform regex to support both .ts and .tsx files ([0b8c371](https://github.com/onlyutkarsh/git-config-user-profiles/commit/0b8c371ed968f5d22375ed6c1f712caf13c4e24f))
+
+
+### Features
+
+* enhance profile management and validation logic in UI ([8efda58](https://github.com/onlyutkarsh/git-config-user-profiles/commit/8efda589c03e7daa7b4f6737235956b6aceb04eb))
+* implement managed profile actions for create, update, and delete operations ([f935d57](https://github.com/onlyutkarsh/git-config-user-profiles/commit/f935d575330cf4b3436d57c082cff3ecaaa2fb55))
+
+
+
 ## [2.5.5](https://github.com/onlyutkarsh/git-config-user-profiles/compare/v2.5.4...v2.5.5) (2026-08-16)
 
 
