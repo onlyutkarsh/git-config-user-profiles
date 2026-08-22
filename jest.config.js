@@ -5,14 +5,16 @@ module.exports = {
   testMatch: ['**/tests/**/*.test.ts'],
   moduleFileExtensions: ['ts', 'tsx', 'js', 'jsx', 'json', 'node'],
   transform: {
-    '^.+\\.ts$': ['ts-jest', {
+    '^.+\\.[tj]sx?$': ['ts-jest', {
       tsconfig: {
         sourceMap: true,
         esModuleInterop: true,
         allowSyntheticDefaultImports: true,
+        allowJs: true,
       },
     }],
   },
+  transformIgnorePatterns: ['node_modules/(?!uuid)'],
   collectCoverageFrom: [
     'src/**/*.ts',
     '!src/**/*.d.ts',
