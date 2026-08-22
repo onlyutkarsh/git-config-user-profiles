@@ -1,6 +1,15 @@
+## 2.6.0 (2026-08-22)
+
+* feat: add cycle profile command and enforce profile signing settings strictly ([f266c69](https://github.com/onlyutkarsh/git-config-user-profiles/commit/f266c69))
+
+### BREAKING CHANGE
+
+* signing mode options (signingKeyMode, commitGpgSignMode, gpgFormatMode) have been removed
+
 ## <small>2.5.7 (2026-08-22)</small>
 
 * chore: update dependencies to latest versions ([1ab1b9d](https://github.com/onlyutkarsh/git-config-user-profiles/commit/1ab1b9d))
+* chore(release): v2.5.7 ([edc17de](https://github.com/onlyutkarsh/git-config-user-profiles/commit/edc17de))
 
 ## <small>2.5.6 (2026-08-22)</small>
 
