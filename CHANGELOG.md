@@ -1,5 +1,10 @@
+## <small>2.6.1 (2026-08-22)</small>
+
+* docs: update README to streamline feature descriptions and improve clarity ([0a0efdf](https://github.com/onlyutkarsh/git-config-user-profiles/commit/0a0efdf))
+
 ## 2.6.0 (2026-08-22)
 
+* chore(release): v2.6.0 ([ce99c63](https://github.com/onlyutkarsh/git-config-user-profiles/commit/ce99c63))
 * feat: add cycle profile command and enforce profile signing settings strictly ([f266c69](https://github.com/onlyutkarsh/git-config-user-profiles/commit/f266c69))
 
 ### BREAKING CHANGE
