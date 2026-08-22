@@ -82,7 +82,6 @@ jobs:
 
       - name: Update Changelog
         run: |
-          npm install --save-dev conventional-changelog-cli
           npx conventional-changelog -p angular -i CHANGELOG.md -s -r 0
 
       - name: Publish to Open VSX Registry
