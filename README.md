@@ -1,90 +1,49 @@
 # Git Config User Profiles
 
-Ever wanted to use different username and email addresses for your commits at work and for your personal repositories? While it is easy to do using `git config` command, this extension allows you to maintain different username and email in named profiles and allows you to easily switch and apply to the repository you are working.
-
-## Key Features
-
-- ✅ **Easy Profile Management** - Create, edit, validate, and switch between multiple git user profiles from the status bar
-- ✅ **Private Profile Selections** - Profile selections are stored in user settings (local to your machine), not shared with your team
-- ✅ **Auto Profile Matching** - Automatically selects the right profile based on your repository's existing git config
-- ✅ **Multi-Folder Workspace Support** - Detects which git repository you're working in based on the active file, perfect for monorepos
-- ✅ **Visual Sync Indicators** - Status bar shows when your git config is out of sync with the selected profile
-- ✅ **Customizable Status Bar** - Choose `full` or `compact` display formats, `left` or `right` alignment, and whether to show the status bar always or only in git repositories
-- ✅ **Detailed Comparison Tooltips** - Hover over the status bar to see:
-  - When in sync: Confirmation message with quick action hints
-  - When out of sync: Side-by-side comparison showing exactly what differs (username, email, signing key)
-  ![alt text](images/marketplace/statusbar-tooltip.png)
-- ✅ **Profile Validation** - Validate profiles before applying them to ensure email format and git compatibility
-- ✅ **Per-Repository Commit Signing** - Profiles can prescribe a signing key, `commit.gpgSign`, and `gpg.format`. These are enforced on the repository when the profile is applied; fields left empty inherit your global Git settings
-- ✅ **Robust Error Handling** - Gracefully handles profiles with missing or invalid fields
-- ✅ **Command Palette Access** - All commands available via Command Palette when status bar is crowded
+Ever wanted to use different username and email for commits at work vs. personal repositories? This extension lets you define named profiles (username, email, signing key) and switch or apply them per repository, right from the status bar.
 
 ![demo](images/marketplace/demo.gif)
 
+## Features
 
-## New UI Mode (Preview)
+- **Easy profile management** - create, edit, delete, and validate profiles from the status bar or Command Palette
+- **Private per-repo selections** - stored in your user settings, never in `.vscode/settings.json`, so selections aren't shared with your team
+- **Auto profile matching** - automatically selects the profile matching the repo's existing git config (can be disabled)
+- **Multi-folder & monorepo support** - detects the right git repository based on the active file
+- **Visual sync indicators** - status bar warns when the repo's git config differs from the selected profile; hover for a side-by-side diff (username, email, signing key)
+- **Per-repository commit signing** - profiles can set `signingKey`, `commit.gpgSign`, and `gpg.format`
+- **Customizable status bar** - `full`/`compact` format, `left`/`right` alignment, show always or only in git repos
+- **Optional form-based UI** - enable with `"gitConfigUser.useUIToEdit": true` to create/edit/delete profiles via a panel instead of step-by-step dialogs
 
-Profile management now includes an optional form-based UI for creating, editing, and deleting profiles. The new interface gives you a profile list with the active workspace selection, keeps profile changes in sync while the panel is open, and provides dedicated controls for Git signing settings.
+## Quick Start
 
-To enable it, add this setting to your `settings.json`:
+1. **Create a profile** - click `Git Config Profiles` in the status bar (or run `Git Config User Profiles: Create a profile` from the Command Palette). Profiles are stored in global user settings, available across all workspaces but private to you.
 
-```json
-{
-  "gitConfigUser.useUIToEdit": true
-}
-```
+   ![status bar](images/marketplace/statusbar.png)
 
-Once enabled, use **Create Profile**, **Edit Profile**, or **Delete Profile** from the Command Palette to open the new UI. Set the value to `false` to return to the existing step-by-step dialogs.
+2. **Pick a profile** - click the status bar item and choose `Pick a profile`.
 
-## Usage
+   ![picker](images/marketplace/profile-picker.png)
 
-### Creating the profiles
+3. **Apply it** - if the repo is out of sync (warning icon), click the profile name in the status bar and choose `Yes, apply` to write the profile's username/email/signing settings to the repo's local git config. The warning disappears once in sync.
 
-Once you install extension, click on 'Git Config Profiles' on the VSCode Status Bar and define few profiles.
+   ![repo in sync](images/marketplace/repo-in-sync.png)
 
-![status bar](images/marketplace/statusbar.png)
+> **Tip:** When the extension loads, it matches the repo's git config against your profiles and selects the matching one automatically. Disable this via `gitConfigUser.selectMatchedProfileAutomatically`.
 
-> Profiles are stored in your global user settings so they are available across all workspaces, but remain private to you.
+## Commands
 
-### Selecting the profile
+All commands are available from the Command Palette - type `git config user profiles` or `gcup`.
 
-Click on the status bar and if you have profiles you will presented with a dialog as below.
+| Command                              | What it does                                                         |
+| ------------------------------------ | -------------------------------------------------------------------- |
+| **Create / Edit / Delete a profile** | Manage your profiles (step-by-step dialog or form UI)                |
+| **Pick a profile**                   | Select and optionally apply a profile to the current repo            |
+| **Cycle to Next Profile**            | Apply the next profile in your list - great when bound to a shortcut |
+| **Validate Profile**                 | Check username/email format and that git accepts the values          |
+| **Show Extension Status**            | Explains why the status bar is hidden or showing a warning           |
 
-![status bar picker](images/marketplace/statusbar-picker.png)
-
-Click `Pick a profile` and then select a profile you need.
-
-![picker](images/marketplace/profile-picker.png)
-
-### Setting the profile selected to the repo
-
-#### Auto selection of profile
-
-When the extension loads up, it looks up the local git config and tries to match it with the profiles defined. If it finds a match, it selects the profile automatically (new behaviour). This behavior can be disabled in settings.
-
-![auto select](images/marketplace/auto-select-profile-setting.png)
-
-#### Manual selection of profile
-
-If auto selection of profile is disabled, the status bar will show a warning if the repository's username and email do not match any of the profiles, and you can select a profile manually (old behaviour).
-
-Once you select a profile, the status bar text changes to selected profile name [1 in image below]. 
-
-> The icon might display a "warning" sign if the current repo is not using the username and email selected.
-
-If you want to apply the username and email defined in the selected profile to the current repository, click on profile name in the status bar (e.g `Work` ) and then select `Yes, apply` in the dialog [2 image below].
-
-![profile not in sync](images/marketplace/repo-not-in-sync.png)
-
-Once the repository's username and email are in sync, you will see warning color go away confirming that repository config is in sync with the profile selected.
-
-![repo in sync](images/marketplace/repo-in-sync.png)
-
-### Cycling between profiles
-
-If you frequently switch between two or more profiles, use the **Git Config User Profiles: Cycle to Next Profile** command to apply the next profile in your list to the current repository — no picker required. The command wraps around to the first profile when it reaches the end, and confirms the switch with a brief status bar message.
-
-It is most useful when bound to a keyboard shortcut. Add a binding to your `keybindings.json`, for example:
+Example keybinding for cycling profiles (`keybindings.json`):
 
 ```json
 {
@@ -93,227 +52,29 @@ It is most useful when bound to a keyboard shortcut. Add a binding to your `keyb
 }
 ```
 
-### Deleting a profile
-Open the Command Palette and type `git config user profiles` or `gcup` and select `Delete a profile`. You will be presented with a list of profiles to delete.
+## Settings
 
-### Validating a profile
-Want to test if a profile is properly configured before applying it? Use the **Validate Profile** command:
-
-1. Open Command Palette (`Cmd+Shift+P` / `Ctrl+Shift+P`)
-2. Type "Git Config User Profiles: Validate Profile"
-3. Select the profile you want to validate
-
-The validation checks:
-- ✅ Username is not empty
-- ✅ Email is not empty and properly formatted (supports `+` addressing, subdomains, etc.)
-- ✅ Git accepts all values (tests actual git config commands)
-
-**Results:**
-- **Success**: "✅ Profile 'Work' is valid and ready to use!"
-- **Failure**: Detailed list of issues found (e.g., "Email is empty", "Invalid email format")
-
-This is especially useful after creating or editing a profile to ensure everything works correctly.
-
-## Configuration
-
-The extension provides configuration options to customize your experience:
-
-### Status Bar Display Format
-
-Choose how the status bar displays profile information:
-
-- **Full (default)**:
-  - Shows repository name and profile with icons
-  - Best for larger screens
-
-- **Compact**:
-  - Shows only profile with git icon
-  - Saves space on smaller screens
-  - Repository name shown in tooltip when hovering
-
-To change the format:
-1. Open Settings (`Cmd+,` / `Ctrl+,`)
-2. Search for "Git Config User Profiles Status Bar Format"
-3. Select your preferred format
-
-Or add to your `settings.json`:
-```json
-{
-  "gitConfigUser.statusBarFormat": "compact"
-}
-```
-
-### Status Bar Alignment
-
-Choose where the status bar item appears:
-
-- **Right (default)**: Position at the absolute right of the status bar
-- **Left**: Position at the absolute left of the status bar
-
-To change the alignment:
-1. Open Settings (`Cmd+,` / `Ctrl+,`)
-2. Search for "Git Config User Profiles Status Bar Alignment"
-3. Select your preferred alignment
-
-Or add to your `settings.json`:
-```json
-{
-  "gitConfigUser.statusBarAlignment": "left"
-}
-```
-
-The change takes effect immediately without needing to reload the window.
-
-### Status Bar Visibility
-
-Control when the status bar item is shown:
-
-- **Always (default)**: Status bar is always visible, even in non-git folders. Shows a helpful tooltip when no git repository is detected.
-- **Only in Git Repositories**: Status bar is hidden when no git repository is detected - the previous behavior.
-
-To change the visibility:
-1. Open Settings (`Cmd+,` / `Ctrl+,`)
-2. Search for "Git Config User Profiles Status Bar Visibility"
-3. Select your preferred option
-
-Or add to your `settings.json`:
-```json
-{
-  "gitConfigUser.statusBarVisibility": "git-repos-only"
-}
-```
-
-### Auto Profile Selection
-
-Enable or disable automatic profile selection based on git config:
-
-```json
-{
-  "gitConfigUser.selectMatchedProfileAutomatically": true
-}
-```
-
-When enabled, the extension automatically selects a profile if your current git config matches one of your saved profiles.
+| Setting                                           | Default  | Description                                                   |
+| ------------------------------------------------- | -------- | ------------------------------------------------------------- |
+| `gitConfigUser.statusBarFormat`                   | `full`   | `full` shows repo + profile; `compact` shows only the profile |
+| `gitConfigUser.statusBarAlignment`                | `right`  | `left` or `right` position in the status bar                  |
+| `gitConfigUser.statusBarVisibility`               | `always` | `always` or `git-repos-only`                                  |
+| `gitConfigUser.selectMatchedProfileAutomatically` | `true`   | Auto-select the profile matching the repo's git config        |
+| `gitConfigUser.useUIToEdit`                       | `false`  | Use the form-based UI for create/edit/delete                  |
 
 ## Commit Signing Behavior
 
-Profiles define signing settings (`signingKey`, `commitGpgSign`, `gpgFormat`) as the source of truth for the repository:
+A profile's signing fields (`signingKey`, `commitGpgSign`, `gpgFormat`) are written to the repository's **local** git config when the profile is applied. Fields left empty on the profile remove the local override, so the repo falls back to your global Git settings.
 
-- **Applying a profile writes its values to the repository's local git config.** Fields left empty on the profile have the corresponding *local* setting removed, so the repository falls back to your global Git configuration.
-- **Sync checking compares strictly.** A repository is shown as out of sync if its local values differ from the profile. When a profile leaves a signing field empty, a local repository value is only considered in sync if it matches your *global* Git setting (since that's what the repository would resolve to after applying the profile).
+Sync checking is strict: a repo is only "in sync" when its local values match the profile (or the global value for fields the profile leaves empty). If a repo needs a different signing key than your global config, set that key on the profile itself or re-apply the repo's key after switching.
 
-This means applying a profile can remove a repository-local signing key override. If a specific repository needs a different signing key than your global config, either set that key on the profile itself or re-apply the repository's key after switching.
+## Where Is Data Stored?
 
-## Supported Scenarios
+- **Profiles** → global user settings (`gitConfigUser.profiles`) - private to you, available in all workspaces, and synced via VS Code Settings Sync.
+- **Repo ↔ profile selections** → global user settings, keyed by workspace path (`gitConfigUser.workspaceProfileSelections`) - private per developer, so teammates can each pick their own profile for the same project.
+- Selections from older versions (`.vscode/settings.json` or workspace settings) are **migrated automatically** on first load - no action needed.
 
-The extension intelligently handles various workspace configurations and provides appropriate feedback through the status bar and tooltips.
+## Issues and Feature Requests
 
-### Workspace Configurations
-
-| Scenario                                             | Status Bar Display                                                                                       | Tooltip                                                                                                                                                       |
-| ---------------------------------------------------- | -------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **No editors open**                                  | Shows git icon → "Git Config User Profiles → No Profile ?" (always mode) or hidden (git-repos-only mode) | ℹ️ **Open a file from a git repository**                                                                                                                       |
-| **Non-file schemes** (Output window, Settings, etc.) | Shows git icon → "Git Config User Profiles → No Profile ?" (always mode) or hidden (git-repos-only mode) | ℹ️ **Open a file from a git repository**                                                                                                                       |
-| **Jupyter Notebooks** (.ipynb)                       | Same as regular files - shows git profile information                                                    | Same as regular files - displays profile sync status                                                                                                          |
-| **File in non-git folder**                           | Shows git icon → "Git Config User Profiles → No Profile ?" (always mode) or hidden (git-repos-only mode) | ℹ️ **This does not seem to be a valid git repository**                                                                                                         |
-| **No profiles created**                              | Shows repo name → "No Profile" with question mark icon and warning background                            | 📋 **No Profiles Created** - No profiles have been created yet                                                                                                 |
-| **Git repo, no profile selected**                    | Shows repo name → "No Profile" with question mark icon and warning background                            | ⚠️ **No Profile Selected** - No profile has been selected for this repository                                                                                  |
-| **Git repo, profile selected, in sync**              | Shows repo name → profile name with normal background (no icons)                                         | ✅ **Profile Active: Profile Name** - Your git config is in sync with this profile. *Click to switch profiles*                                                 |
-| **Git repo, profile selected, out of sync**          | Shows repo name → profile name with alert icon and warning background                                    | ⚠️ **Git Config Out of Sync** - Shows side-by-side comparison of differences (username, email, signing key). *Click to apply the profile or update git config* |
-| **Profile configuration error**                      | Shows repo name → profile name with error icon and error background                                      | ❌ **Profile Configuration Error** - Selected profile is missing required information                                                                          |
-| **Nested git repositories**                          | Works correctly by detecting git root from file location                                                 | Each nested git repo can have its own profile selection                                                                                                       |
-| **Extension status hidden**                          | Use "Show Extension Status" command                                                                      | ⚠️ Status bar is hidden when not in a git repository. Use "Show Extension Status" command to see why                                                           |
-
-### Checking Extension Status
-
-If you're wondering why the status bar is not visible, or want to see detailed information about the extension's current state, use the **"Git Config User Profiles: Show Status"** command from the Command Palette.
-
-To access it:
-1. Open the Command Palette (`Cmd+Shift+P` on macOS or `Ctrl+Shift+P` on Windows/Linux)
-2. Type "Git Config User Profiles: Show Extension Status"
-3. Press Enter
-
-### Multi-root and Nested Repository Support
-
-The extension fully supports complex workspace configurations:
-
-- **Parent folder with multiple git repos**: Open a parent folder containing multiple nested git repositories, and the extension will detect the correct git repo based on which file you have open.
-- **Multi-root workspaces**: Each workspace folder can have its own profile selection.
-- **Mono repositories**: Works correctly in mono repos by traversing up to find the git root from the opened file's location.
-
-> All tooltips are kept minimal for quick readability. Click the status bar icon for detailed information and available actions.
-
-<br/>
-
-## Technical Details: How Profile Storage Works
-
-> **Note:** This section is for advanced users who want to understand the internals. Most users don't need to read this!
-
-### Profile Definitions Storage
-
-- **Where:** User Settings (Global)
-- **Setting:** `gitConfigUser.profiles`
-- **Shared with team:** ❌ No
-
-Your profiles (name, email, signing key) are stored in your global user settings, available across all workspaces but private to you.
-
-### Profile Selection Storage
-
-- **Where:** User Settings (Global, keyed by workspace path)
-- **Setting:** `gitConfigUser.workspaceProfileSelections`
-- **Shared with team:** ❌ No
-
-Your selections are stored in a map like this:
-```json
-{
-  "gitConfigUser.workspaceProfileSelections": {
-    "/path/to/work-project": "work-profile-id",
-    "/path/to/personal-project": "personal-profile-id"
-  }
-}
-```
-
-This allows workspace-specific selections while keeping them private to each developer.
-
-### Profile Selection Priority
-
-When opening a workspace, the extension determines the profile in this order:
-
-1. **User settings map** (`workspaceProfileSelections`) - Current storage location (v2.2.0+)
-2. **Auto-matching** - If auto-select is enabled and no profile is selected, matches git config against profiles
-3. **Legacy `.vscode/settings.json` file** - Automatically migrated to user settings if found
-4. **Legacy workspace settings** - Automatically migrated from old workspace-scoped settings
-5. **Legacy global selected flag** - Backwards compatibility with v1.x (deprecated)
-
-### Migration from v2.1.0 and Earlier
-
-The extension automatically migrates old profile selections:
-- ✅ Reads old selections from `.vscode/settings.json` or workspace settings
-- ✅ Migrates to new user settings storage (`workspaceProfileSelections`)
-- ✅ Cleans up old settings from `.vscode/settings.json` and workspace settings
-- ✅ Works seamlessly - no user action needed!
-- ✅ One-time migration happens transparently when you open a workspace
-
-### FAQ
-
-**Q: Why not store selections in `.vscode/settings.json`?** 
-
-A: That file is often committed to git and shared with the team. Profile selections are personal (your email vs teammate's email).
-
-
-**Q: Can team members use different profiles for the same project?**
-
-A: Yes! Each person has their own private selections.
-
-**Q: Will selections sync across machines?**
-
-A: Profile definitions sync via VSCode Settings Sync. Selections are stored in user settings and will sync if you have Settings Sync enabled, allowing your profile selections to follow you across machines.
-
-### Star History
-
-[![Star History Chart](https://api.star-history.com/svg?repos=onlyutkarsh/git-config-user-profiles&type=date&legend=top-left)](https://www.star-history.com/#onlyutkarsh/git-config-user-profiles&type=date&legend=top-left)
-
-### Issues and feature requests
-
-If you find any bug or have any suggestion/feature request, please submit the [issue](https://github.com/onlyutkarsh/git-config-user-profiles/issues) in the GitHub repo.
+Found a bug or have a suggestion? Please file an [issue](https://github.com/onlyutkarsh/git-config-user-profiles/issues) on GitHub.
 
