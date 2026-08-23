@@ -1,5 +1,10 @@
+## <small>2.6.2 (2026-08-23)</small>
+
+* feat: enhance profile management with back navigation and action options in pickers ([0e756fd](https://github.com/onlyutkarsh/git-config-user-profiles/commit/0e756fd))
+
 ## <small>2.6.1 (2026-08-22)</small>
 
+* chore(release): v2.6.1 ([1b0fbc5](https://github.com/onlyutkarsh/git-config-user-profiles/commit/1b0fbc5))
 * docs: update README to streamline feature descriptions and improve clarity ([0a0efdf](https://github.com/onlyutkarsh/git-config-user-profiles/commit/0a0efdf))
 
 ## 2.6.0 (2026-08-22)
