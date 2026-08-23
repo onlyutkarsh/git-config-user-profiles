@@ -295,34 +295,77 @@ export function syncCheckNeedsGlobalGitConfig(gitConfig: SyncGitConfig, profile:
   return inheritsSigningKey || inheritsCommitGpgSign || inheritsGpgFormat;
 }
 
-export async function showProfilePicker() {
+/** Action ids returned by the profile picker when the user picks a non-profile action. */
+export const PROFILE_PICKER_ACTION_CREATE = "create-new-profile";
+export const PROFILE_PICKER_ACTION_EDIT = "edit-profile";
+export const PROFILE_PICKER_ACTION_DELETE = "delete-profile";
+export const PROFILE_PICKER_ACTION_GO_BACK = "go-back";
+
+export interface ProfilePickerOptions {
+  /** Id of the profile currently applied to the workspace; its item gets a $(check) icon. */
+  selectedProfileId?: string;
+  /** Show the root-level management actions: Edit, Delete, Create. */
+  includeActions?: boolean;
+  /** Show only the nested back action; used after choosing Edit/Delete from the main picker. */
+  includeGoBack?: boolean;
+  /** Placeholder text shown in the picker; defaults to "Select a user profile." */
+  placeHolder?: string;
+}
+
+export interface ProfilePickerResult {
+  result?: Profile;
+  actionId?: string;
+}
+
+type ProfileQuickPickItem = vscode.QuickPickItem & { profile?: Profile; actionId?: string };
+
+export async function showProfilePicker(options: ProfilePickerOptions = {}): Promise<ProfilePickerResult> {
   const profilesInVscConfig = getProfilesInSettings();
+
+  const profileItems: ProfileQuickPickItem[] = profilesInVscConfig.map((x) => {
+    const isApplied = !!options.selectedProfileId && x.id === options.selectedProfileId;
+    const signingSuffix = isEmpty(x.signingKey) ? "" : `  $(key) ${x.commitGpgSign === false ? "Signing key set" : "Signs commits"}`;
+    return {
+      label: x.label,
+      description: isApplied ? "$(check) Current" : "",
+      detail: `${x.userName} • ${x.email}${signingSuffix}`,
+      profile: x,
+    };
+  });
+
+  const items: ProfileQuickPickItem[] = options.includeActions
+    ? [
+        { label: "Profiles", kind: vscode.QuickPickItemKind.Separator },
+        ...profileItems,
+        { label: "Actions", kind: vscode.QuickPickItemKind.Separator },
+        { label: "$(edit) Edit profile...", actionId: PROFILE_PICKER_ACTION_EDIT, alwaysShow: true },
+        { label: "$(trash) Delete profile...", actionId: PROFILE_PICKER_ACTION_DELETE, alwaysShow: true },
+        { label: "$(add) Create new profile...", actionId: PROFILE_PICKER_ACTION_CREATE, alwaysShow: true },
+      ]
+    : options.includeGoBack
+      ? [
+          { label: "Profiles", kind: vscode.QuickPickItemKind.Separator },
+          ...profileItems,
+          { label: "Actions", kind: vscode.QuickPickItemKind.Separator },
+          { label: "$(arrow-left) Go back", actionId: PROFILE_PICKER_ACTION_GO_BACK, alwaysShow: true },
+        ]
+      : profileItems;
 
   //show picklist only if no profile is marked as selected in config.
   //this can happen only when setting up config for the first time or user deliberately changed config
-  const pickedProfile = await window.showQuickPick<Profile>(
-    profilesInVscConfig.map((x) => {
-      return {
-        label: x.label,
-        userName: x.userName,
-        email: x.email,
-        selected: x.selected,
-        detail: `${x.userName} (${x.email}) `,
-        id: x.id,
-        signingKey: x.signingKey,
-        commitGpgSign: x.commitGpgSign,
-        gpgFormat: x.gpgFormat,
-      };
-    }),
-    {
-      canPickMany: false,
-      matchOnDetail: false,
-      ignoreFocusOut: true,
-      placeHolder: "Select a user profile.",
-    }
-  );
+  const pickedItem = await window.showQuickPick<ProfileQuickPickItem>(items, {
+    canPickMany: false,
+    matchOnDescription: false,
+    matchOnDetail: true,
+    ignoreFocusOut: true,
+    placeHolder: options.placeHolder ?? "Select a user profile.",
+  });
+
+  if (pickedItem?.actionId) {
+    return { actionId: pickedItem.actionId };
+  }
   return {
-    result: pickedProfile,
+    result: pickedItem?.profile,
   };
 }
 
@@ -391,7 +434,7 @@ export async function loadProfileInWizard(preloadedProfile: Profile): Promise<Pr
   //await saveVscProfile(profile);
   return profile;
 }
-export async function createProfileWithWizard(): Promise<Profile> {
+export async function createProfileWithWizard(): Promise<Profile | undefined> {
   const createNewProfile = true;
   const globalGitConfig = await getGlobalGitConfig();
   const state: Partial<controls.State> = {
@@ -399,7 +442,11 @@ export async function createProfileWithWizard(): Promise<Profile> {
     globalCommitGpgSign: globalGitConfig.commitGpgSign,
     globalGpgFormat: globalGitConfig.gpgFormat,
   };
-  await controls.MultiStepInput.run(async (input) => await pickProfileName(input, state, createNewProfile));
+  const input = await controls.MultiStepInput.run(async (input) => await pickProfileName(input, state, createNewProfile), { showBackOnFirstStep: true });
+  if (input.wentBackFromFirstStep) {
+    await vscode.commands.executeCommand(constants.CommandIds.PICK_USER_PROFILE);
+    return undefined;
+  }
   const profile: Profile = new Profile(
     state.profileName || "Unknown",
     state.profileUserName || "",

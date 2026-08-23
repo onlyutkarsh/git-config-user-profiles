@@ -32,8 +32,20 @@ export class EditUserProfileCommand implements ICommand<boolean> {
       const useUIToEdit = config.get<boolean>("useUIToEdit", false);
       const profiles = getProfilesInSettings();
       const workspaceSelections = config.get<Record<string, string>>("workspaceProfileSelections", {});
-      const pickedProfile = useUIToEdit ? undefined : await util.showProfilePicker();
+      const pickedProfile = useUIToEdit
+        ? undefined
+        : await util.showProfilePicker({
+            includeGoBack: true,
+            selectedProfileId: result.selectedProfile?.id,
+            placeHolder: "Select a profile to edit.",
+          });
       const selectedProfile = useUIToEdit ? undefined : (pickedProfile?.result as Profile);
+
+      if (pickedProfile?.actionId === util.PROFILE_PICKER_ACTION_GO_BACK) {
+        util.Logger.instance.logDebug(LogCategory.EDIT_PROFILE, "User chose to return to the profile picker", {});
+        await vscode.commands.executeCommand(constants.CommandIds.PICK_USER_PROFILE);
+        return { result: true };
+      }
 
       if (useUIToEdit) {
         void showProfileForm(

@@ -75,6 +75,7 @@ export class CycleUserProfileCommand implements ICommand<Profile> {
       }
 
       vscode.window.setStatusBarMessage(`$(check) Switched to profile '${nextProfile.label}' for '${applyResult.message}'`, 3000);
+      await vscode.commands.executeCommand(constants.CommandIds.GET_USER_PROFILE, "applied profile");
       return { result: applyResult.result };
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : String(error);

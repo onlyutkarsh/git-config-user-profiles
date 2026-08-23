@@ -52,11 +52,16 @@ export interface State {
 }
 
 export class MultiStepInput {
-  static async run(start: InputStep) {
+  static async run(start: InputStep, options?: { showBackOnFirstStep?: boolean }) {
     const input = new MultiStepInput();
-    return input.stepThrough(start);
+    input.showBackOnFirstStep = options?.showBackOnFirstStep ?? false;
+    await input.stepThrough(start);
+    return input;
   }
 
+  /** Set when the user presses Back on the very first step of the flow. */
+  public wentBackFromFirstStep = false;
+  private showBackOnFirstStep = false;
   private current?: QuickInput;
   private steps: InputStep[] = [];
 
@@ -74,6 +79,9 @@ export class MultiStepInput {
         if (err === InputFlowAction.back) {
           this.steps.pop();
           step = this.steps.pop();
+          if (!step) {
+            this.wentBackFromFirstStep = true;
+          }
         } else if (err === InputFlowAction.resume) {
           step = this.steps.pop();
         } else if (err === InputFlowAction.cancel) {
@@ -101,7 +109,7 @@ export class MultiStepInput {
         if (activeItem) {
           input.activeItems = [activeItem];
         }
-        input.buttons = [...(this.steps.length > 1 ? [QuickInputButtons.Back] : []), ...(buttons || [])];
+        input.buttons = [...(this.steps.length > 1 || this.showBackOnFirstStep ? [QuickInputButtons.Back] : []), ...(buttons || [])];
         disposables.push(
           input.onDidTriggerButton((item) => {
             if (item === QuickInputButtons.Back) {
@@ -140,7 +148,7 @@ export class MultiStepInput {
         input.value = value || "";
         input.prompt = prompt;
         input.placeholder = placeholder;
-        input.buttons = [...(this.steps.length > 1 ? [QuickInputButtons.Back] : []), ...(buttons || [])];
+        input.buttons = [...(this.steps.length > 1 || this.showBackOnFirstStep ? [QuickInputButtons.Back] : []), ...(buttons || [])];
         let validating = validate("");
         disposables.push(
           input.onDidTriggerButton((item) => {

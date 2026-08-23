@@ -98,6 +98,11 @@ export const commands = {
   executeCommand: jest.fn(),
 };
 
+export enum QuickPickItemKind {
+  Separator = -1,
+  Default = 0,
+}
+
 export class Uri {
   static file(path: string) {
     return {

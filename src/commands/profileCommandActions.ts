@@ -1,7 +1,6 @@
 import { basename } from "path";
 import * as vscode from "vscode";
 import { saveVscProfile } from "../config";
-import * as constants from "../constants";
 import { Profile } from "../models";
 import * as util from "../util";
 import * as gm from "../util/gitManager";
@@ -130,7 +129,6 @@ export async function applyProfileToWorkspace(profile: Profile): Promise<Result<
 
   // Invalidate cache after updating git config
   gm.invalidateWorkspaceStatusCache();
-  await vscode.commands.executeCommand(constants.CommandIds.GET_USER_PROFILE, "applied profile");
 
   util.Logger.instance.logInfo(`Profile '${profile.label}' applied successfully to '${refreshedRepoName}'`);
   return { result: profile, message: refreshedRepoName };

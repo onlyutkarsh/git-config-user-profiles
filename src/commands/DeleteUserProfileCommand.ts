@@ -30,7 +30,21 @@ export class DeleteUserProfileCommand implements ICommand<boolean> {
 
       const config = vscode.workspace.getConfiguration("gitConfigUser");
       const useUIToEdit = config.get<boolean>("useUIToEdit", false);
-      const selectedProfile = useUIToEdit ? await showProfileDeleteUi(getProfilesInSettings()) : ((await util.showProfilePicker()).result as Profile);
+      const pickedProfile = useUIToEdit
+        ? undefined
+        : await util.showProfilePicker({
+            includeGoBack: true,
+            selectedProfileId: result.selectedProfile?.id,
+            placeHolder: "Select a profile to delete.",
+          });
+      const selectedProfile = useUIToEdit ? await showProfileDeleteUi(getProfilesInSettings()) : (pickedProfile?.result as Profile);
+
+      if (pickedProfile?.actionId === util.PROFILE_PICKER_ACTION_GO_BACK) {
+        util.Logger.instance.logDebug(LogCategory.DELETE_PROFILE, "User chose to return to the profile picker", {});
+        await vscode.commands.executeCommand(constants.CommandIds.PICK_USER_PROFILE);
+        return { result: true };
+      }
+
       if (selectedProfile) {
         util.Logger.instance.logDebug(LogCategory.DELETE_PROFILE, "Profile selected for deletion", {
           profileLabel: selectedProfile.label,
@@ -39,11 +53,19 @@ export class DeleteUserProfileCommand implements ICommand<boolean> {
 
         const confirmation = useUIToEdit
           ? "Yes, delete"
-          : await vscode.window.showQuickPick(["No", "Yes, delete"], {
+          : await vscode.window.showQuickPick(["No", "Yes, delete", "Go back"], {
               canPickMany: false,
               ignoreFocusOut: true,
               placeHolder: `Delete profile '${util.trimLabelIcons(selectedProfile.label)}'? This cannot be undone.`,
             });
+
+        if (confirmation === "Go back") {
+          util.Logger.instance.logDebug(LogCategory.DELETE_PROFILE, "User chose to return to profile selection after confirming deletion prompt", {
+            profileLabel: selectedProfile.label,
+          });
+          await vscode.commands.executeCommand(constants.CommandIds.PICK_USER_PROFILE);
+          return { result: true };
+        }
 
         if (confirmation !== "Yes, delete") {
           util.Logger.instance.logDebug(LogCategory.DELETE_PROFILE, "User cancelled profile deletion confirmation", {

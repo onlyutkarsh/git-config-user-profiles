@@ -66,8 +66,30 @@ export class PickUserProfileCommand implements ICommand<Profile> {
         allWorkspaceFolders: vscode.workspace.workspaceFolders?.map((wf) => wf.uri.fsPath),
       });
 
-      const pickedProfileRaw = await util.showProfilePicker();
-      const pickedProfile = pickedProfileRaw.result as Profile;
+      const pickerResponse = await util.showProfilePicker({
+        selectedProfileId: result.selectedProfile?.id,
+        includeActions: true,
+      });
+
+      if (pickerResponse.actionId) {
+        if (pickerResponse.actionId === util.PROFILE_PICKER_ACTION_CREATE) {
+          util.Logger.instance.logDebug(LogCategory.PICK_PROFILE, "User chose to create a new profile from picker", {});
+          await vscode.commands.executeCommand(constants.CommandIds.CREATE_USER_PROFILE);
+          return { result: undefined };
+        }
+        if (pickerResponse.actionId === util.PROFILE_PICKER_ACTION_EDIT) {
+          util.Logger.instance.logDebug(LogCategory.PICK_PROFILE, "User chose to edit a profile from picker", {});
+          await vscode.commands.executeCommand(constants.CommandIds.EDIT_USER_PROFILE);
+          return { result: undefined };
+        }
+        if (pickerResponse.actionId === util.PROFILE_PICKER_ACTION_DELETE) {
+          util.Logger.instance.logDebug(LogCategory.PICK_PROFILE, "User chose to delete a profile from picker", {});
+          await vscode.commands.executeCommand(constants.CommandIds.DELETE_USER_PROFILE);
+          return { result: undefined };
+        }
+      }
+
+      const pickedProfile = pickerResponse.result as Profile;
       if (pickedProfile) {
         util.Logger.instance.logDebug(LogCategory.PICK_PROFILE, "User selected profile", {
           profileLabel: pickedProfile.label,
@@ -82,7 +104,10 @@ export class PickUserProfileCommand implements ICommand<Profile> {
           return { result: undefined, error: applyResult.error };
         }
 
-        await vscode.window.showInformationMessage(`Profile '${pickedProfile.label}' is now applied for '${applyResult.message}'. 🎉`, "OK");
+        // Refresh the status bar with the new in-sync state, then confirm via a transient
+        // status bar message - no modal, so focus stays put
+        await vscode.commands.executeCommand(constants.CommandIds.GET_USER_PROFILE, "applied profile");
+        vscode.window.setStatusBarMessage(`$(check) Profile '${util.trimLabelIcons(pickedProfile.label)}' is now applied for '${applyResult.message}'`, 3000);
         return { result: pickedProfile };
       }
       util.Logger.instance.logDebug(LogCategory.PICK_PROFILE, "User cancelled profile selection", {});
